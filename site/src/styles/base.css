@@ -1,0 +1,300 @@
+/* ============================================================
+   VETA — sistema base
+   Tres materiales, en esta proporción:
+     --roca       negro mate, fracturado, con grano   → 80 % de la superficie
+     --esmeralda  translúcida, con luz interna        → lo que se revela
+     --oro        en hilos finos, nunca masas         → por donde entra la luz
+   ============================================================ */
+
+/* ---------- Fuentes auto-hospedadas ---------- */
+@font-face {
+  font-family: 'Outfit';
+  src: url('/fonts/outfit-latin-wght-normal.woff2') format('woff2');
+  font-weight: 100 900; font-style: normal; font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+                 U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+                 U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Outfit';
+  src: url('/fonts/outfit-latin-ext-wght-normal.woff2') format('woff2');
+  font-weight: 100 900; font-style: normal; font-display: swap;
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+                 U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+                 U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Geist';
+  src: url('/fonts/Geist-latin.woff2') format('woff2');
+  font-weight: 100 900; font-style: normal; font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+                 U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+                 U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Geist';
+  src: url('/fonts/Geist-latin-ext.woff2') format('woff2');
+  font-weight: 100 900; font-style: normal; font-display: swap;
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+                 U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+                 U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('/fonts/JetBrainsMono-latin.woff2') format('woff2');
+  font-weight: 100 800; font-style: normal; font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+                 U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+                 U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('/fonts/JetBrainsMono-latin-ext.woff2') format('woff2');
+  font-weight: 100 800; font-style: normal; font-display: swap;
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+                 U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+                 U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/* ---------- Tokens ---------- */
+:root {
+  /* Roca: cuatro profundidades. Nunca negro puro: la roca tiene grano. */
+  --roca-0:   #070809;
+  --roca:     #0C0E10;
+  --roca-2:   #15181B;
+  --roca-3:   #1F2327;
+  --grano:    #2B3035;
+
+  /* Esmeralda: lo que se revela. Tres valores: sombra, cuerpo, luz interna. */
+  --esmeralda-sombra: #0F5A3C;
+  --esmeralda:        #1FA46F;
+  --esmeralda-luz:    #5FE0A6;
+
+  /* Oro: hilos, nunca masas. Tres valores: sombra, cuerpo, brillo. */
+  --oro-sombra: #8A6A2A;
+  --oro:        #C9A24B;
+  --oro-luz:    #EAD189;
+
+  /* Texto */
+  --hueso:    #ECE6D8;   /* principal — el blanco cálido del wordmark */
+  --ceniza:   #8E918C;   /* secundario y partículas: el ruido */
+  --ceniza-2: #5C605D;   /* terciario */
+
+  /* Negativo: rojo apagado, nunca alarma neón. */
+  --rojo:     #B5473E;
+  --rojo-luz: #D9695F;
+
+  --esmeralda-dim: rgba(31, 164, 111, 0.12);
+  --oro-dim:       rgba(201, 162, 75, 0.12);
+  --rojo-dim:      rgba(181, 71, 62, 0.12);
+  --hairline:      rgba(236, 230, 216, 0.10);
+  --hairline-2:    rgba(236, 230, 216, 0.06);
+
+  --font-display: 'Outfit', 'Geist', system-ui, sans-serif;
+  --font-body:    'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono:    'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* Radio mínimo. La roca se corta, no se redondea. */
+  --r: 2px;
+
+  --gutter: clamp(20px, 5vw, 64px);
+  --measure: 60ch;
+  --maxw: 1320px;
+
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-io: cubic-bezier(0.65, 0, 0.35, 1);
+  /* Piedra: arranca lento, pesa, se asienta. */
+  --ease-piedra: cubic-bezier(0.7, 0, 0.2, 1);
+
+  color-scheme: dark;
+}
+
+/* ---------- Reset ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+* { margin: 0; }
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: auto; /* Lenis lo maneja */
+}
+
+body {
+  background: var(--roca);
+  color: var(--hueso);
+  font-family: var(--font-body);
+  font-size: clamp(15px, 0.42vw + 13.6px, 17px);
+  line-height: 1.6;
+  font-feature-settings: 'kern', 'liga';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+img, svg, video, canvas { display: block; max-width: 100%; }
+[hidden] { display: none !important; }
+img { height: auto; }
+button, input, textarea, select { font: inherit; color: inherit; }
+a { color: inherit; text-decoration: none; }
+
+/* ---------- Foco de teclado visible ---------- */
+:focus { outline: none; }
+:focus-visible {
+  outline: 1px solid var(--oro);
+  outline-offset: 3px;
+  border-radius: var(--r);
+}
+
+.skip-link {
+  position: absolute; top: 0; left: 0;
+  transform: translateY(-120%);
+  z-index: 200;
+  background: var(--hueso); color: var(--roca);
+  padding: 10px 18px;
+  font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transition: transform 0.2s var(--ease);
+}
+.skip-link:focus-visible { transform: translateY(0); outline-offset: -2px; }
+
+/* ---------- Tipografía ----------
+   Display: Outfit fina (300) con tracking apenas negativo en títulos grandes;
+   el wordmark y las etiquetas van en 500 con tracking ancho, como el logo.  */
+.display {
+  font-family: var(--font-display);
+  font-weight: 300;
+  letter-spacing: -0.015em;
+  line-height: 1.02;
+  text-wrap: balance;
+}
+h1.display { font-size: clamp(2.4rem, 5.4vw, 4.7rem); }
+h2.display { font-size: clamp(2rem, 4.2vw, 3.4rem); }
+h3.display { font-size: clamp(1.25rem, 1.6vw, 1.6rem); letter-spacing: 0; line-height: 1.12; font-weight: 400; }
+
+.display em, .display strong {
+  font-style: normal; font-weight: 400;
+  color: var(--esmeralda-luz);
+}
+
+/* Wordmark: el lettering del logo, en texto. */
+.wordmark {
+  font-family: var(--font-display);
+  font-weight: 500;
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+  color: var(--hueso);
+}
+.wordmark__sub {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 0.62em;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  color: var(--oro);
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+
+.lead {
+  font-size: clamp(1.05rem, 1.3vw, 1.25rem);
+  line-height: 1.5;
+  color: var(--hueso);
+  max-width: var(--measure);
+  text-wrap: pretty;
+}
+.body-muted { color: var(--ceniza); max-width: var(--measure); text-wrap: pretty; }
+
+.hi-veta { color: var(--esmeralda-luz); }
+.hi-oro  { color: var(--oro); }
+.hi-neg  { color: var(--rojo-luz); }
+
+/* ---------- Layout ---------- */
+.shell { width: 100%; max-width: var(--maxw); margin-inline: auto; padding-inline: var(--gutter); }
+.section { position: relative; padding-block: clamp(80px, 10vw, 160px); }
+.section + .section { border-top: 1px solid var(--hairline-2); }
+
+/* ---------- Eyebrow ---------- */
+.eyebrow {
+  display: flex; align-items: center; gap: 12px;
+  color: var(--ceniza);
+  margin-bottom: clamp(20px, 2.6vw, 32px);
+}
+.eyebrow__mark {
+  width: 6px; height: 6px; flex: none;
+  background: var(--ceniza);
+  transform: rotate(45deg);
+}
+.eyebrow[data-mat='esmeralda'] .eyebrow__mark { background: var(--esmeralda); }
+.eyebrow[data-mat='oro']       .eyebrow__mark { background: var(--oro); }
+.eyebrow__rule { flex: 1; height: 1px; background: var(--hairline); min-width: 24px; }
+
+/* ---------- Botones ----------
+   Sin masas de oro. El primario es un hilo de oro que se cierra al pasar:
+   el borde es la grieta; el relleno nunca ocurre. El hilo no es plano: va
+   de oro-sombra a oro-luz, como un filamento con luz de un lado. */
+.btn {
+  --btn-fg: var(--oro-luz);
+  --btn-a: var(--oro-sombra); --btn-b: var(--oro); --btn-c: var(--oro-luz);
+  position: relative;
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 13px 22px;
+  background: transparent; color: var(--btn-fg);
+  border: 1px solid var(--btn-b);
+  border-image: linear-gradient(120deg, var(--btn-a), var(--btn-b) 45%, var(--btn-c)) 1;
+  font-family: var(--font-mono); font-size: 0.72rem;
+  letter-spacing: 0.1em; text-transform: uppercase; font-weight: 500;
+  cursor: pointer;
+  transition: color 0.22s var(--ease), background 0.22s var(--ease), box-shadow 0.3s var(--ease), transform 0.22s var(--ease);
+}
+.btn::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(180deg, rgba(234,209,137,0.10), transparent 55%);
+  opacity: 0; transition: opacity 0.25s var(--ease);
+}
+.btn:hover { background: var(--oro-dim); box-shadow: 0 0 22px -8px rgba(201,162,75,0.55), inset 0 0 0 1px rgba(234,209,137,0.12); transform: translateY(-1px); }
+.btn:hover::after { opacity: 1; }
+.btn:active { transform: translateY(0); box-shadow: none; }
+.btn:focus-visible { outline: 1px solid var(--oro-luz); outline-offset: 3px; }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; background: transparent; }
+.btn:disabled::after { opacity: 0; }
+
+.btn--ghost { --btn-fg: var(--hueso); --btn-a: rgba(236,230,216,0.10); --btn-b: rgba(236,230,216,0.16); --btn-c: rgba(236,230,216,0.10); }
+.btn--ghost:hover { background: rgba(236,230,216,0.04); box-shadow: inset 0 0 0 1px rgba(236,230,216,0.18); }
+.btn--ghost::after { background: linear-gradient(180deg, rgba(236,230,216,0.06), transparent 55%); }
+
+.btn--esmeralda { --btn-fg: var(--esmeralda-luz); --btn-a: var(--esmeralda-sombra); --btn-b: var(--esmeralda); --btn-c: var(--esmeralda-luz); }
+.btn--esmeralda:hover { background: var(--esmeralda-dim); box-shadow: 0 0 22px -8px rgba(31,164,111,0.6), inset 0 0 0 1px rgba(95,224,166,0.14); }
+.btn--esmeralda::after { background: linear-gradient(180deg, rgba(95,224,166,0.10), transparent 55%); }
+
+/* ---------- Utilidades ---------- */
+.hairline { height: 1px; background: var(--hairline); border: 0; }
+.vh {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip-path: inset(50%); white-space: nowrap;
+}
+
+[data-reveal] { will-change: transform, opacity; }
+
+/* ---------- Movimiento reducido ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  [data-reveal] { opacity: 1 !important; transform: none !important; }
+  .btn:hover { transform: none; }
+}

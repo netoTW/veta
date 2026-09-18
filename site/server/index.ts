@@ -1,0 +1,185 @@
+/* ============================================================================
+   Servidor de VETA — Hono sobre Node.
+
+     /api/auth/*       better-auth (registro, login, logout, recuperación, admin)
+     /api/contenido/*  contenido del motor filtrado por la matriz de acceso
+     /api/admin/*      bandeja de aprobación, cuentas, registro de acciones
+     /api/yo           sesión + rol efectivo (lo que el cliente necesita)
+
+   En desarrollo Vite proxya /api acá. Con VETA_SERVIR_DIST=1 sirve además
+   la build (dist/) con fallback SPA: es el modo de las capturas.
+   ========================================================================== */
+import { Hono, type Context } from 'hono'
+import { serve } from '@hono/node-server'
+import { serveStatic } from '@hono/node-server/serve-static'
+import { existsSync, readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+import { ENV, RAIZ_SITE } from './entorno.ts'
+import { auth, migrar, sesionDe, type Sesion } from './auth.ts'
+import { bd } from './db.ts'
+import { rolDe, puede, type Rol, type Seccion } from '../src/lib/matriz.ts'
+import * as contenido from './contenido.ts'
+import { adminApp, sincronizarAlertas } from './admin.ts'
+import { votacionApp, votacionAdmin } from './votacion.ts'
+import { cupoDe } from './cupo.ts'
+import { analizarApp, consumoAdmin } from './analizar.ts'
+import { operacionAdmin } from './operacion.ts'
+import { sembrar } from './semilla.ts'
+
+type Vars = { sesion: Sesion | null; rol: Rol; rolReal: Rol; verComo: Rol | null }
+const app = new Hono<{ Variables: Vars }>()
+
+/* ---------- auth ---------- */
+app.on(['GET', 'POST'], '/api/auth/*', (c) => auth.handler(c.req.raw))
+
+/* ---------- sesión y rol efectivo en cada petición ---------- */
+app.onError((e, c) => {
+  console.error('[veta] error', c.req.method, c.req.path, e)
+  return c.json({ error: 'interno', detalle: e.message }, 500)
+})
+
+app.use('/api/*', async (c, next) => {
+  const sesion = await sesionDe(c.req.raw.headers).catch((e) => { console.error('[sesion]', e); return null })
+  const rolReal = rolDe(sesion?.user)
+  // "Ver como" existe SÓLO en desarrollo y SÓLO para admin: la cabecera la manda el selector de dev.
+  let verComo: Rol | null = null
+  const h = c.req.header('x-veta-ver-como')
+  if (!ENV.PRODUCCION && rolReal === 'admin' && h && (['visitante', 'base', 'pro', 'admin'] as string[]).includes(h)) verComo = h as Rol
+  c.set('sesion', sesion); c.set('rolReal', rolReal); c.set('verComo', verComo); c.set('rol', verComo ?? rolReal)
+  await next()
+})
+
+const exige = (seccion: Seccion) => async (c: { get: (k: 'rol') => Rol; json: (o: unknown, s?: 401 | 403) => Response }, next: () => Promise<void>) => {
+  const rol = c.get('rol')
+  if (!puede(rol, seccion)) return c.json({ error: 'sin_acceso', seccion, rol, plan_minimo: seccion }, rol === 'visitante' ? 401 : 403)
+  await next()
+}
+
+app.get('/api/yo', (c) => {
+  const s = c.get('sesion')
+  return c.json({
+    usuario: s ? { id: s.user.id, email: s.user.email, nombre: s.user.name, plan: s.user.plan ?? 'gratis', rol: s.user.role ?? 'usuario', estado: s.user.estado ?? 'activo', suspendido: !!s.user.banned, fecha_alta: s.user.createdAt, ultimo_acceso: s.user.ultimo_acceso ?? null } : null,
+    rol: c.get('rol'), rol_real: c.get('rolReal'), ver_como: c.get('verComo'),
+    impersonando: !!s?.session.impersonatedBy,
+    desarrollo: !ENV.PRODUCCION,
+    horas_anticipo: ENV.HORAS_ANTICIPO,
+  })
+})
+
+app.get('/api/cuenta', async (c) => {
+  const s = c.get('sesion')
+  if (!s) return c.json({ error: 'sin_sesion' }, 401)
+  const suscripcion = await bd.uno('SELECT plan, estado, fecha_renovacion FROM suscripcion WHERE usuario_id = ?', [s.user.id]) ?? null
+  const c0 = await cupoDe(s.user.id, c.get('rol') === 'admin' ? 'pro' : (s.user.plan ?? 'gratis'), c.get('rol') === 'admin')
+  const cupo = { periodo: c0.periodo, analisis_incluidos: c0.incluidos, analisis_usados: c0.usados, fecha_reinicio: c0.fecha_reinicio, ilimitado: c0.ilimitado }
+  const sesiones = (await bd.uno<{ n: number }>('SELECT COUNT(*) AS n FROM session WHERE "userId" = ?', [s.user.id]))!.n
+  return c.json({ suscripcion, cupo, sesiones })
+})
+
+/* ---------- contenido ---------- */
+app.get('/api/contenido/meta', (c) => c.json(contenido.meta()))
+app.get('/api/contenido/gemas', async (c) => c.json({ gemas: await contenido.gemasPara(c.get('rol')), anticipadas: await contenido.anticipadasPara(c.get('rol')) }))
+app.get('/api/contenido/gemas/:id', async (c) => {
+  const g = await contenido.gemaPara(c.req.param('id'), c.get('rol')) as (Record<string, unknown> & { recorte?: string }) | null
+  if (g?.recorte === 'anticipada') return c.json({ error: 'anticipada', ...g }, 403)
+  return g ? c.json(g) : c.json({ error: 'no_encontrado' }, 404)
+})
+app.get('/api/contenido/analisis', async (c) => c.json(await contenido.analisisPara(c.get('rol'))))
+app.get('/api/contenido/analisis/:id', async (c) => {
+  const a = await contenido.analisisUnoPara(c.req.param('id'), c.get('rol'))
+  return a ? c.json(a) : c.json({ error: 'no_encontrado' }, 404)
+})
+app.get('/api/contenido/marcador', async (c) => {
+  const m = await contenido.marcadorAgregado()
+  // el visitante ve el agregado (evidencia de método); el detalle por gema, sólo quien puede ver el informe
+  const rol = c.get('rol')
+  return c.json(puede(rol, 'seguimiento') ? m : { ...m, gemas: m.gemas.map((g) => ({ gema_id: g.gema_id, simbolo: g.simbolo, b1: { lado: g.b1.lado }, b2: { lado: g.b2.lado }, cerrada: g.cerrada, dias_al_cierre: g.dias_al_cierre })) })
+})
+
+/* ---------- predicción del usuario: una vez, con fecha, sin cambios ---------- */
+app.get('/api/prediccion', async (c) => {
+  const s = c.get('sesion'); if (!s) return c.json({ error: 'sin_sesion' }, 401)
+  const mias = await bd.todos('SELECT gema_id, prediccion, fecha, retorno_gema_al_marcar, b1_al_marcar, dias_al_cierre_al_marcar FROM prediccion WHERE usuario_id = ? ORDER BY fecha DESC', [s.user.id]) as { gema_id: string; prediccion: 'gana' | 'no_gana'; fecha: string }[]
+  const m = await contenido.marcadorAgregado()
+  const filas = mias.map((p) => {
+    const g = m.gemas.find((x) => x.gema_id === p.gema_id)
+    const vivo = g ? g.b1.lado : 'sin_medir'
+    const acierto_por_ahora = vivo === 'sin_medir' ? null : (vivo === 'gana') === (p.prediccion === 'gana')
+    return { ...p, simbolo: g?.simbolo ?? p.gema_id, va: vivo, cerrada: g?.cerrada ?? false, acierto_por_ahora }
+  })
+  const veta = m.gemas.filter((g) => g.b1.lado !== 'sin_medir')
+  return c.json({
+    predicciones: filas,
+    marcador: {
+      total: filas.length, acertando: filas.filter((f) => f.acierto_por_ahora === true).length, fallando: filas.filter((f) => f.acierto_por_ahora === false).length, sin_medir: filas.filter((f) => f.acierto_por_ahora === null).length,
+      // VETA "predice" que cada gema le gana a la canasta: su acierto vivo es cuántas van ganando
+      veta: { total: veta.length, acertando: veta.filter((g) => g.b1.lado === 'gana').length },
+    },
+  })
+})
+app.post('/api/prediccion/:gemaId', async (c) => {
+  const s = c.get('sesion'); if (!s) return c.json({ error: 'sin_sesion' }, 401)
+  if (!puede(c.get('rol'), 'gemas.informe')) return c.json({ error: 'sin_acceso', seccion: 'gemas.informe' }, 403)
+  const gemaId = c.req.param('gemaId')
+  const g = await contenido.gemaPara(gemaId, c.get('rol')) as { recorte?: string } | null
+  if (!g || g.recorte) return c.json({ error: 'no_encontrado' }, 404)
+  const { prediccion } = await c.req.json().catch(() => ({})) as { prediccion?: string }
+  if (prediccion !== 'gana' && prediccion !== 'no_gana') return c.json({ error: 'prediccion_invalida' }, 400)
+  const ya = await bd.uno('SELECT prediccion, fecha FROM prediccion WHERE usuario_id = ? AND gema_id = ?', [s.user.id, gemaId])
+  if (ya) return c.json({ error: 'ya_marcada', detalle: 'La predicción es una sola y no se cambia.' }, 409)
+  const m = (await contenido.marcadorAgregado()).gemas.find((x) => x.gema_id === gemaId)
+  if (m?.cerrada) return c.json({ error: 'gema_cerrada', detalle: 'El horizonte ya cerró: no se predice sobre un resultado.' }, 409)
+  await bd.ejecutar('INSERT INTO prediccion (usuario_id, gema_id, prediccion, fecha, retorno_gema_al_marcar, b1_al_marcar, dias_al_cierre_al_marcar) VALUES (?, ?, ?, ?, ?, ?, ?)', [s.user.id, gemaId, prediccion, new Date().toISOString(), m?.retorno_gema ?? null, m?.b1.valor ?? null, m?.dias_al_cierre ?? null])
+  return c.json({ ok: true })
+})
+
+app.get('/api/contenido/visuales/:id', async (c) => {
+  const v = await contenido.visualesPara(c.req.param('id'), c.get('rol'))
+  return v ? c.json(v) : c.json({ error: 'no_encontrado' }, 404)
+})
+app.get('/api/contenido/seguimiento', exige('seguimiento'), async (c) => c.json(await contenido.seguimientoPara(c.get('rol'))))
+app.get('/api/contenido/benchmark', exige('seguimiento'), (c) => c.json(contenido.benchmark()))
+app.get('/api/contenido/watchlist', exige('watchlist'), (c) => c.json(contenido.watchlistToda()))
+app.get('/api/contenido/alertas', exige('alertas'), async (c) => c.json(await alertasDe(c.get('sesion')!.user.id)))
+app.get('/api/contenido/exportar/:que', exige('exportar'), async (c) => {
+  const que = c.req.param('que'); const rol = c.get('rol')
+  const cuerpo = que === 'gemas' ? await contenido.gemasPara(rol) : que === 'seguimiento' ? await contenido.seguimientoPara(rol) : que === 'watchlist' ? contenido.watchlistToda() : que === 'analisis' ? await contenido.analisisPara(rol) : null
+  if (!cuerpo) return c.json({ error: 'no_exportable' }, 404)
+  c.header('Content-Disposition', `attachment; filename="veta-${que}-${new Date().toISOString().slice(0, 10)}.json"`)
+  return c.json(cuerpo)
+})
+
+async function alertasDe(usuarioId: string) {
+  return bd.todos('SELECT id, tipo, gema_id, fecha, leida, detalle FROM alerta WHERE usuario_id = ? ORDER BY fecha DESC LIMIT 100', [usuarioId])
+}
+
+/* ---------- analiza tu moneda ---------- */
+app.route('/api/analizar', analizarApp)
+app.route('/api/admin/consumo', consumoAdmin)
+app.route('/api/admin/operacion', operacionAdmin)
+
+/* ---------- votación semanal ---------- */
+app.route('/api/votacion', votacionApp)
+app.route('/api/admin/votacion', votacionAdmin)
+
+/* ---------- admin ---------- */
+app.route('/api/admin', adminApp)
+
+app.notFound((c) => (c.req.path.startsWith('/api/') ? c.json({ error: 'no_encontrado' }, 404) : spa(c)))
+
+/* ---------- build estática (modo capturas / preview) ---------- */
+const DIST = resolve(RAIZ_SITE, 'dist')
+function spa(c: Context) {
+  const f = resolve(DIST, 'index.html')
+  return existsSync(f) ? c.html(readFileSync(f, 'utf8')) : c.text('Sin build: corré `npm run build`', 404)
+}
+if (ENV.SERVIR_DIST) {
+  app.use('/*', serveStatic({ root: './dist' }))
+}
+
+await migrar()
+await sembrar()
+console.log(`[alertas] ${await sincronizarAlertas()} nuevas`)
+serve({ fetch: app.fetch, port: ENV.PUERTO }, (info) => {
+  console.log(`[veta] servidor en http://localhost:${info.port} · datos ${ENV.DATOS} · base ${ENV.DATABASE_URL ? 'postgres' : ENV.DB}${ENV.SERVIR_DIST ? ' · sirviendo dist/' : ''}`)
+})

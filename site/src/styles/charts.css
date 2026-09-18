@@ -1,0 +1,98 @@
+/* ============================================================
+   VETA — charts. Son contenido, no fondo: van junto a la
+   sección que ilustran, nunca sobre tablas ni detrás del texto.
+   Esmeralda positivo · oro destacado · rojo apagado negativo ·
+   números en mono. Sin librería: SVG escalado a mano.
+   ============================================================ */
+.ch { position: relative; margin: 18px 0 10px; padding: 16px 18px 12px; border: 1px solid var(--hairline-2); background: linear-gradient(180deg, var(--roca-2), #111417); }
+.ch__cab { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 18px; margin-bottom: 10px; }
+.ch__k { display: block; color: var(--ceniza-2); font-size: 0.6rem; }
+.ch__titular { color: var(--esmeralda-luz); font-size: 0.86rem; }
+.ch__titular b { font-family: var(--font-mono); font-weight: 500; font-size: 1.15rem; margin-right: 6px; }
+.ch__titular.is-neg { color: var(--rojo-luz); }
+.ch__grafico { position: relative; }
+.ch__svg { display: block; width: 100%; height: auto; overflow: visible; }
+.ch__grid { stroke: rgba(236,230,216,0.06); stroke-width: 1; }
+.ch__tick { fill: var(--ceniza-2); font-family: var(--font-mono); font-size: 11px; }
+.ch__linea { fill: none; stroke: var(--esmeralda-luz); stroke-width: 1.6; stroke-linejoin: round; filter: drop-shadow(0 0 4px rgba(95,224,166,0.35)); }
+.ch__ath { stroke: var(--oro); stroke-width: 1; stroke-dasharray: 5 4; opacity: 0.8; }
+.ch__oro { fill: var(--oro-luz); font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.04em; }
+.ch__esm { fill: var(--esmeralda-luz); font-family: var(--font-mono); font-size: 11px; }
+.ch__gema { fill: var(--oro); stroke: #fff2c8; stroke-width: 0.6; filter: drop-shadow(0 0 5px rgba(234,209,137,0.7)); }
+.ch__hoy { fill: var(--esmeralda-luz); stroke: var(--roca); stroke-width: 2; filter: drop-shadow(0 0 6px rgba(95,224,166,0.8)); }
+.ch__cruz { stroke: rgba(236,230,216,0.3); stroke-width: 1; stroke-dasharray: 3 3; }
+.ch__barra { fill: var(--esmeralda); opacity: 0.75; transition: opacity 0.15s; }
+.ch__barra.is-on { fill: var(--esmeralda-luz); opacity: 1; }
+.ch__nota { margin-top: 8px; color: var(--ceniza-2); font-size: 0.66rem; font-family: var(--font-mono); line-height: 1.5; word-break: break-word; }
+.ch-tip { position: absolute; z-index: 3; display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; background: rgba(12,14,16,0.92); border: 1px solid var(--hairline); color: var(--hueso); font-size: 0.8rem; pointer-events: none; backdrop-filter: blur(6px); }
+.ch-tip .mono { color: var(--ceniza-2); font-size: 0.58rem; }
+.ch-tip b { font-family: var(--font-mono); font-weight: 500; }
+.ch-tip--flot { top: 12px; transform: translateX(-50%); }
+.ch-tip__densa { color: var(--oro-luz); font-size: 0.56rem; }
+
+/* ---------- liquidación proyectada ---------- */
+.ch-heat { padding-bottom: 16px; }
+.ch-heat__cab { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 10px 24px; margin-bottom: 12px; }
+.ch-heat__sesgo { color: var(--hueso); font-size: 0.95rem; line-height: 1.45; max-width: 56ch; text-wrap: pretty; margin-top: 4px; }
+.ch-heat__totales { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+.ch-heat__tot { color: var(--ceniza); font-size: 0.78rem; }
+.ch-heat__tot b { font-family: var(--font-mono); font-weight: 500; font-size: 1rem; margin-right: 6px; }
+.ch-heat__tot b { color: var(--hueso); }
+.ch-sello { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border: 1px solid; outline: 1px solid; outline-offset: 2px; font-size: 0.6rem; }
+.ch-sello::before { content: ''; width: 8px; height: 8px; transform: rotate(45deg); background: currentColor; box-shadow: 0 0 8px currentColor; }
+.ch-sello--rojo { color: var(--rojo-luz); border-color: rgba(217,105,95,0.6); outline-color: rgba(217,105,95,0.2); background: rgba(181,71,62,0.08); }
+.ch-heat__grafico { position: relative; }
+.ch-heat__svg { display: block; width: 100%; height: auto; }
+.ch-heat__lado { fill: var(--ceniza-2); font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; }
+.ch-heat__precio { fill: var(--ceniza); font-family: var(--font-mono); font-size: 10px; }
+.ch-heat__eje { stroke: rgba(236,230,216,0.07); stroke-width: 1; }
+.ch-heat__ejet { fill: var(--ceniza-2); font-family: var(--font-mono); font-size: 9.5px; }
+.ch-heat__cifra { fill: var(--oro-luz); font-family: var(--font-mono); font-size: 10px; }
+.ch-heat__hoy-linea { stroke: var(--hueso); stroke-width: 1.2; stroke-dasharray: 4 3; opacity: 0.8; }
+.ch-heat__hoy-caja { fill: var(--roca); stroke: var(--hueso); stroke-width: 1; }
+.ch-heat__precio.is-densa { fill: var(--oro-luz); }
+.ch-heat__actual { fill: var(--hueso); font-family: var(--font-mono); font-size: 11.5px; letter-spacing: 0.04em; font-weight: 500; }
+.ch-heat .ch-tip { right: 0; transform: translateY(-50%); }
+.ch-heat__zonas { display: flex; flex-wrap: wrap; gap: 10px 28px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--hairline-2); color: var(--ceniza); font-size: 0.8rem; }
+.ch-heat__zonas > span { display: flex; flex-direction: column; gap: 2px; }
+.ch-heat__zonas b { font-family: var(--font-mono); font-weight: 500; color: var(--hueso); }
+.ch-heat__supuestos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 28px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--hairline-2); }
+.ch-heat__lista { margin: 8px 0 0; padding-left: 14px; color: var(--ceniza); font-size: 0.82rem; line-height: 1.5; display: flex; flex-direction: column; gap: 5px; }
+.ch-heat__lista b { color: var(--hueso); font-weight: 500; }
+.ch-heat__lista em { color: var(--oro-luz); font-style: normal; }
+.ch-heat__lista--lim li::marker { color: var(--rojo-luz); }
+.ch-heat--ausente .ch-heat__sesgo { color: var(--ceniza); }
+@media (max-width: 720px) {
+  .ch { padding: 12px 12px 10px; }
+  .ch-heat__supuestos { grid-template-columns: 1fr; }
+  .ch-heat__precio { font-size: 13px; }
+  .ch-heat__lado { font-size: 12px; }
+  .ch-heat__actual { font-size: 14px; }
+  .ch-heat .ch-tip { position: static; transform: none; margin-top: 10px; }
+  .ch__tick { font-size: 13px; }
+  .ch__oro, .ch__esm { font-size: 12px; }
+  .ch-heat--movil .ch-heat__precio { font-size: 12px; }
+  .ch-heat--movil .ch-heat__lado { font-size: 10px; }
+  .ch-heat--movil .ch-heat__actual { font-size: 13px; }
+  .ch-heat--movil .ch-heat__ejet, .ch-heat--movil .ch-heat__cifra { font-size: 11px; }
+}
+
+/* ---------- tvl y concentración ---------- */
+.ch-tvl__barras { display: flex; flex-direction: column; gap: 8px; }
+.ch-tvl__fila { display: grid; grid-template-columns: 80px 1fr 150px; gap: 12px; align-items: center; font-size: 0.86rem; color: var(--ceniza); }
+.ch-tvl__fila b { font-family: var(--font-mono); font-weight: 500; text-align: right; }
+.ch-tvl__fila.is-hoy b { color: var(--esmeralda-luz); }
+.ch-tvl__k { color: var(--ceniza-2); font-size: 0.6rem; }
+.ch-tvl__barra { display: block; height: 10px; background: var(--roca-0); }
+.ch-tvl__barra span { display: block; height: 100%; background: linear-gradient(90deg, var(--esmeralda-sombra), var(--esmeralda)); }
+.ch-tvl__fila.is-hoy .ch-tvl__barra span { background: linear-gradient(90deg, var(--esmeralda), var(--esmeralda-luz)); box-shadow: 0 0 10px rgba(95,224,166,0.35); }
+.ch-conc__barra { display: flex; height: 16px; background: var(--roca-0); overflow: hidden; }
+.ch-conc__top { background: linear-gradient(90deg, var(--oro-sombra), var(--oro-luz)); box-shadow: 0 0 10px rgba(234,209,137,0.35); }
+.ch-conc__resto { background: linear-gradient(90deg, rgba(31,164,111,0.55), rgba(31,164,111,0.25)); }
+.ch-conc__leyenda { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 8px; font-size: 0.6rem; color: var(--ceniza-2); }
+.ch-conc__l1 { color: var(--oro-luz); } .ch-conc__l2 { color: var(--esmeralda-luz); }
+.ch-conc__desc { margin-top: 12px; }
+.ch-conc__desc ul { margin: 6px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px; color: var(--ceniza); font-size: 0.82rem; }
+.ch-conc__desc b { color: var(--hueso); font-family: var(--font-mono); font-weight: 500; }
+.ch-conc__tipo { display: inline-block; margin-right: 8px; padding: 2px 6px; border: 1px solid var(--hairline); color: var(--ceniza); font-size: 0.56rem; }
+@media (max-width: 720px) { .ch-tvl__fila { grid-template-columns: 70px 1fr; } .ch-tvl__fila b { grid-column: 2; text-align: left; } }

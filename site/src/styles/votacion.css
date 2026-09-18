@@ -1,0 +1,226 @@
+/* ============================================================
+   VETA — Votación semanal (Pro).
+   Las candidatas son piedras cerradas sobre una mesa oscura:
+   nadie las analizó todavía. La señal del scanner asoma en la
+   superficie (esmeralda por la grieta, hilo de oro, piedra recién
+   partida). La más votada se ilumina en vivo; el voto pesa; el
+   cierre revela. Para Base y Gratis la mesa está, velada.
+   ============================================================ */
+.vt { display: flex; flex-direction: column; gap: clamp(36px, 5vw, 64px); padding-bottom: 40px; }
+.vt-h2 { font-size: clamp(1.6rem, 2.8vw, 2.3rem); line-height: 1.1; }
+.vt-h2 b { font-weight: 400; color: var(--oro-luz); }
+.vt-h3 { font-size: clamp(1.3rem, 2vw, 1.6rem); }
+.vt-lead { margin-top: 10px; max-width: 60ch; text-wrap: pretty; }
+.vt-oculto { color: transparent; text-shadow: 0 0 10px rgba(236,230,216,0.35); user-select: none; letter-spacing: 0.04em; }
+
+/* ---------- la activa ---------- */
+.vt-activa { position: relative; }
+.vt-activa__cab { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(320px, 1fr); gap: 20px 48px; align-items: start; margin-bottom: 22px; }
+.vt-activa__cab .eyebrow { margin-bottom: 12px; }
+
+/* ---------- la mecha: cuenta regresiva ---------- */
+.vt-mecha { position: relative; padding: 16px 18px 14px; border: 1px solid var(--hairline); background: linear-gradient(180deg, rgba(21,24,27,0.9), rgba(12,14,16,0.9)); }
+.vt-mecha__cab { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; }
+.vt-mecha__k { color: var(--oro-luz); font-size: 0.6rem; }
+.vt-mecha__cuando { color: var(--hueso); font-size: 0.92rem; }
+.vt-mecha__resta { flex-basis: 100%; display: flex; align-items: baseline; gap: 2px; margin-top: 6px; color: var(--hueso); font-size: clamp(1.7rem, 3vw, 2.4rem); line-height: 1; font-weight: 400; letter-spacing: 0.02em; font-variant-numeric: tabular-nums; }
+.vt-mecha__resta i { font-style: normal; font-size: 0.55em; color: var(--ceniza); margin-right: 8px; }
+.vt-mecha__seg { color: var(--oro-luz); }
+.vt-mecha__seg { animation: vt-tic 1s steps(1) infinite; }
+@keyframes vt-tic { 0% { opacity: 1; } 50% { opacity: 0.55; } 100% { opacity: 1; } }
+.vt-mecha__hilo { position: relative; height: 3px; margin-top: 14px; background: linear-gradient(90deg, var(--oro-sombra), var(--oro) 60%, var(--oro-luz)); box-shadow: 0 0 10px rgba(201,162,75,0.25); }
+.vt-mecha__quemado { position: absolute; left: 0; top: -1px; bottom: -1px; background: linear-gradient(90deg, #2a2320, #3a2f26); box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.6); transition: width 1s linear; }
+.vt-mecha__brasa { position: absolute; top: 50%; width: 9px; height: 9px; transform: translate(-50%, -50%) rotate(45deg); background: radial-gradient(circle at 40% 40%, #fff6d6, var(--oro-luz) 40%, var(--oro) 75%); box-shadow: 0 0 10px 2px rgba(234,209,137,0.85), 0 0 26px 6px rgba(201,162,75,0.35); transition: left 1s linear; animation: vt-brasa 1.4s ease-in-out infinite; }
+@keyframes vt-brasa { 0%, 100% { box-shadow: 0 0 10px 2px rgba(234,209,137,0.85), 0 0 26px 6px rgba(201,162,75,0.35); } 50% { box-shadow: 0 0 14px 4px rgba(255,236,190,0.95), 0 0 34px 10px rgba(201,162,75,0.45); } }
+.vt-mecha__pie { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px 12px; margin-top: 10px; color: var(--ceniza-2); font-size: 0.58rem; text-transform: none; letter-spacing: 0.05em; }
+.vt-mecha.is-urgente .vt-mecha__resta { color: var(--oro-luz); }
+.vt-mecha.is-urgente .vt-mecha__brasa { animation-duration: 0.7s; }
+.vt-mecha.is-vencida .vt-mecha__brasa, .vt-mecha.is-cerrada .vt-mecha__brasa { animation: none; background: var(--ceniza); box-shadow: none; }
+.vt-mecha.is-cerrada .vt-mecha__hilo { background: #2a2320; box-shadow: none; }
+.vt-mecha.is-cerrada .vt-mecha__k { color: var(--ceniza); }
+.vt-mecha--compacta { padding: 10px 14px 10px; }
+.vt-mecha--compacta .vt-mecha__resta { font-size: 1.3rem; margin-top: 2px; }
+.vt-mecha--compacta .vt-mecha__hilo { margin-top: 8px; height: 2px; }
+
+/* ---------- el embudo ---------- */
+.vt-embudo { list-style: none; padding: 0; margin: 0 0 28px; display: flex; flex-wrap: wrap; align-items: stretch; gap: 0; border-top: 1px solid var(--hairline-2); border-bottom: 1px solid var(--hairline-2); }
+.vt-embudo__paso { position: relative; flex: 1 1 140px; display: flex; flex-direction: column; gap: 2px; padding: 12px 18px 12px 0; color: var(--ceniza); font-size: 0.72rem; }
+.vt-embudo__paso b { font-weight: 500; font-size: 1.25rem; line-height: 1.1; color: var(--hueso); }
+.vt-embudo__paso + .vt-embudo__paso { padding-left: 18px; border-left: 1px solid var(--hairline-2); }
+.vt-embudo__paso + .vt-embudo__paso::before { content: ''; position: absolute; left: -5px; top: 50%; width: 8px; height: 8px; transform: translateY(-50%) rotate(45deg); background: var(--roca); border-right: 1px solid var(--hairline); border-top: 1px solid var(--hairline); }
+.vt-embudo__paso.is-oro b { color: var(--oro-luz); text-shadow: 0 0 12px rgba(234,209,137,0.3); }
+.vt-embudo__paso.is-oro { color: var(--hueso); }
+.vt-embudo__fecha { align-self: center; margin-left: auto; padding-left: 18px; color: var(--ceniza-2); font-size: 0.58rem; }
+
+/* ---------- la mesa: las piedras ---------- */
+.vt-mesa { list-style: none; padding: 26px 0 8px; margin: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; position: relative; }
+.vt-mesa--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.vt-mesa--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.vt-mesa--6 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+/* la superficie: una sombra que reúne a todas, como una mesa de piedra */
+.vt-mesa::before { content: ''; position: absolute; left: 4%; right: 4%; top: 150px; height: 140px; background: radial-gradient(ellipse at 50% 50%, rgba(0,0,0,0.65), transparent 70%); pointer-events: none; z-index: 0; }
+.vt-cand { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 0 6px 16px; text-align: center; transition: opacity 0.6s var(--ease), filter 0.6s var(--ease), transform 0.6s var(--ease); animation: vt-entra 0.9s var(--ease) both; animation-delay: calc(var(--i, 0) * 90ms); }
+@keyframes vt-entra { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+.vt-cand__btn { position: relative; display: block; background: none; border: 0; padding: 6px; cursor: pointer; border-radius: 50%; transition: transform 0.5s var(--ease); -webkit-tap-highlight-color: transparent; }
+.vt-cand__btn:disabled { cursor: default; }
+.vt-cand__btn:focus-visible { outline: 1px solid var(--oro-luz); outline-offset: 6px; }
+.vt-cand__btn:not(:disabled):hover { transform: translateY(-6px) scale(1.04); }
+.vt-cand__btn:not(:disabled):hover .vt-piedra img { animation: vt-latido 1.6s ease-in-out infinite; }
+.vt-cand__lidera { position: absolute; top: -14px; left: 50%; transform: translateX(-50%); padding: 4px 10px; color: var(--roca); background: linear-gradient(135deg, var(--oro-luz), var(--oro)); font-size: 0.56rem; letter-spacing: 0.16em; box-shadow: 0 0 16px rgba(234,209,137,0.45); z-index: 3; animation: vt-entra 0.6s var(--ease) both; }
+.vt-cand__id { display: flex; flex-direction: column; gap: 2px; margin-top: 2px; }
+.vt-cand__sym { font-size: clamp(1.4rem, 2.2vw, 1.9rem); line-height: 1; color: var(--hueso); letter-spacing: 0.02em; }
+.vt-cand__nombre { color: var(--ceniza); font-size: 0.82rem; }
+.vt-cand__senales { list-style: none; padding: 0; margin: 4px 0 0; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.vt-senal { display: inline-flex; align-items: center; gap: 7px; padding: 3px 9px; border: 1px solid var(--hairline-2); color: var(--ceniza); font-size: 0.72rem; line-height: 1.3; }
+.vt-senal__gema { width: 7px; height: 7px; transform: rotate(45deg); flex: none; background: var(--ceniza-2); }
+.vt-senal--oro { border-color: rgba(201,162,75,0.3); color: var(--oro-luz); } .vt-senal--oro .vt-senal__gema { background: linear-gradient(135deg, var(--oro-luz), var(--oro-sombra)); box-shadow: 0 0 6px rgba(201,162,75,0.5); }
+.vt-senal--esmeralda { border-color: rgba(31,164,111,0.3); color: var(--esmeralda-luz); } .vt-senal--esmeralda .vt-senal__gema { background: linear-gradient(135deg, var(--esmeralda-luz), var(--esmeralda-sombra)); box-shadow: 0 0 6px rgba(31,164,111,0.5); }
+.vt-senal--hueso { color: var(--hueso); } .vt-senal--hueso .vt-senal__gema { background: linear-gradient(135deg, #fff, var(--hueso) 50%, #8f8a7c); }
+.vt-senal--rojo { border-color: rgba(217,105,95,0.35); color: var(--rojo-luz); } .vt-senal--rojo .vt-senal__gema { background: linear-gradient(135deg, var(--rojo-luz), var(--rojo)); box-shadow: 0 0 6px rgba(217,105,95,0.5); }
+.vt-senal--velada { border-color: var(--hairline-2); color: transparent; }
+.vt-cand__votos { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100%; margin-top: 6px; }
+.vt-cand__barra { display: block; width: 72%; height: 3px; background: var(--roca-3); overflow: hidden; }
+.vt-cand__barra span { display: block; height: 100%; background: linear-gradient(90deg, var(--oro-sombra), var(--oro-luz)); box-shadow: 0 0 8px rgba(234,209,137,0.4); transition: width 0.9s var(--ease); }
+.vt-cand__n { color: var(--ceniza); font-size: 0.62rem; }
+.vt-cand__n b { color: var(--hueso); font-weight: 500; font-size: 0.95rem; }
+.vt-cand.is-lider .vt-cand__sym { color: var(--oro-luz); text-shadow: 0 0 14px rgba(234,209,137,0.35); }
+.vt-cand.is-apagada { opacity: 0.32; filter: saturate(0.4); transform: scale(0.96); }
+.vt-cand.is-elegida .vt-cand__btn { transform: translateY(-10px) scale(1.06); }
+.vt-cand.is-elegida .vt-piedra img { animation: vt-latido 1.2s ease-in-out infinite; }
+.vt-cand__btn:disabled .vt-piedra { filter: none; }
+
+/* la piedra */
+.vt-piedra { position: relative; display: inline-block; flex: none; user-select: none; --glow: rgba(201,162,75,0.0); }
+.vt-piedra img { position: relative; z-index: 1; display: block; width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 18px 18px rgba(0,0,0,0.7)) drop-shadow(0 0 0 var(--glow)); transition: filter 0.8s var(--ease); }
+.vt-piedra__luz { position: absolute; inset: -22%; z-index: 0; border-radius: 50%; background: radial-gradient(circle at 50% 55%, rgba(234,209,137,0.55), rgba(201,162,75,0.18) 38%, transparent 66%); opacity: 0; transition: opacity 1s var(--ease); pointer-events: none; }
+.vt-piedra__brillo { position: absolute; inset: 0; z-index: 2; mix-blend-mode: screen; background: radial-gradient(ellipse at 50% 42%, rgba(255,240,200,0.55), rgba(234,209,137,0.12) 32%, transparent 58%); opacity: 0; transition: opacity 1s var(--ease); pointer-events: none; }
+.vt-piedra.is-lit { --glow: rgba(234,209,137,0.55); }
+.vt-piedra.is-lit img { filter: drop-shadow(0 18px 18px rgba(0,0,0,0.7)) drop-shadow(0 0 10px rgba(234,209,137,0.45)) brightness(1.08); animation: vt-arde 2.6s ease-in-out infinite; }
+.vt-piedra.is-lit .vt-piedra__luz { opacity: 1; animation: vt-halo 2.6s ease-in-out infinite; }
+.vt-piedra.is-lit .vt-piedra__brillo { opacity: 0.7; animation: vt-halo 2.6s ease-in-out infinite; }
+@keyframes vt-arde { 0%, 100% { filter: drop-shadow(0 18px 18px rgba(0,0,0,0.7)) drop-shadow(0 0 10px rgba(234,209,137,0.45)) brightness(1.08); } 50% { filter: drop-shadow(0 18px 18px rgba(0,0,0,0.7)) drop-shadow(0 0 22px rgba(234,209,137,0.7)) brightness(1.18); } }
+@keyframes vt-halo { 0%, 100% { opacity: 0.7; } 50% { opacity: 1; } }
+@keyframes vt-latido { 0%, 100% { filter: drop-shadow(0 18px 18px rgba(0,0,0,0.7)) drop-shadow(0 0 4px rgba(95,224,166,0.3)); } 50% { filter: drop-shadow(0 18px 18px rgba(0,0,0,0.7)) drop-shadow(0 0 12px rgba(95,224,166,0.55)) drop-shadow(0 0 22px rgba(201,162,75,0.35)) brightness(1.1); } }
+.vt-piedra.is-velada img { filter: blur(7px) brightness(0.65) saturate(0.6) drop-shadow(0 18px 18px rgba(0,0,0,0.7)); }
+.vt-piedra.is-velada::after { content: ''; position: absolute; inset: 0; z-index: 3; background: radial-gradient(ellipse at 50% 50%, transparent 45%, rgba(12,14,16,0.55) 85%); }
+
+/* ---------- el momento del voto ---------- */
+.vt-onda { position: absolute; left: 50%; top: 52%; width: 70%; aspect-ratio: 1; transform: translate(-50%, -50%) scale(0.6); border-radius: 50%; border: 1px solid rgba(234,209,137,0.9); box-shadow: 0 0 18px rgba(234,209,137,0.5), inset 0 0 18px rgba(234,209,137,0.25); opacity: 0; pointer-events: none; z-index: 0; }
+.vt-cand.is-sello .vt-onda { animation: vt-onda 1.6s var(--ease) both; }
+.vt-cand.is-sello .vt-onda--2 { animation-delay: 0.35s; }
+@keyframes vt-onda { 0% { opacity: 0; transform: translate(-50%, -50%) scale(0.55); } 12% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -50%) scale(2.3); border-width: 0.5px; } }
+.vt-cand.is-sello .vt-cand__btn { animation: vt-cae 1.1s var(--ease-piedra) both; }
+@keyframes vt-cae { 0% { transform: translateY(-10px) scale(1.06); } 30% { transform: translateY(6px) scale(0.97); } 55% { transform: translateY(-3px) scale(1.02); } 100% { transform: none; } }
+.vt-cand.is-sello .vt-piedra img { animation: vt-flash 1.4s var(--ease) both; }
+@keyframes vt-flash { 0% { filter: drop-shadow(0 18px 18px rgba(0,0,0,0.7)) brightness(1); } 25% { filter: drop-shadow(0 18px 18px rgba(0,0,0,0.7)) drop-shadow(0 0 30px rgba(234,209,137,0.95)) brightness(1.6); } 100% { filter: drop-shadow(0 18px 18px rgba(0,0,0,0.7)) drop-shadow(0 0 10px rgba(234,209,137,0.45)) brightness(1.08); } }
+.vt-activa.is-sellando { animation: vt-temblor 0.5s linear 0.3s; }
+@keyframes vt-temblor { 0%, 100% { transform: none; } 20% { transform: translate(1px, -1px); } 40% { transform: translate(-1px, 1px); } 60% { transform: translate(1px, 1px); } 80% { transform: translate(-1px, -0.5px); } }
+.vt-sello { display: inline-flex; align-items: center; gap: 8px; margin-top: 4px; padding: 5px 11px; border: 1px solid rgba(201,162,75,0.55); outline: 1px solid rgba(201,162,75,0.18); outline-offset: 3px; color: var(--oro-luz); font-size: 0.58rem; letter-spacing: 0.14em; background: rgba(201,162,75,0.06); animation: vt-sello 0.9s var(--ease) 0.9s both; }
+.vt-sello__gema { width: 8px; height: 8px; transform: rotate(45deg); background: linear-gradient(135deg, var(--oro-luz), var(--oro-sombra)); box-shadow: 0 0 8px rgba(234,209,137,0.6); }
+@keyframes vt-sello { 0% { opacity: 0; transform: scale(1.4); } 60% { opacity: 1; transform: scale(0.96); } 100% { transform: none; } }
+.vt-cand.is-mia { --cinta: var(--oro); }
+.vt-cand.is-mia::after { content: ''; position: absolute; left: 20%; right: 20%; bottom: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--oro-luz), transparent); box-shadow: 0 0 10px rgba(234,209,137,0.5); }
+
+.vt-confirma { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.5s var(--ease); }
+.vt-confirma > * { min-height: 0; }
+.vt-confirma.is-abierta { grid-template-rows: 1fr; }
+.vt-confirma.is-abierta { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px 32px; margin-top: 8px; padding: 18px 22px; border: 1px solid rgba(201,162,75,0.4); background: linear-gradient(90deg, rgba(201,162,75,0.08), transparent 50%), var(--roca-2); animation: vt-entra 0.5s var(--ease) both; position: relative; }
+.vt-confirma.is-abierta::before { content: ''; position: absolute; left: -1px; top: 12%; bottom: 12%; width: 2px; background: linear-gradient(to bottom, transparent, var(--oro-luz) 20%, var(--oro) 50%, var(--oro-sombra) 80%, transparent); box-shadow: 0 0 12px rgba(201,162,75,0.4); }
+.vt-confirma__k { display: block; color: var(--oro-luz); font-size: 0.6rem; margin-bottom: 4px; }
+.vt-confirma__texto p { color: var(--hueso); }
+.vt-confirma__texto b { font-weight: 400; font-size: 1.6rem; margin-right: 8px; line-height: 1; }
+.vt-confirma__regla { color: var(--ceniza); font-size: 0.84rem; margin-top: 4px; }
+.vt-confirma__error { color: var(--rojo-luz); font-size: 0.84rem; margin-top: 6px; }
+.vt-confirma__botones { display: flex; gap: 10px; flex-wrap: wrap; }
+.vt-total { margin-top: 18px; color: var(--ceniza-2); font-size: 0.6rem; }
+.vt-total b { color: var(--hueso); font-weight: 500; font-size: 0.9rem; }
+
+/* ---------- la lectura de una candidata ---------- */
+.vt-lectura { margin-top: 18px; padding: 18px 22px; border: 1px solid var(--hairline); background: linear-gradient(180deg, var(--roca-2), #111417); animation: vt-entra 0.5s var(--ease) both; }
+.vt-lectura__cab { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 18px; margin-bottom: 8px; }
+.vt-lectura__k { color: var(--oro-luz); font-size: 0.6rem; }
+.vt-lectura__carril { color: var(--ceniza-2); font-size: 0.6rem; }
+.vt-lectura__razon { color: var(--hueso); font-size: 1rem; line-height: 1.5; max-width: 78ch; text-wrap: pretty; }
+.vt-lectura__detalle { list-style: none; padding: 0; margin: 12px 0 0; display: flex; flex-direction: column; gap: 6px; color: var(--ceniza); font-size: 0.86rem; line-height: 1.45; }
+.vt-lectura__detalle li { display: grid; grid-template-columns: 220px 1fr; gap: 14px; }
+.vt-lectura__mat { font-weight: 500; color: var(--hueso); }
+.vt-lectura__mat.is-oro { color: var(--oro-luz); } .vt-lectura__mat.is-esmeralda { color: var(--esmeralda-luz); } .vt-lectura__mat.is-rojo { color: var(--rojo-luz); }
+.vt-metricas { display: flex; flex-wrap: wrap; gap: 10px 32px; margin: 14px 0 0; padding-top: 12px; border-top: 1px solid var(--hairline-2); }
+.vt-metricas div { display: flex; flex-direction: column; gap: 2px; }
+.vt-metricas dt { color: var(--ceniza-2); font-size: 0.58rem; }
+.vt-metricas dd { margin: 0; color: var(--hueso); font-size: 1rem; }
+
+/* ---------- velada: Base y Gratis ---------- */
+.vt-velo { position: relative; }
+.vt-velo .vt-mesa { pointer-events: none; }
+.vt-velo .vt-cand { animation: none; }
+.vt-velo::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(12,14,16,0) 20%, rgba(12,14,16,0.55) 55%, rgba(12,14,16,0.92) 85%); pointer-events: none; }
+.vt-puerta { position: absolute; left: 50%; top: 58%; transform: translate(-50%, -50%); z-index: 2; width: min(560px, 100%); display: flex; gap: 20px; padding: 24px 28px; border: 1px solid rgba(201,162,75,0.45); background: rgba(12,14,16,0.82); backdrop-filter: blur(10px); box-shadow: 0 30px 60px -20px rgba(0,0,0,0.9), 0 0 0 1px rgba(0,0,0,0.5); }
+.vt-puerta__linea { flex: none; width: 2px; align-self: stretch; background: linear-gradient(to bottom, transparent, var(--oro-luz) 18%, var(--oro) 50%, var(--oro-sombra) 82%, transparent); box-shadow: 0 0 12px rgba(201,162,75,0.4); }
+.vt-puerta__k { color: var(--oro-luz); font-size: 0.6rem; margin-bottom: 8px; }
+.vt-puerta__que { color: var(--hueso); font-size: 1rem; line-height: 1.5; text-wrap: pretty; }
+.vt-puerta__que b { color: var(--oro-luz); font-weight: 500; }
+.vt-puerta__plan { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+.vt-puerta__plan .mono { color: var(--ceniza-2); font-size: 0.6rem; }
+.vt-puerta__acciones { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+
+/* ---------- el cierre: la ganadora se revela ---------- */
+.vt-cierre { position: relative; padding: clamp(24px, 3vw, 36px) 0 0; border-top: 1px solid var(--hairline-2); }
+.vt-cierre__cab .eyebrow { margin-bottom: 12px; }
+.vt-cierre__nombre { color: var(--ceniza); font-size: 0.6em; }
+.vt-cierre__escena { position: relative; display: grid; grid-template-columns: minmax(280px, 1fr) minmax(0, 1.2fr); gap: 24px 48px; align-items: center; margin-top: 18px; padding: 24px 0 8px; }
+.vt-cierre__escena::before { content: ''; position: absolute; left: 0; right: 0; top: 40%; height: 220px; background: radial-gradient(ellipse at 22% 50%, rgba(0,0,0,0.7), transparent 60%); pointer-events: none; }
+.vt-cierre__ganadora { position: relative; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.vt-cierre__piedra { opacity: 0; transform: scale(0.9); transition: opacity 1s var(--ease) 0.5s, transform 1.2s var(--ease) 0.5s; }
+.vt-cierre.is-revelado .vt-cierre__piedra { opacity: 1; transform: none; }
+.vt-cierre.is-revelado .vt-onda--cierre { animation: vt-onda 2s var(--ease) 0.8s both; }
+.vt-cierre__votos { color: var(--ceniza); font-size: 0.68rem; opacity: 0; transition: opacity 0.6s var(--ease) 1.4s; }
+.vt-cierre__votos b { color: var(--oro-luz); font-weight: 500; font-size: 1.4rem; margin-right: 4px; }
+.vt-cierre.is-revelado .vt-cierre__votos { opacity: 1; }
+.vt-cierre__otras { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 14px 22px; }
+.vt-cierre__otras li { display: flex; flex-direction: column; align-items: center; gap: 4px; opacity: 1; filter: none; transition: opacity 1s var(--ease), filter 1s var(--ease), transform 1s var(--ease); transition-delay: calc(0.2s + var(--i, 0) * 0.16s); }
+.vt-cierre.is-revelado .vt-cierre__otras li { opacity: 0.38; filter: saturate(0.25) brightness(0.7); transform: translateY(6px); }
+.vt-cierre.is-revelado .vt-cierre__otras li.is-velada { opacity: 0.8; filter: none; }
+.vt-cierre__osym { color: var(--hueso); font-size: 0.7rem; }
+.vt-cierre__on { color: var(--ceniza-2); font-size: 0.6rem; }
+.vt-cierre__pie { display: grid; grid-template-columns: minmax(280px, 1fr) minmax(0, 1.2fr); gap: 16px 48px; align-items: center; margin-top: 10px; }
+.vt-cola { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; color: var(--ceniza); font-size: 0.9rem; }
+.vt-cola__dot { width: 8px; height: 8px; transform: rotate(45deg); background: var(--ceniza-2); flex: none; }
+.vt-cola--lanzado .vt-cola__dot { background: linear-gradient(135deg, var(--oro-luz), var(--oro-sombra)); box-shadow: 0 0 8px rgba(201,162,75,0.5); }
+.vt-cola--publicado { color: var(--hueso); }
+.vt-cola--publicado .vt-cola__dot { background: linear-gradient(135deg, var(--esmeralda-luz), var(--esmeralda-sombra)); box-shadow: 0 0 8px rgba(31,164,111,0.5); }
+.vt-cola__ir { color: var(--esmeralda-luz); text-decoration: underline; text-underline-offset: 4px; }
+
+/* ---------- histórico ---------- */
+.vt-hist__lista { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.vt-hist__fila { display: grid; grid-template-columns: 56px minmax(180px, 1fr) auto minmax(220px, 1.2fr); gap: 12px 22px; align-items: center; padding: 12px 16px; border: 1px solid var(--hairline-2); background: var(--roca-2); }
+.vt-hist__id { display: flex; flex-direction: column; gap: 2px; }
+.vt-hist__sem { color: var(--ceniza-2); font-size: 0.6rem; }
+.vt-hist__gan { font-size: 1.3rem; color: var(--hueso); line-height: 1.1; }
+.vt-hist__gan small { font-family: var(--font-body); font-size: 0.8rem; color: var(--ceniza); }
+.vt-hist__votos { color: var(--ceniza); font-size: 0.62rem; }
+.vt-sin { padding-top: 8px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .vt-cand, .vt-cand__lidera, .vt-confirma.is-abierta, .vt-lectura { animation: none; }
+  .vt-piedra.is-lit img, .vt-piedra.is-lit .vt-piedra__luz, .vt-piedra.is-lit .vt-piedra__brillo, .vt-mecha__brasa, .vt-mecha__seg, .vt-cand__btn:hover .vt-piedra img { animation: none; }
+  .vt-activa.is-sellando { animation: none; }
+}
+
+@media (max-width: 960px) {
+  .vt-activa__cab, .vt-cierre__escena, .vt-cierre__pie { grid-template-columns: 1fr; }
+  .vt-mesa, .vt-mesa--4, .vt-mesa--6 { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px 8px; }
+  .vt-mesa::before { display: none; }
+  .vt-lectura__detalle li { grid-template-columns: 1fr; gap: 2px; }
+  .vt-hist__fila { grid-template-columns: 48px 1fr; }
+  .vt-hist__fila > :nth-child(n+3) { grid-column: 2; }
+}
+@media (max-width: 640px) {
+  .vt-mesa, .vt-mesa--3, .vt-mesa--4, .vt-mesa--6 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .vt-cand__btn .vt-piedra { width: 150px !important; height: 150px !important; }
+  .vt-puerta { position: static; transform: none; width: auto; margin-top: -60px; }
+  .vt-velo::after { display: none; }
+  .vt-embudo__paso { flex-basis: 45%; }
+  .vt-embudo__paso + .vt-embudo__paso::before { display: none; }
+  .vt-mecha__resta { font-size: 1.6rem; }
+}

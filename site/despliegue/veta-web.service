@@ -1,0 +1,25 @@
+# /etc/systemd/system/veta-web.service — la API de VETA (Hono) junto al motor.
+# Lee /opt/veta-web/site/.env (NUNCA en git). NODE_ENV va acá y no en el .env.
+[Unit]
+Description=VETA web API (Hono)
+After=network-online.target veta-servicio.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=veta
+Group=veta
+WorkingDirectory=/opt/veta-web/site
+Environment=NODE_ENV=production
+Environment=PORT=8790
+ExecStart=/usr/bin/node node_modules/.bin/tsx server/index.ts
+Restart=always
+RestartSec=5
+# el token y las claves viven en el .env con permisos 600; nada en la unidad
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ReadWritePaths=/opt/veta-web /opt/veta/gem-pipeline/base_contenido
+
+[Install]
+WantedBy=multi-user.target

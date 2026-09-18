@@ -1,0 +1,14 @@
+# /etc/caddy/Caddyfile — HTTPS automático (Let's Encrypt) para la API.
+# Sólo la API va por acá; la web estática vive en Vercel y reescribe /api/* hacia este host.
+api.{$VETA_DOMINIO} {
+	encode zstd gzip
+	reverse_proxy 127.0.0.1:8790
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		-Server
+	}
+	log {
+		output file /var/log/caddy/api.log
+	}
+}

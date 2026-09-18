@@ -1,0 +1,30 @@
+# --- secretos y datos locales: NUNCA ---
+.env
+.env.*
+!.env.example
+*.sqlite
+*.sqlite-*
+site/server/data/
+site/server/correo-saliente/
+
+# --- generado ---
+node_modules/
+site/dist/
+site/server/datos/
+
+# --- copias y pesados que no son fuente de la web ---
+# espejo de base_contenido/reports del motor (se sincroniza, no se versiona)
+datos-motor/
+# sitio de referencia de terceros
+referencia-3hscalex/
+Archivo.zip
+# capturas de cada fase (143 MB) y generaciones en bruto de Higgsfield; lo usable está en site/public/img
+recursos/capturas/
+recursos/generados/
+recursos/texturas/
+recursos/posters/
+recursos/matcaps/
+
+# --- sistema ---
+.DS_Store
+*.log
