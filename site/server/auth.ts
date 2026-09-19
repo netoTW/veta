@@ -33,8 +33,20 @@ export const auth = betterAuth({
     sendResetPassword: async ({ user, url }) => {
       await enviar({
         para: user.email,
-        asunto: 'VETA · restablecer contraseña',
-        texto: `Hola.\n\nPara elegir una contraseña nueva entrá acá (vale una hora, una sola vez):\n${url}\n\nSi no pediste esto, ignorá este correo: nada cambia.\n\n— VETA`,
+        asunto: 'VETA · elige tu contraseña',
+        // El mismo correo sirve para recuperar y para una cuenta recién creada por admin,
+        // porque las dos pasan por aquí. Por eso no da por hecho que lo pediste tú.
+        texto: [
+          'Hola.',
+          '',
+          'Para elegir tu contraseña de VETA, entra aquí. El enlace vale una hora y se usa una sola vez:',
+          url,
+          '',
+          'Si no esperabas este correo, ignóralo. Sin abrir el enlace no cambia nada.',
+          '',
+          '— VETA · Crypto Intelligence',
+          'Nada de lo que publicamos es consejo de inversión.',
+        ].join('\n'),
       })
     },
   },

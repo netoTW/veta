@@ -81,6 +81,10 @@ export const ENV = {
   CORREO_TRANSPORTE: process.env.VETA_CORREO ?? 'archivo',
   SMTP_URL: (process.env.VETA_SMTP_URL ?? '').trim(),
   CORREO_DESDE: process.env.VETA_CORREO_DESDE ?? 'VETA <no-responder@veta.local>',
+  /** A dónde contesta quien responde a un correo nuestro. Vacío = no se pone cabecera. */
+  CORREO_RESPONDER_A: (process.env.VETA_CORREO_RESPONDER_A ?? process.env.VETA_CONTACTO ?? '').trim(),
+  /** Clave de Resend. Sólo en el .env del servidor; nunca en el repositorio. */
+  RESEND_API_KEY: (process.env.VETA_RESEND_API_KEY ?? '').trim(),
   CORREO_SALIENTE: resolve(RAIZ_SITE, 'server/correo-saliente'),
   ADMIN_EMAIL: process.env.VETA_ADMIN_EMAIL ?? '',
   ADMIN_PASSWORD: process.env.VETA_ADMIN_PASSWORD ?? '',
