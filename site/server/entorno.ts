@@ -55,6 +55,11 @@ export const ENV = {
   /** Acceso anticipado del plan pro: horas antes de que el base vea una gema recién aprobada. [JUICIO] */
   HORAS_ANTICIPO: num('VETA_HORAS_ANTICIPO', 6),
   CUPO: { gratis: 0, base: num('VETA_CUPO_BASE', 2), pro: num('VETA_CUPO_PRO', 6) } as Record<string, number>,
+  /* Precios de cara al público, en USD al mes. Se cambian por variable de entorno,
+     sin tocar código, porque van a moverse cuando el motor mida el costo real. */
+  PRECIO: { gratis: 0, base: num('VETA_PRECIO_BASE', 30), pro: num('VETA_PRECIO_PRO', 50) } as Record<string, number>,
+  /** A dónde escribe quien quiere un plan mientras no haya cobro automático. */
+  CONTACTO: process.env.VETA_CONTACTO ?? process.env.VETA_ADMIN_EMAIL ?? '',
   /* Analiza tu moneda (spec §5): tope global de gasto mensual y costo estimado por análisis profundo. [JUICIO] */
   TOPE_MENSUAL_USD: num('VETA_TOPE_MENSUAL_USD', 60),
   COSTO_ESTIMADO_USD: num('VETA_COSTO_ESTIMADO_USD', 1.8),

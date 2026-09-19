@@ -2,7 +2,6 @@ import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Outlet } from 'react-router-dom'
 import { Nav } from './components/Nav'
 import { Hero } from './components/Hero'
-import { Sistema } from './components/Sistema'
 import { Footer } from './components/Footer'
 import { useLenis, useReveals } from './lib/motion'
 import { ProveedorSesion } from './lib/sesion'
@@ -34,6 +33,10 @@ const CuentaDetalle = lazy(() => import('./producto/admin/CuentaDetalle').then((
 const Operacion = lazy(() => import('./producto/admin/Operacion').then((m) => ({ default: m.Operacion })))
 const Consumo = lazy(() => import('./producto/admin/Consumo').then((m) => ({ default: m.Consumo })))
 const VotacionAdmin = lazy(() => import('./producto/admin/Votacion').then((m) => ({ default: m.VotacionAdmin })))
+/* La guía de estilo sale de la portada: queda en /sistema, sin enlace en la navegación. */
+const Sistema = lazy(() => import('./components/Sistema').then((m) => ({ default: m.Sistema })))
+const Metodologia = lazy(() => import('./publico/Metodologia').then((m) => ({ default: m.Metodologia })))
+const Precios = lazy(() => import('./publico/Precios').then((m) => ({ default: m.Precios })))
 const Acciones = lazy(() => import('./producto/admin/Acciones').then((m) => ({ default: m.Acciones })))
 
 function Portada() {
@@ -41,15 +44,20 @@ function Portada() {
   useReveals()
   return (
     <>
-      <a className="skip-link" href="#sistema">Saltar al contenido</a>
+      <a className="skip-link" href="#top">Saltar al contenido</a>
       <Nav />
       <main>
         <Hero />
-        <Sistema />
       </main>
       <Footer />
     </>
   )
+}
+
+/* La guía de estilo, fuera de la portada. */
+function GuiaVisual() {
+  useLenis(); useReveals()
+  return (<><Nav /><main><Sistema /></main><Footer /></>)
 }
 
 function Producto() {
@@ -68,6 +76,10 @@ export default function App() {
       <ProveedorSesion>
         <Routes>
           <Route path="/" element={<Portada />} />
+          <Route path="/metodologia" element={<Suspense fallback={null}><Metodologia /></Suspense>} />
+          <Route path="/precios" element={<Suspense fallback={null}><Precios /></Suspense>} />
+          {/* Referencia interna del sistema visual. Sin enlace en la navegación. */}
+          <Route path="/sistema" element={<Suspense fallback={null}><GuiaVisual /></Suspense>} />
           <Route path="/entrar" element={<Suspense fallback={null}><Entrar /></Suspense>} />
           <Route path="/registro" element={<Suspense fallback={null}><Registro /></Suspense>} />
           <Route path="/recuperar" element={<Suspense fallback={null}><Recuperar /></Suspense>} />

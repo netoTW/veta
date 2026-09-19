@@ -1,6 +1,7 @@
 import { createRoot } from 'react-dom/client'
 import './styles/base.css'
 import './styles/sections.css'
+import './styles/publico.css'
 import './styles/sistema.css'
 import './styles/producto.css'
 import './styles/votacion.css'

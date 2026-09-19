@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 
 /* El nav público no expone el laboratorio de diseño: sólo entrar y la acción. */
-const LINKS: { href: string; label: string }[] = []
+const LINKS: { href: string; label: string }[] = [{ href: '/metodologia', label: 'Cómo trabajamos' }, { href: '/precios', label: 'Planes' }]
 
 export function Nav() {
   const [stuck, setStuck] = useState(false)
@@ -28,7 +28,7 @@ export function Nav() {
   return (
     <header className={`nav ${stuck ? 'is-stuck' : ''}`}>
       <div className="nav__inner shell">
-        <a href="#top" className="nav__logo" aria-label="VETA, ir al inicio">
+        <a href="/" className="nav__logo" aria-label="VETA, ir al inicio">
           <img src="/img/logo-mark.webp" alt="" width={460} height={345} />
           <span className="wordmark nav__word">Veta</span>
         </a>
@@ -40,7 +40,7 @@ export function Nav() {
         </nav>
 
         <a href="/entrar" className="nav__entrar mono">Entrar</a>
-        <a href="#sistema" className="btn nav__cta">Analiza tu moneda</a>
+        <a href="/analizar" className="btn nav__cta">Analiza tu moneda</a>
 
         <button
           type="button"
@@ -59,7 +59,7 @@ export function Nav() {
           {LINKS.map((l) => (
             <a key={l.href} href={l.href} className="display" onClick={() => setOpen(false)}>{l.label}</a>
           ))}
-          <a href="#sistema" className="btn" onClick={() => setOpen(false)}>Analiza tu moneda</a>
+          <a href="/analizar" className="btn" onClick={() => setOpen(false)}>Analiza tu moneda</a>
         </nav>
       </div>
     </header>

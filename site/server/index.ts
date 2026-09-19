@@ -77,6 +77,18 @@ app.get('/api/cuenta', async (c) => {
 })
 
 /* ---------- contenido ---------- */
+/* Catálogo público de planes. Precios y cupos salen del entorno, nunca del código
+   del cliente: cuando cambien, cambia una variable y no hay que volver a construir. */
+app.get('/api/planes', (c) => c.json({
+  contacto: ENV.CONTACTO || null,
+  cobro_automatico: false,
+  planes: [
+    { clave: 'gratis', nombre: 'Gratis', precio_usd: ENV.PRECIO.gratis, analisis_mes: ENV.CUPO.gratis },
+    { clave: 'base', nombre: 'Base', precio_usd: ENV.PRECIO.base, analisis_mes: ENV.CUPO.base },
+    { clave: 'pro', nombre: 'Pro', precio_usd: ENV.PRECIO.pro, analisis_mes: ENV.CUPO.pro },
+  ],
+}))
+
 app.get('/api/contenido/meta', (c) => c.json(contenido.metaPara(c.get('rol'))))
 app.get('/api/contenido/gemas', async (c) => c.json({ gemas: await contenido.gemasPara(c.get('rol')), anticipadas: await contenido.anticipadasPara(c.get('rol')) }))
 app.get('/api/contenido/gemas/:id', async (c) => {

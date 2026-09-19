@@ -1,7 +1,7 @@
 import { Hero3D } from './Hero3D'
 import { HeroMobile } from './HeroMobile'
 
-export function Hero() {
+export function Hero({ haySeccionDebajo = false }: { haySeccionDebajo?: boolean }) {
   return (
     <section className="hero" id="top" aria-labelledby="hero-title">
       <div className="hero__art" aria-hidden="true">
@@ -48,14 +48,15 @@ export function Hero() {
         </ul>
 
         <div className="hero__actions" data-reveal>
-          <a href="#sistema" className="btn">Analiza tu moneda</a>
-          <a href="#sistema" className="btn btn--ghost">Cómo trabajamos</a>
+          <a href="/analizar" className="btn">Analiza tu moneda</a>
+          <a href="/metodologia" className="btn btn--ghost">Cómo trabajamos</a>
         </div>
       </div>
 
+      {/* El aviso de scroll sólo cuando de verdad hay algo debajo. */}
       <div className="hero__foot shell mono" aria-hidden="true">
         <span>Tesis · Escenarios · Riesgo · Sin promesas</span>
-        <span className="hero__scroll">Scroll ↓</span>
+        {haySeccionDebajo && <span className="hero__scroll">Scroll ↓</span>}
       </div>
     </section>
   )
