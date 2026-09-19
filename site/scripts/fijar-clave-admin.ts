@@ -20,8 +20,10 @@ try {
   const tras = await bd.uno<{ role: string | null; plan: string | null }>('SELECT role, plan FROM "user" WHERE id = ?', [u.id])
   console.log(JSON.stringify({ ok: true, largo: clave.length, rol: tras?.role, plan: tras?.plan }))
 } catch (e) {
-  const err = e as { body?: { code?: string; message?: string }; message?: string; status?: unknown }
-  console.error(JSON.stringify({ ok: false, codigo: err.body?.code, mensaje: err.body?.message ?? err.message, largo: clave.length }))
+  const err = e as { body?: { code?: string; message?: string }; message?: string; status?: unknown; statusCode?: unknown }
+  console.error(JSON.stringify({ ok: false, largo: clave.length, status: err.status ?? err.statusCode,
+    codigo: err.body?.code, mensaje: err.body?.message || err.message || '(sin mensaje)',
+    crudo: JSON.stringify(e, Object.getOwnPropertyNames(e as object)).slice(0, 300) }))
   process.exit(4)
 }
 process.exit(0)
