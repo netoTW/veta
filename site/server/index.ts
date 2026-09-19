@@ -77,7 +77,7 @@ app.get('/api/cuenta', async (c) => {
 })
 
 /* ---------- contenido ---------- */
-app.get('/api/contenido/meta', (c) => c.json(contenido.meta()))
+app.get('/api/contenido/meta', (c) => c.json(contenido.metaPara(c.get('rol'))))
 app.get('/api/contenido/gemas', async (c) => c.json({ gemas: await contenido.gemasPara(c.get('rol')), anticipadas: await contenido.anticipadasPara(c.get('rol')) }))
 app.get('/api/contenido/gemas/:id', async (c) => {
   const g = await contenido.gemaPara(c.req.param('id'), c.get('rol')) as (Record<string, unknown> & { recorte?: string }) | null

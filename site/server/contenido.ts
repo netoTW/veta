@@ -42,6 +42,12 @@ export const watchlistToda = () => leer<Registro[]>('watchlist')
 export const seguimientoTodo = () => leer<{ ultimo: Registro[]; historial: Registro[] }>('seguimiento')
 export const benchmark = () => leer<Record<string, unknown>>('benchmark')
 export const meta = () => leer<Record<string, unknown>>('meta')
+/** Lo que el cliente necesita de meta es la fecha. Los conteos incluyen informes SIN aprobar
+    y la versión del motor es vocabulario interno: sólo para admin. */
+export function metaPara(rol: Rol) {
+  const m = meta()
+  return rol === 'admin' ? m : { generado_en: m.generado_en }
+}
 export const visualesTodos = () => leer<Record<string, Registro>>('visuales')
 
 /** Visuales de un informe: mismas reglas que el informe (gema → informe del plan; análisis → gratis si aprobado). */
