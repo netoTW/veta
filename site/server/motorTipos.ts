@@ -9,6 +9,7 @@ export interface Moneda { simbolo: string; nombre: string; id_coingecko?: string
   analizable?: boolean | null; motivo_no_analizable?: string }
 
 /** §9.1: una candidata concreta detrás de lo que el usuario escribió. */
+export interface RefMoneda { contrato?: string | null; cadena?: string | null }
 export interface Candidata extends Moneda { contrato?: string | null; mcap_usd?: number | null; vol24h_usd?: number | null }
 export interface Resolucion {
   consulta: string
@@ -26,6 +27,8 @@ export interface Solicitud {
   usuario: { id: string; email: string; plan: string } | null
   origen: 'analiza_tu_moneda' | 'votacion_semanal' | string
   fecha: string; consume_cupo: boolean
+  /** §9.3: cuál de las homónimas eligió quien pidió el análisis. */
+  contrato?: string | null; cadena?: string | null
 }
 
 /** Lo que el motor devuelve mientras trabaja y al terminar. */
@@ -67,7 +70,9 @@ export interface Motor {
   universo(): Promise<Moneda[]>
   /** §9.1. Devuelve las monedas que pueden ser lo que el usuario escribió. */
   resolver(consulta: string): Promise<Resolucion>
-  determinista(simbolo: string): Promise<LecturaDeterminista | SinDatos | null>
+  /** `ref` es la candidata que eligió quien pregunta (§9.1). El motor todavía
+      busca sólo por símbolo, así que se manda y se comprueba lo que vuelve. */
+  determinista(simbolo: string, ref?: RefMoneda): Promise<LecturaDeterminista | SinDatos | null>
   solicitarProfundo(s: Solicitud): Promise<void>
   progreso(id: string): Promise<Progreso | null>
 }

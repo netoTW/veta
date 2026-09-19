@@ -133,16 +133,17 @@ analizarApp.post('/resolver', async (c) => {
 analizarApp.get('/cupo', async (c) => c.json({ cupo: cupoSerializable(await cupoDeSesion(c.get('sesion'), c.get('rol'))), plan_minimo: planMinimo('analiza.profundo'), puede_profundo: puede(c.get('rol'), 'analiza.profundo') }))
 
 analizarApp.post('/determinista', async (c) => {
-  const { simbolo } = await c.req.json().catch(() => ({})) as { simbolo?: string }
+  const { simbolo, contrato, cadena } = await c.req.json().catch(() => ({})) as { simbolo?: string; contrato?: string; cadena?: string }
   const sym = (simbolo ?? '').trim().toUpperCase()
   if (!sym) return c.json({ error: 'simbolo_requerido' }, 400)
+  const elegida = { contrato: contrato?.trim() || null, cadena: cadena?.trim() || null }
   const moneda = (await motor.universo()).find((m) => m.simbolo === sym) ?? null
-  const r = await motor.determinista(sym).catch((e) => { console.warn('[analizar] determinista', e.message); return null })
+  const r = await motor.determinista(sym, elegida).catch((e) => { console.warn('[analizar] determinista', e.message); return null })
   const s = c.get('sesion')
   if (!r || 'sin_datos' in r) {
     // tres casos distintos: no la cubrimos · la cubrimos pero no tiene datos todavía · el motor no respondió
     if (!moneda) return c.json({ error: 'no_encontrada', detalle: `${sym} no está entre las ${(await motor.universo()).length} monedas que cubrimos hoy (las de CoinGecko con volumen real).` }, 404)
-    if (!r) return c.json({ error: 'motor_no_disponible', detalle: 'El sistema de análisis no respondió. Probá en un momento.' }, 503)
+    if (!r) return c.json({ error: 'motor_no_disponible', detalle: 'El sistema de análisis no respondió. Prueba en un momento.' }, 503)
     return c.json({ id: null, lectura: null, sin_datos: { codigo: r.codigo, texto: r.texto }, moneda, cupo: cupoSerializable(await cupoDeSesion(s, c.get('rol'))), puede_profundo: puede(c.get('rol'), 'analiza.profundo'), plan_minimo: planMinimo('analiza.profundo') })
   }
   const lectura = r
@@ -150,14 +151,14 @@ analizarApp.post('/determinista', async (c) => {
   await bd.ejecutar(`INSERT INTO solicitud (id, usuario_id, usuario_email, simbolo, nombre, nivel, origen, estado, etapa, avance, detalle, etapas_hechas, resultado, consume_cupo, costo_real_usd, motor, creada, iniciada, terminada, actualizada, vista)
               VALUES (?, ?, ?, ?, ?, 'determinista', 'analiza_tu_moneda', 'listo', NULL, 1, 'Listo.', '[]', ?, 0, 0, ?, ?, ?, ?, ?, 1)`, [id, s?.user.id ?? null, s?.user.email ?? null, sym, lectura.nombre, JSON.stringify(lectura), motor.nombre, t, t, t, t])
   await bd.ejecutar("INSERT INTO uso_analisis (usuario_id, simbolo, fecha, tipo, consumio_cupo, costo_real_usd, resultado) VALUES (?, ?, ?, 'determinista', 0, 0, 'listo')", [s?.user.id ?? 'visitante', sym, t])
-  return c.json({ id, lectura, sin_datos: null, moneda, cupo: cupoSerializable(await cupoDeSesion(s, c.get('rol'))), puede_profundo: puede(c.get('rol'), 'analiza.profundo'), plan_minimo: planMinimo('analiza.profundo') })
+  return c.json({ id, lectura, sin_datos: null, moneda, elegida, cupo: cupoSerializable(await cupoDeSesion(s, c.get('rol'))), puede_profundo: puede(c.get('rol'), 'analiza.profundo'), plan_minimo: planMinimo('analiza.profundo') })
 })
 
 analizarApp.post('/profundo', async (c) => {
   const s = c.get('sesion'); const rol = c.get('rol')
   if (!s) return c.json({ error: 'sin_sesion' }, 401)
   if (!puede(rol, 'analiza.profundo')) return c.json({ error: 'sin_acceso', seccion: 'analiza.profundo', plan_minimo: planMinimo('analiza.profundo') }, 403)
-  const { simbolo } = await c.req.json().catch(() => ({})) as { simbolo?: string }
+  const { simbolo, contrato, cadena } = await c.req.json().catch(() => ({})) as { simbolo?: string; contrato?: string; cadena?: string }
   const sym = (simbolo ?? '').trim().toUpperCase()
   if (!sym) return c.json({ error: 'simbolo_requerido' }, 400)
   const moneda = (await motor.universo()).find((m) => m.simbolo === sym)
@@ -177,7 +178,7 @@ analizarApp.post('/profundo', async (c) => {
               VALUES (?, ?, ?, ?, ?, 'profundo', 'analiza_tu_moneda', 'en_cola', NULL, NULL, ?, '[]', ?, ?, 0, ?, ?, ?, 0, 0)`, [id, s.user.id, s.user.email, sym, moneda.nombre, enCola ? 'La plataforma llegó a su tope mensual de gasto: tu pedido queda en cola y arranca en cuanto se libere.' : 'En cola.', consume ? 1 : 0, cupo.periodo, motor.nombre, t, t])
   if (consume) await reservar(s.user.id, cupo.periodo)
   await bd.ejecutar("INSERT INTO uso_analisis (usuario_id, simbolo, fecha, tipo, consumio_cupo, costo_real_usd, resultado) VALUES (?, ?, ?, 'profundo', ?, 0, ?)", [s.user.id, sym, t, consume ? 1 : 0, `pendiente:${id}`])
-  const sol: Solicitud = { id, nivel: 'profundo', simbolo: sym, id_coingecko: moneda.id_coingecko, usuario: { id: s.user.id, email: s.user.email, plan: s.user.plan ?? 'gratis' }, origen: 'analiza_tu_moneda', fecha: t, consume_cupo: consume }
+  const sol: Solicitud = { id, nivel: 'profundo', simbolo: sym, id_coingecko: moneda.id_coingecko, usuario: { id: s.user.id, email: s.user.email, plan: s.user.plan ?? 'gratis' }, origen: 'analiza_tu_moneda', fecha: t, consume_cupo: consume, contrato: contrato?.trim() || null, cadena: cadena?.trim() || null }
   encolar(sol)
   const f = await bd.uno('SELECT * FROM solicitud WHERE id = ?', [id]) as FilaSolicitud
   if (!enCola) await intentarArrancar(f)

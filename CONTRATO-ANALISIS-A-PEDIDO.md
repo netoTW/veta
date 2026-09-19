@@ -297,3 +297,34 @@ Reglas del campo:
 *Mientras no exista:* la web sigue componiendo el texto desde `ficha_esencial` y `niveles`, con
 el filtro por frases. **Cuando `narrado` llegue, el filtro se retira** y el informe pasa a ser
 la pieza central de la pantalla de resultado.
+
+---
+
+## 9.5 `/determinista` tiene que respetar la moneda elegida  ·  HUECO ABIERTO
+
+`POST /resolver` ya desambigua: con `pepe` devuelve **ocho** monedas distintas, cada una con
+su contrato y su cadena. La web las muestra y quien pregunta elige una.
+
+Pero `POST /determinista` recibe sólo el símbolo y busca `reports/<SÍMBOLO>-*`. Si se le
+manda `contrato` y `cadena`, los ignora: se le pidió el PEPE de Base con su contrato y
+devolvió el PEPE de Ethereum.
+
+**Qué manda ya la web** (desde hoy, en `/determinista` y en `/profundo`):
+
+```json
+{ "simbolo": "PEPE",
+  "contrato": "0x52b492a33e447cdb854c7fc19f1e57e8bfa1777d",
+  "cadena": "base" }
+```
+
+**Qué hace falta del motor:**
+
+1. Que `/determinista` use `contrato` (y `cadena` como respaldo) para elegir el informe, y
+   devuelva **404** cuando no tenga uno de *esa* moneda, en vez del de su homónima.
+2. Que `/profundo` guarde `contrato` y `cadena` junto al pedido, para que la corrida analice
+   la moneda que se pidió.
+
+**Mientras tanto,** la web compara la cadena que eligió el usuario con la que vuelve en la
+lectura y, si no coinciden, lo dice en pantalla: «de las monedas que se llaman PEPE, la única
+con datos guardados es Pepe en Ethereum». No se hace pasar una por otra. Cuando el motor
+cierre este hueco, ese aviso se quita.

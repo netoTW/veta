@@ -11,7 +11,7 @@
      manual (pipeline/lanzar_pedidos.py). La web sólo espeja y explica.
    ========================================================================== */
 import { ENV } from './entorno.ts'
-import type { Motor, Moneda, LecturaDeterminista, SinDatos, Solicitud, Progreso, Resolucion } from './motorTipos.ts'
+import type { Motor, Moneda, LecturaDeterminista, SinDatos, Solicitud, Progreso, Resolucion, RefMoneda } from './motorTipos.ts'
 import { resolverEnUniverso } from './resolver.ts'
 
 const TIMEOUT_MS = 8000
@@ -49,8 +49,8 @@ export const motor: Motor = {
     if (r.status === 404 && r.cuerpo?.error === 'sin_cobertura') return { consulta, interpretada_como: 'ticker', candidatas: [] }
     return resolverEnUniverso(consulta, await this.universo())
   },
-  async determinista(simbolo): Promise<LecturaDeterminista | SinDatos | null> {
-    const r = await llamar<LecturaDeterminista | { error?: string; texto?: string }>('/determinista', { method: 'POST', body: JSON.stringify({ simbolo }) })
+  async determinista(simbolo, ref?: RefMoneda): Promise<LecturaDeterminista | SinDatos | null> {
+    const r = await llamar<LecturaDeterminista | { error?: string; texto?: string }>('/determinista', { method: 'POST', body: JSON.stringify({ simbolo, contrato: ref?.contrato ?? undefined, cadena: ref?.cadena ?? undefined }) })
     if (r.status === 200 && r.cuerpo && (r.cuerpo as LecturaDeterminista).nivel === 'determinista') return r.cuerpo as LecturaDeterminista
     if (r.status === 404) { const c = r.cuerpo as { error?: string; texto?: string } | null; return { sin_datos: true, codigo: c?.error ?? 'sin_cobertura', texto: c?.texto ?? 'Todavía no hay datos guardados de esta moneda.' } }
     return null

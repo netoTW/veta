@@ -25,6 +25,8 @@ import {
    decide después si vale publicarlo. Nunca dice "es gema".
    ========================================================================== */
 
+interface Elegida { contrato?: string | null; cadena?: string | null; nombre?: string }
+
 export function Analizar() {
   const [params, setParams] = useSearchParams()
   const nav = useNavigate()
@@ -35,6 +37,7 @@ export function Analizar() {
   const [lectura, setLectura] = useState<{ l: Lectura | null; sin_datos: { codigo: string; texto: string } | null; moneda: Moneda | null; cupo: Cupo | null; puede_profundo: boolean } | null>(null)
   const [resol, setResol] = useState<Resolucion | null>(null)
   const [noAnalizable, setNoAnalizable] = useState<Moneda | null>(null)
+  const [elegida, setElegida] = useState<Elegida | null>(null)
   const [buscando, setBuscando] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [pidiendo, setPidiendo] = useState(false)
@@ -47,11 +50,12 @@ export function Analizar() {
     return monedas.filter((m) => m.simbolo.toLowerCase().startsWith(t) || m.nombre.toLowerCase().includes(t)).slice(0, 8)
   }, [q, monedas])
 
-  const analizar = useCallback(async (simbolo: string) => {
+  const analizar = useCallback(async (simbolo: string, ref?: Elegida) => {
     const sym = simbolo.trim().toUpperCase(); if (!sym) return
+    setElegida(ref ?? null)
     setBuscando(true); setError(null); setLectura(null); setErrorPedido(null); setResol(null); setNoAnalizable(null)
     try {
-      const r = await api<{ lectura: Lectura | null; sin_datos: { codigo: string; texto: string } | null; moneda: Moneda | null; cupo: Cupo | null; puede_profundo: boolean }>('/api/analizar/determinista', { cuerpo: { simbolo: sym } })
+      const r = await api<{ lectura: Lectura | null; sin_datos: { codigo: string; texto: string } | null; moneda: Moneda | null; cupo: Cupo | null; puede_profundo: boolean }>('/api/analizar/determinista', { cuerpo: { simbolo: sym, contrato: ref?.contrato ?? undefined, cadena: ref?.cadena ?? undefined } })
       setLectura({ l: r.lectura, sin_datos: r.sin_datos, moneda: r.moneda, cupo: r.cupo, puede_profundo: r.puede_profundo }); setQ(sym); setParams({ m: sym }, { replace: true })
     } catch (e) { setError(e instanceof ErrorApi ? e.message : String(e)) } finally { setBuscando(false) }
   }, [setParams])
@@ -62,7 +66,7 @@ export function Analizar() {
     if (!lectura) return
     setPidiendo(true); setErrorPedido(null)
     try {
-      const r = await api<{ id: string }>('/api/analizar/profundo', { cuerpo: { simbolo: simboloActual } })
+      const r = await api<{ id: string }>('/api/analizar/profundo', { cuerpo: { simbolo: simboloActual, contrato: elegida?.contrato ?? undefined, cadena: elegida?.cadena ?? undefined } })
       invalidarDatos(); nav(`/analizar/s/${r.id}`)
     } catch (e) {
       if (e instanceof ErrorApi && e.codigo === 'ya_en_curso' && typeof (e.cuerpo as { id?: string })?.id === 'string') { nav(`/analizar/s/${(e.cuerpo as { id: string }).id}`); return }
@@ -73,7 +77,7 @@ export function Analizar() {
   const elegir = useCallback((c: Candidata | Moneda) => {
     setResol(null)
     if (c.analizable === false) { setNoAnalizable(c); setQ(c.simbolo); return }
-    analizar(c.simbolo)
+    analizar(c.simbolo, { contrato: ('contrato' in c ? c.contrato : null) ?? null, cadena: c.cadena ?? null, nombre: c.nombre })
   }, [analizar, setParams])
 
   /* Buscar no gasta nada: resolver, y sólo leer cuando hay una sola candidata. */
@@ -92,6 +96,10 @@ export function Analizar() {
   const otra = () => { setResol(null); setNoAnalizable(null); setLectura(null); setError(null); setQ(''); setParams({}, { replace: true }); inputRef.current?.focus() }
   const cupo = lectura?.cupo ?? (cupoSt.estado === 'ok' ? cupoSt.datos.cupo : null)
   const simboloActual = lectura?.l?.simbolo ?? lectura?.moneda?.simbolo ?? ''
+  /* El motor guarda los informes por símbolo, así que con monedas homónimas puede devolver
+     una distinta de la elegida. Cuando pasa, se dice; no se hace pasar una por otra. */
+  const norm = (t?: string | null) => (t ?? '').trim().toLowerCase()
+  const otraMoneda = !!(lectura?.l && elegida?.cadena && norm(lectura.l.cadena) && norm(lectura.l.cadena) !== norm(elegida.cadena))
 
   return (
     <>
@@ -129,6 +137,7 @@ export function Analizar() {
         {error && <EmptyState kind="sin-datos" title="No la encontramos" detail={error} action={<button type="button" className="btn btn--ghost" onClick={() => { setError(null); inputRef.current?.focus() }}>Probar otra</button>} />}
         {lectura && (
           <>
+            {otraMoneda && <Nota tono="oro">De las monedas que se llaman <b>{simboloActual}</b>, la única con datos guardados es <b>{lectura.l?.nombre}</b>{lectura.l?.cadena ? <> en {lectura.l.cadena}</> : null}. Es la que estás viendo. La que elegiste todavía no tiene lectura: el análisis profundo la crea.</Nota>}
             {lectura.l ? <LecturaDeterminista l={lectura.l} /> : lectura.moneda && lectura.sin_datos ? <SinDatosAun moneda={lectura.moneda} texto={lectura.sin_datos.texto} /> : null}
             <Decidir simbolo={simboloActual} cupo={lectura.cupo} puedeProfundo={lectura.puede_profundo} onPedir={pedir} ocupado={pidiendo} error={errorPedido} />
             {lectura.l?.origen_motor === 'simulador' && <Nota tono="mudo">Lectura simulada: los números salen de la última pasada que VETA hizo sobre esta moneda; el análisis en vivo todavía no está conectado.</Nota>}
