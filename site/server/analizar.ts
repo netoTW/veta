@@ -29,6 +29,8 @@ interface FilaSolicitud {
   id: string; usuario_id: string | null; usuario_email: string | null; simbolo: string; nombre: string | null; nivel: 'determinista' | 'profundo'; origen: string
   estado: EstadoSolicitud; etapa: string | null; avance: number | null; detalle: string | null; etapas_hechas: string; resultado: string | null; fallo: string | null; verificador: string | null
   consume_cupo: number; cupo_periodo: string | null; costo_real_usd: number; motor: string; creada: string; iniciada: string | null; terminada: string | null; actualizada: string; vista: number; enviada: number
+  /** §9.5: cuál de las homónimas se pidió. */
+  contrato: string | null; cadena: string | null
 }
 const nuevoId = () => `sol-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${randomBytes(3).toString('hex')}`
 const TERMINAL: EstadoSolicitud[] = ['listo', 'fallido', 'bloqueado']
@@ -87,7 +89,7 @@ async function sincronizarUna(f: FilaSolicitud): Promise<FilaSolicitud> {
 /** Los pedidos en cola arrancan cuando hay margen bajo el tope (spec §5.7). */
 async function intentarArrancar(f: FilaSolicitud) {
   if (!(await hayMargen())) return
-  const sol: Solicitud = { id: f.id, nivel: 'profundo', simbolo: f.simbolo, usuario: f.usuario_id ? { id: f.usuario_id, email: f.usuario_email ?? '', plan: '' } : null, origen: f.origen, fecha: f.creada, consume_cupo: !!f.consume_cupo }
+  const sol: Solicitud = { id: f.id, nivel: 'profundo', simbolo: f.simbolo, usuario: f.usuario_id ? { id: f.usuario_id, email: f.usuario_email ?? '', plan: '' } : null, origen: f.origen, fecha: f.creada, consume_cupo: !!f.consume_cupo, contrato: f.contrato ?? null, cadena: f.cadena ?? null }
   try {
     await motor.solicitarProfundo(sol)
     // el motor ya lo tiene; lo que diga su progreso manda (puede dejarlo en cola: el lanzamiento es manual)
@@ -133,16 +135,25 @@ analizarApp.post('/resolver', async (c) => {
 analizarApp.get('/cupo', async (c) => c.json({ cupo: cupoSerializable(await cupoDeSesion(c.get('sesion'), c.get('rol'))), plan_minimo: planMinimo('analiza.profundo'), puede_profundo: puede(c.get('rol'), 'analiza.profundo') }))
 
 analizarApp.post('/determinista', async (c) => {
-  const { simbolo, contrato, cadena } = await c.req.json().catch(() => ({})) as { simbolo?: string; contrato?: string; cadena?: string }
+  const { simbolo, contrato, cadena, id_coingecko, nombre } = await c.req.json().catch(() => ({})) as { simbolo?: string; contrato?: string; cadena?: string; id_coingecko?: string; nombre?: string }
   const sym = (simbolo ?? '').trim().toUpperCase()
   if (!sym) return c.json({ error: 'simbolo_requerido' }, 400)
-  const elegida = { contrato: contrato?.trim() || null, cadena: cadena?.trim() || null }
+  const elegida = { contrato: contrato?.trim() || null, cadena: cadena?.trim() || null, id_coingecko: id_coingecko?.trim() || null }
   const moneda = (await motor.universo()).find((m) => m.simbolo === sym) ?? null
   const r = await motor.determinista(sym, elegida).catch((e) => { console.warn('[analizar] determinista', e.message); return null })
   const s = c.get('sesion')
   if (!r || 'sin_datos' in r) {
     // tres casos distintos: no la cubrimos · la cubrimos pero no tiene datos todavía · el motor no respondió
-    if (!moneda) return c.json({ error: 'no_encontrada', detalle: `${sym} no está entre las ${(await motor.universo()).length} monedas que cubrimos hoy (las de CoinGecko con volumen real).` }, 404)
+    // §9.5: fuera del universo no hay lectura guardada, pero sí se puede preguntar si da para
+    // un análisis. Decir "no la encontramos" de una moneda que el buscador acaba de encontrar
+    // es mentir, y además deja sin salida a quien la eligió.
+    if (!moneda) {
+      const an = await motor.analizable(sym, elegida)
+      const base = { id: null, lectura: null, sin_datos: null, cupo: cupoSerializable(await cupoDeSesion(s, c.get('rol'))), puede_profundo: puede(c.get('rol'), 'analiza.profundo'), plan_minimo: planMinimo('analiza.profundo') }
+      if (!an) return c.json({ error: 'motor_no_disponible', detalle: 'No pudimos comprobar esa moneda ahora mismo. Prueba en un momento.' }, 503)
+      const monedaFuera = { simbolo: sym, nombre: nombre?.trim() || sym, cadena: elegida.cadena, con_informe: false, analizable: an.analizable, motivo_no_analizable: an.cliente || '' }
+      return c.json({ ...base, moneda: monedaFuera, elegida, fuera_universo: { analizable: an.analizable, medidas: an.medidas ?? null, motivos: an.faltantes?.map((f) => f.cliente).filter(Boolean) ?? [] } })
+    }
     if (!r) return c.json({ error: 'motor_no_disponible', detalle: 'El sistema de análisis no respondió. Prueba en un momento.' }, 503)
     return c.json({ id: null, lectura: null, sin_datos: { codigo: r.codigo, texto: r.texto }, moneda, cupo: cupoSerializable(await cupoDeSesion(s, c.get('rol'))), puede_profundo: puede(c.get('rol'), 'analiza.profundo'), plan_minimo: planMinimo('analiza.profundo') })
   }
@@ -158,15 +169,22 @@ analizarApp.post('/profundo', async (c) => {
   const s = c.get('sesion'); const rol = c.get('rol')
   if (!s) return c.json({ error: 'sin_sesion' }, 401)
   if (!puede(rol, 'analiza.profundo')) return c.json({ error: 'sin_acceso', seccion: 'analiza.profundo', plan_minimo: planMinimo('analiza.profundo') }, 403)
-  const { simbolo, contrato, cadena } = await c.req.json().catch(() => ({})) as { simbolo?: string; contrato?: string; cadena?: string }
+  const { simbolo, contrato, cadena, id_coingecko, nombre } = await c.req.json().catch(() => ({})) as { simbolo?: string; contrato?: string; cadena?: string; id_coingecko?: string; nombre?: string }
   const sym = (simbolo ?? '').trim().toUpperCase()
   if (!sym) return c.json({ error: 'simbolo_requerido' }, 400)
-  const moneda = (await motor.universo()).find((m) => m.simbolo === sym)
-  if (!moneda) return c.json({ error: 'no_encontrada', detalle: `${sym} no está entre las monedas que cubrimos.` }, 404)
-  // §9.2: si el motor dice que no es analizable, no se pide y no se toca el cupo.
-  if (moneda.analizable === false) {
-    return c.json({ error: 'no_analizable', detalle: moneda.motivo_no_analizable || `${sym} no tiene datos suficientes para un análisis que valga la pena. No se descontó nada.` }, 422)
+  const ref = { contrato: contrato?.trim() || null, cadena: cadena?.trim() || null, id_coingecko: id_coingecko?.trim() || null }
+  const delUniverso = (await motor.universo()).find((m) => m.simbolo === sym)
+  // §9.5: se puede pedir el análisis de una moneda de fuera del universo. Quien manda es el
+  // motor: si dice que no da, no se pide y no se toca el cupo.
+  const an = delUniverso && delUniverso.analizable !== undefined && delUniverso.analizable !== null
+    ? null : await motor.analizable(sym, ref)
+  if (!delUniverso && !an) return c.json({ error: 'motor_no_disponible', detalle: 'No pudimos comprobar esa moneda ahora mismo. Prueba en un momento.' }, 503)
+  const noAnalizable = delUniverso?.analizable === false || an?.analizable === false
+  if (noAnalizable) {
+    const motivo = delUniverso?.motivo_no_analizable || an?.cliente || an?.faltantes?.[0]?.cliente
+    return c.json({ error: 'no_analizable', detalle: motivo || `${sym} no tiene datos suficientes para un análisis que valga la pena. No se descontó nada.` }, 422)
   }
+  const moneda = delUniverso ?? { simbolo: sym, nombre: nombre?.trim() || sym, id_coingecko: an?.medidas?.coingecko_id ?? undefined, con_informe: false }
   const viva = await bd.uno("SELECT id FROM solicitud WHERE usuario_id = ? AND simbolo = ? AND nivel = 'profundo' AND estado IN ('en_cola','en_curso')", [s.user.id, sym]) as { id: string } | undefined
   if (viva) return c.json({ error: 'ya_en_curso', detalle: 'Ya hay un análisis de esa moneda en marcha.', id: viva.id }, 409)
   const cupo = (await cupoDeSesion(s, rol))!
@@ -174,11 +192,11 @@ analizarApp.post('/profundo', async (c) => {
   if (consume && cupo.restantes <= 0) return c.json({ error: 'sin_cupo', detalle: `Usaste los ${cupo.incluidos} análisis del ciclo.`, cupo: cupoSerializable(cupo) }, 402)
   const id = nuevoId(); const t = ahora()
   const enCola = !(await hayMargen())
-  await bd.ejecutar(`INSERT INTO solicitud (id, usuario_id, usuario_email, simbolo, nombre, nivel, origen, estado, etapa, avance, detalle, etapas_hechas, consume_cupo, cupo_periodo, costo_real_usd, motor, creada, actualizada, vista, enviada)
-              VALUES (?, ?, ?, ?, ?, 'profundo', 'analiza_tu_moneda', 'en_cola', NULL, NULL, ?, '[]', ?, ?, 0, ?, ?, ?, 0, 0)`, [id, s.user.id, s.user.email, sym, moneda.nombre, enCola ? 'La plataforma llegó a su tope mensual de gasto: tu pedido queda en cola y arranca en cuanto se libere.' : 'En cola.', consume ? 1 : 0, cupo.periodo, motor.nombre, t, t])
+  await bd.ejecutar(`INSERT INTO solicitud (id, usuario_id, usuario_email, simbolo, nombre, nivel, origen, estado, etapa, avance, detalle, etapas_hechas, consume_cupo, cupo_periodo, costo_real_usd, motor, creada, actualizada, vista, enviada, contrato, cadena)
+              VALUES (?, ?, ?, ?, ?, 'profundo', 'analiza_tu_moneda', 'en_cola', NULL, NULL, ?, '[]', ?, ?, 0, ?, ?, ?, 0, 0, ?, ?)`, [id, s.user.id, s.user.email, sym, moneda.nombre, enCola ? 'La plataforma llegó a su tope mensual de gasto: tu pedido queda en cola y arranca en cuanto se libere.' : 'En cola.', consume ? 1 : 0, cupo.periodo, motor.nombre, t, t, ref.contrato, ref.cadena])
   if (consume) await reservar(s.user.id, cupo.periodo)
   await bd.ejecutar("INSERT INTO uso_analisis (usuario_id, simbolo, fecha, tipo, consumio_cupo, costo_real_usd, resultado) VALUES (?, ?, ?, 'profundo', ?, 0, ?)", [s.user.id, sym, t, consume ? 1 : 0, `pendiente:${id}`])
-  const sol: Solicitud = { id, nivel: 'profundo', simbolo: sym, id_coingecko: moneda.id_coingecko, usuario: { id: s.user.id, email: s.user.email, plan: s.user.plan ?? 'gratis' }, origen: 'analiza_tu_moneda', fecha: t, consume_cupo: consume, contrato: contrato?.trim() || null, cadena: cadena?.trim() || null }
+  const sol: Solicitud = { id, nivel: 'profundo', simbolo: sym, id_coingecko: moneda.id_coingecko, usuario: { id: s.user.id, email: s.user.email, plan: s.user.plan ?? 'gratis' }, origen: 'analiza_tu_moneda', fecha: t, consume_cupo: consume, contrato: ref.contrato, cadena: ref.cadena }
   encolar(sol)
   const f = await bd.uno('SELECT * FROM solicitud WHERE id = ?', [id]) as FilaSolicitud
   if (!enCola) await intentarArrancar(f)
@@ -230,14 +248,15 @@ consumoAdmin.use('*', async (c, next) => {
 consumoAdmin.get('/', async (c) => {
   await sincronizarVivas()
   const mes = await gastoMes()
-  const porUsuario = await bd.todos(`SELECT s.usuario_id, s.usuario_email, u.plan,
+  const porUsuario = await bd.todos(`SELECT s.usuario_id, s.usuario_email, u.plan, u.role,
       SUM(CASE WHEN s.nivel = 'profundo' THEN 1 ELSE 0 END) AS profundos,
       SUM(CASE WHEN s.nivel = 'determinista' THEN 1 ELSE 0 END) AS deterministas,
       SUM(CASE WHEN s.nivel = 'profundo' AND s.estado = 'listo' THEN 1 ELSE 0 END) AS listos,
       SUM(CASE WHEN s.estado IN ('fallido','bloqueado') THEN 1 ELSE 0 END) AS sin_terminar,
       COALESCE(SUM(s.costo_real_usd), 0) AS costo_real_usd, MAX(s.creada) AS ultimo
-    FROM solicitud s LEFT JOIN "user" u ON u.id = s.usuario_id WHERE s.usuario_id IS NOT NULL GROUP BY s.usuario_id, s.usuario_email, u.plan ORDER BY costo_real_usd DESC, profundos DESC`) as Record<string, unknown>[]
-  const conCupo = await Promise.all(porUsuario.map(async (u) => ({ ...u, cupo: u.usuario_id ? cupoSerializable(await cupoDe(String(u.usuario_id), String(u.plan ?? 'gratis'))) : null })))
+    FROM solicitud s LEFT JOIN "user" u ON u.id = s.usuario_id WHERE s.usuario_id IS NOT NULL GROUP BY s.usuario_id, s.usuario_email, u.plan, u.role ORDER BY costo_real_usd DESC, profundos DESC`) as Record<string, unknown>[]
+  // El admin no tiene tope: si aquí se le muestra el del plan, la pestaña contradice a la del análisis.
+  const conCupo = await Promise.all(porUsuario.map(async (u) => ({ ...u, cupo: u.usuario_id ? cupoSerializable(await cupoDe(String(u.usuario_id), u.role === 'admin' ? 'pro' : String(u.plan ?? 'gratis'), u.role === 'admin')) : null })))
   const solicitudes = await Promise.all((await bd.todos<FilaSolicitud>("SELECT * FROM solicitud WHERE nivel = 'profundo' ORDER BY creada DESC LIMIT 80")).map(async (f) => ({ ...(await vistaSolicitud(f, false)), usuario_email: f.usuario_email, costo_real_usd: f.costo_real_usd })))
   const visitantes = (await bd.uno("SELECT COUNT(*) AS n FROM solicitud WHERE usuario_id IS NULL") as { n: number }).n
   const porMes = await bd.todos("SELECT substr(creada, 1, 7) AS mes, COUNT(*) AS n, COALESCE(SUM(costo_real_usd), 0) AS costo FROM solicitud WHERE nivel = 'profundo' GROUP BY mes ORDER BY mes DESC LIMIT 6")

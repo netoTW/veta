@@ -442,3 +442,30 @@ Servido así, la web aplica la regla sin decidir nada.
   seguimos.
 - **Bloque Tendencias**: el público entero, el del rastreo según el plan.
 - **Admin**: despublicar una pieza, con el mismo registro de autor y fecha que los informes.
+
+### 9.5.1 Lo que se resolvió el 2026-09-19
+
+`GET /analizable?simbolo=&cadena=&id=&contrato=` **ya existe en el motor y la web ya lo usa.**
+Con eso, una moneda de fuera del universo deja de ser un callejón sin salida:
+
+- Si el motor dice que **sí** da para analizar, la web muestra lo que él midió (capitalización,
+  volumen diario, días de historia de precio y de ingresos) y ofrece el análisis completo.
+- Si dice que **no**, la web muestra los motivos con las palabras del propio motor, que ya
+  vienen llanas en `faltantes[].cliente`. No se descuenta nada.
+- **Nunca más «no se encontró»** para una moneda que `/resolver` acaba de encontrar.
+
+`POST /profundo` ahora recibe siempre `contrato` y `cadena`, y la web los guarda junto al
+pedido, porque el mensaje que viaja al motor se reconstruye desde esa fila.
+
+### 9.5.2 Lo que sigue abierto
+
+1. **`/determinista` sigue eligiendo el informe por símbolo.** Con ocho PEPE o dos STONK,
+   devuelve el de la carpeta que coincida de nombre. La web avisa cuando la cadena que vuelve
+   no es la elegida, pero eso es un parche.
+2. **`registrada_reciente(simbolo)` también va por símbolo.** Dos monedas homónimas comparten
+   el veredicto de analizabilidad: la grande puede heredar el «no» de la pequeña, o al revés.
+   Debería ir por contrato cuando lo haya.
+3. **No hay lectura rápida para monedas de fuera del universo.** Hoy se muestran las medidas de
+   `/analizable`, que ya es bastante. Si el motor pudiera calcular las cinco señales
+   (qué mueve el precio, caídas, concentración, si el token cobra, salida) sin un análisis
+   completo, la lectura gratis valdría para cualquier moneda y no sólo para las ya analizadas.

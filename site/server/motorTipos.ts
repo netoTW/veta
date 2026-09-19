@@ -9,7 +9,21 @@ export interface Moneda { simbolo: string; nombre: string; id_coingecko?: string
   analizable?: boolean | null; motivo_no_analizable?: string }
 
 /** §9.1: una candidata concreta detrás de lo que el usuario escribió. */
-export interface RefMoneda { contrato?: string | null; cadena?: string | null }
+export interface RefMoneda { contrato?: string | null; cadena?: string | null; id_coingecko?: string | null }
+
+/** §9.5: el veredicto del motor sobre si una moneda da para un análisis, con sus medidas.
+    Vale para monedas de fuera del universo, que es donde la web no tenía nada que decir. */
+export interface Faltante { codigo: string; cliente: string }
+export interface Analizabilidad {
+  simbolo: string; analizable: boolean
+  faltantes: Faltante[]
+  cumple?: Record<string, boolean>
+  medidas?: { mcap_usd?: number | null; adv_global_30d_usd?: number | null; dias_precio?: number | null
+    revenue_dias_de_historia?: number | null; tvl_usd?: number | null; tenedores_medibles?: boolean | null
+    contrato?: string | null; cadena?: string | null; coingecko_id?: string | null }
+  /** Motivo llano del "no". Vacío cuando sí es analizable. */
+  cliente?: string
+}
 export interface Candidata extends Moneda { contrato?: string | null; mcap_usd?: number | null; vol24h_usd?: number | null }
 export interface Resolucion {
   consulta: string
@@ -73,6 +87,8 @@ export interface Motor {
   /** `ref` es la candidata que eligió quien pregunta (§9.1). El motor todavía
       busca sólo por símbolo, así que se manda y se comprueba lo que vuelve. */
   determinista(simbolo: string, ref?: RefMoneda): Promise<LecturaDeterminista | SinDatos | null>
+  /** §9.5: ¿da para un análisis? Se pregunta por contrato y cadena, no sólo por símbolo. */
+  analizable(simbolo: string, ref?: RefMoneda): Promise<Analizabilidad | null>
   solicitarProfundo(s: Solicitud): Promise<void>
   progreso(id: string): Promise<Progreso | null>
 }

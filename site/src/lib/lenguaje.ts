@@ -151,6 +151,8 @@ export const TRADUCCIONES: { de: RegExp; a: string; nota: string }[] = [
   { de: /\bTVL\b/g, a: 'fondos bloqueados', nota: 'sigla sin explicar' },
   { de: /\bsupply\b/gi, a: 'circulante', nota: 'inglés sin traducir' },
   { de: /,?\s*y la lectura de [^.]*?es '?sin lectura'?/gi, a: '', nota: 'coletilla que dice que falta el dato' },
+  // p. ej. "(Los lanzamientos recientes necesitan otro criterio, pendiente.)"
+  { de: /\s*\([^)]*\b(criterio|umbral|observable|pendiente|por definir|hueco)\b[^)]*\)/gi, a: '', nota: 'paréntesis con una nota de taller dentro' },
 ]
 
 export function llano(t?: string | null): string {

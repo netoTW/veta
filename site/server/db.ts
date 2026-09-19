@@ -128,6 +128,10 @@ CREATE TABLE IF NOT EXISTS acciones_admin (
 `)
 // bases SQLite anteriores: la columna llegó después
 await bd.columna('solicitud', 'enviada', 'INTEGER NOT NULL DEFAULT 1')
+/* §9.5: cuál de las homónimas se pidió. Se guarda porque el pedido que viaja al motor se
+   reconstruye desde esta fila, no desde el cuerpo de la petición. */
+await bd.columna('solicitud', 'contrato', 'TEXT')
+await bd.columna('solicitud', 'cadena', 'TEXT')
 
 export const ahora = () => new Date().toISOString()
 

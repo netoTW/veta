@@ -76,7 +76,7 @@ export function formatoCifra(c: Cifra): string | null {
 /* ---------- el contador de cupo ---------- */
 export function CupoChip({ cupo, compacto = false }: { cupo: Cupo | null; compacto?: boolean }) {
   if (!cupo) return null
-  if (cupo.ilimitado) return <span className={`an-cupo an-cupo--admin mono ${compacto ? 'an-cupo--compacto' : ''}`} title="Admin: sin cupo">sin cupo · admin</span>
+  if (cupo.ilimitado) return <span className={`an-cupo an-cupo--admin mono ${compacto ? 'an-cupo--compacto' : ''}`} title="Admin: sin límite de análisis">sin límite · admin</span>
   const r = cupo.restantes ?? 0
   return (
     <span className={`an-cupo mono ${compacto ? 'an-cupo--compacto' : ''} ${r === 0 ? 'is-agotado' : ''}`} title={`Se reinicia ${fechaHora(cupo.fecha_reinicio)}`}>
@@ -251,6 +251,61 @@ export function NoAnalizable({ moneda, onOtra }: { moneda: Moneda; onOtra: () =>
   )
 }
 
+/* ---------- fuera del universo, pero se puede analizar (§9.5) ----------
+   La lectura instantánea sale de un análisis anterior, así que una moneda que
+   nadie analizó todavía no tiene ninguna. Eso no es "no existe": es que aún no
+   hay. Se muestra lo que el sistema sí midió y se ofrece el análisis. */
+export interface MedidasFuera {
+  mcap_usd?: number | null; adv_global_30d_usd?: number | null; dias_precio?: number | null
+  revenue_dias_de_historia?: number | null; tvl_usd?: number | null; tenedores_medibles?: boolean | null
+  contrato?: string | null; cadena?: string | null
+}
+
+export function PuedeAnalizarse({ moneda, medidas }: { moneda: Moneda; medidas: MedidasFuera | null }) {
+  const filas: { k: string; v: string }[] = []
+  if (typeof medidas?.mcap_usd === 'number') filas.push({ k: 'Capitalización', v: usd(medidas.mcap_usd) })
+  if (typeof medidas?.adv_global_30d_usd === 'number') filas.push({ k: 'Se opera al día', v: usd(medidas.adv_global_30d_usd) })
+  if (typeof medidas?.dias_precio === 'number') filas.push({ k: 'Historia de precio', v: `${num(medidas.dias_precio)} días` })
+  if (typeof medidas?.revenue_dias_de_historia === 'number' && medidas.revenue_dias_de_historia > 0) filas.push({ k: 'Historia de ingresos', v: `${num(medidas.revenue_dias_de_historia)} días` })
+  if (typeof medidas?.tvl_usd === 'number') filas.push({ k: 'Fondos bloqueados', v: usd(medidas.tvl_usd) })
+  return (
+    <section className="an-fuera" aria-labelledby="an-fuera-t">
+      <div className="an-fuera__cab">
+        <span className="eyebrow mono" data-mat="esmeralda"><span className="eyebrow__mark" aria-hidden="true" />Se puede analizar</span>
+        <h2 id="an-fuera-t" className="an-lect__sym display">{moneda.simbolo}<small>{moneda.nombre}{moneda.cadena ? ` · ${moneda.cadena}` : ''}</small></h2>
+        <p className="an-fuera__que">Nadie la ha analizado todavía, así que no hay lectura instantánea: esa sale de un análisis anterior. Lo que sí comprobamos es que tiene tamaño, volumen e historia suficientes para analizarla con rigor.</p>
+      </div>
+      {!!filas.length && (
+        <ul className="an-fuera__medidas">
+          {filas.map((f) => (
+            <li key={f.k}><span className="mono an-fuera__k">{f.k}</span><b className="mono">{f.v}</b></li>
+          ))}
+        </ul>
+      )}
+      {medidas?.contrato && <p className="an-fuera__contrato mono">Contrato {medidas.contrato.slice(0, 8)}…{medidas.contrato.slice(-6)}{medidas.cadena ? ` en ${medidas.cadena}` : ''}</p>}
+    </section>
+  )
+}
+
+/* ---------- se encontró, pero no da para un análisis ---------- */
+export function NoDaParaAnalisis({ moneda, motivos, onOtra }: { moneda: Moneda; motivos: string[]; onOtra: () => void }) {
+  const limpios = motivos.map((m) => llano(m)).filter(Boolean)
+  return (
+    <section className="an-noanal" aria-live="polite">
+      <div className="an-noanal__head">
+        <b className="mono an-noanal__sim">{moneda.simbolo}</b>
+        <span className="an-noanal__nom">{moneda.nombre}{moneda.cadena ? ` · ${moneda.cadena}` : ''}</span>
+      </div>
+      <h2 className="display">Esta moneda no da para un análisis nuestro</h2>
+      {limpios.length > 1
+        ? <ul className="an-noanal__motivos">{limpios.map((m, i) => <li key={i}>{m}</li>)}</ul>
+        : <p>{limpios[0] || 'No tiene todavía el tamaño, el volumen o la historia que hacen falta para medir su riesgo con rigor.'}</p>}
+      <p className="an-noanal__gratis mono">No se descontó nada de tu cupo.</p>
+      <button type="button" className="btn btn--ghost" onClick={onOtra}>Analizar otra</button>
+    </section>
+  )
+}
+
 /* ---------- decidir gastar cupo ---------- */
 export function Decidir({ simbolo, cupo, puedeProfundo, onPedir, ocupado, error }: { simbolo: string; cupo: Cupo | null; puedeProfundo: boolean; onPedir: () => void; ocupado: boolean; error: string | null }) {
   const [confirmando, setConfirmando] = useState(false)
@@ -287,7 +342,7 @@ export function Decidir({ simbolo, cupo, puedeProfundo, onPedir, ocupado, error 
           </>
         ) : (
           <div className="an-confirma">
-            <p>{cupo && !cupo.ilimitado ? <>Usa <b>1 de tus {cupo.restantes}</b> de este ciclo.</> : <>Sin cupo: eres admin.</>} Mientras se hace vas a ver cada etapa. Si no termina, no se descuenta.</p>
+            <p>{cupo && !cupo.ilimitado ? <>Usa <b>1 de tus {cupo.restantes}</b> de este ciclo.</> : <>Sin límite: eres admin. Queda registrado en Consumo.</>} Mientras se hace vas a ver cada etapa. Si no termina, no se descuenta.</p>
             {error && <p className="an-confirma__error">{error}</p>}
             <div className="an-confirma__botones">
               <button type="button" className="btn btn--ghost" onClick={() => setConfirmando(false)} disabled={ocupado}>Todavía no</button>

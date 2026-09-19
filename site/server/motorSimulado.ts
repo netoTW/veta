@@ -168,6 +168,11 @@ export const motor: Motor = {
   nombre: 'simulador',
   async universo() { return universo() },
   async resolver(consulta: string): Promise<Resolucion> { return resolverEnUniverso(consulta, universo()) },
+  /** El simulador no mide nada: dice que sí a lo que tiene informe y calla del resto. */
+  async analizable(simbolo: string) {
+    const hay = (await this.universo()).some((m) => m.simbolo === simbolo.toUpperCase())
+    return { simbolo: simbolo.toUpperCase(), analizable: hay, faltantes: hay ? [] : [{ codigo: 'SIN_SIMULACION', cliente: 'El simulador sólo conoce las monedas con informe guardado.' }] }
+  },
   async determinista(simbolo) {
     const sym = simbolo.toUpperCase()
     const r = informeDe(sym); if (r) return deterministaDeInforme(r)

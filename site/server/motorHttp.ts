@@ -11,7 +11,7 @@
      manual (pipeline/lanzar_pedidos.py). La web sólo espeja y explica.
    ========================================================================== */
 import { ENV } from './entorno.ts'
-import type { Motor, Moneda, LecturaDeterminista, SinDatos, Solicitud, Progreso, Resolucion, RefMoneda } from './motorTipos.ts'
+import type { Motor, Moneda, LecturaDeterminista, SinDatos, Solicitud, Progreso, Resolucion, RefMoneda, Analizabilidad } from './motorTipos.ts'
 import { resolverEnUniverso } from './resolver.ts'
 
 const TIMEOUT_MS = 8000
@@ -48,6 +48,16 @@ export const motor: Motor = {
     if (r.status === 200 && r.cuerpo && Array.isArray(r.cuerpo.candidatas)) return r.cuerpo
     if (r.status === 404 && r.cuerpo?.error === 'sin_cobertura') return { consulta, interpretada_como: 'ticker', candidatas: [] }
     return resolverEnUniverso(consulta, await this.universo())
+  },
+  /** GET /analizable. Con contrato y cadena distingue homónimas; sin ellos, por símbolo. */
+  async analizable(simbolo, ref?: RefMoneda): Promise<Analizabilidad | null> {
+    const q = new URLSearchParams({ simbolo })
+    if (ref?.cadena) q.set('cadena', ref.cadena)
+    if (ref?.contrato) q.set('contrato', ref.contrato)
+    if (ref?.id_coingecko) q.set('id', ref.id_coingecko)
+    const r = await llamar<Analizabilidad>(`/analizable?${q}`).catch((e) => { console.warn('[motor] analizable:', (e as Error).message); return { status: 0, cuerpo: null } })
+    if (r.status === 200 && r.cuerpo && typeof r.cuerpo.analizable === 'boolean') return r.cuerpo
+    return null
   },
   async determinista(simbolo, ref?: RefMoneda): Promise<LecturaDeterminista | SinDatos | null> {
     const r = await llamar<LecturaDeterminista | { error?: string; texto?: string }>('/determinista', { method: 'POST', body: JSON.stringify({ simbolo, contrato: ref?.contrato ?? undefined, cadena: ref?.cadena ?? undefined }) })

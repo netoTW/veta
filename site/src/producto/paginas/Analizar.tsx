@@ -12,7 +12,8 @@ import { Loader } from '../../ui/Loader'
 import type { Informe } from '../../lib/contrato'
 import {
   LecturaDeterminista, SinDatosAun, Decidir, EscenaAnalisis, Etapas, Transcurrido, BotonAviso, CupoChip, Nota, useCupo, useUniverso, llano,
-  FormatoAceptado, Candidatas, SinCoincidencia, NoAnalizable, InformeNarrado, narradoDe,
+  FormatoAceptado, Candidatas, SinCoincidencia, NoAnalizable, NoDaParaAnalisis, PuedeAnalizarse, InformeNarrado, narradoDe,
+  type MedidasFuera,
   type Lectura, type Cupo, type Solicitud, type Moneda, type Candidata, type Resolucion,
 } from '../analizar/piezasAnalizar'
 
@@ -25,7 +26,9 @@ import {
    decide después si vale publicarlo. Nunca dice "es gema".
    ========================================================================== */
 
-interface Elegida { contrato?: string | null; cadena?: string | null; nombre?: string }
+interface Elegida { contrato?: string | null; cadena?: string | null; nombre?: string; id_coingecko?: string }
+/** §9.5: lo que dice el motor de una moneda que no está en el universo. */
+interface Fuera { analizable: boolean; medidas: MedidasFuera | null; motivos: string[] }
 
 export function Analizar() {
   const [params, setParams] = useSearchParams()
@@ -34,7 +37,7 @@ export function Analizar() {
   const universo = useUniverso()
   const cupoSt = useCupo()
   const [q, setQ] = useState(params.get('m') ?? '')
-  const [lectura, setLectura] = useState<{ l: Lectura | null; sin_datos: { codigo: string; texto: string } | null; moneda: Moneda | null; cupo: Cupo | null; puede_profundo: boolean } | null>(null)
+  const [lectura, setLectura] = useState<{ l: Lectura | null; sin_datos: { codigo: string; texto: string } | null; moneda: Moneda | null; cupo: Cupo | null; puede_profundo: boolean; fuera: Fuera | null } | null>(null)
   const [resol, setResol] = useState<Resolucion | null>(null)
   const [noAnalizable, setNoAnalizable] = useState<Moneda | null>(null)
   const [elegida, setElegida] = useState<Elegida | null>(null)
@@ -55,8 +58,9 @@ export function Analizar() {
     setElegida(ref ?? null)
     setBuscando(true); setError(null); setLectura(null); setErrorPedido(null); setResol(null); setNoAnalizable(null)
     try {
-      const r = await api<{ lectura: Lectura | null; sin_datos: { codigo: string; texto: string } | null; moneda: Moneda | null; cupo: Cupo | null; puede_profundo: boolean }>('/api/analizar/determinista', { cuerpo: { simbolo: sym, contrato: ref?.contrato ?? undefined, cadena: ref?.cadena ?? undefined } })
-      setLectura({ l: r.lectura, sin_datos: r.sin_datos, moneda: r.moneda, cupo: r.cupo, puede_profundo: r.puede_profundo }); setQ(sym); setParams({ m: sym }, { replace: true })
+      const r = await api<{ lectura: Lectura | null; sin_datos: { codigo: string; texto: string } | null; moneda: Moneda | null; cupo: Cupo | null; puede_profundo: boolean; fuera_universo?: Fuera }>('/api/analizar/determinista',
+        { cuerpo: { simbolo: sym, contrato: ref?.contrato ?? undefined, cadena: ref?.cadena ?? undefined, id_coingecko: ref?.id_coingecko ?? undefined, nombre: ref?.nombre ?? undefined } })
+      setLectura({ l: r.lectura, sin_datos: r.sin_datos, moneda: r.moneda, cupo: r.cupo, puede_profundo: r.puede_profundo, fuera: r.fuera_universo ?? null }); setQ(sym); setParams({ m: sym }, { replace: true })
     } catch (e) { setError(e instanceof ErrorApi ? e.message : String(e)) } finally { setBuscando(false) }
   }, [setParams])
 
@@ -66,7 +70,7 @@ export function Analizar() {
     if (!lectura) return
     setPidiendo(true); setErrorPedido(null)
     try {
-      const r = await api<{ id: string }>('/api/analizar/profundo', { cuerpo: { simbolo: simboloActual, contrato: elegida?.contrato ?? undefined, cadena: elegida?.cadena ?? undefined } })
+      const r = await api<{ id: string }>('/api/analizar/profundo', { cuerpo: { simbolo: simboloActual, contrato: elegida?.contrato ?? undefined, cadena: elegida?.cadena ?? undefined, id_coingecko: elegida?.id_coingecko ?? undefined, nombre: elegida?.nombre ?? undefined } })
       invalidarDatos(); nav(`/analizar/s/${r.id}`)
     } catch (e) {
       if (e instanceof ErrorApi && e.codigo === 'ya_en_curso' && typeof (e.cuerpo as { id?: string })?.id === 'string') { nav(`/analizar/s/${(e.cuerpo as { id: string }).id}`); return }
@@ -77,7 +81,7 @@ export function Analizar() {
   const elegir = useCallback((c: Candidata | Moneda) => {
     setResol(null)
     if (c.analizable === false) { setNoAnalizable(c); setQ(c.simbolo); return }
-    analizar(c.simbolo, { contrato: ('contrato' in c ? c.contrato : null) ?? null, cadena: c.cadena ?? null, nombre: c.nombre })
+    analizar(c.simbolo, { contrato: ('contrato' in c ? c.contrato : null) ?? null, cadena: c.cadena ?? null, nombre: c.nombre, id_coingecko: c.id_coingecko })
   }, [analizar, setParams])
 
   /* Buscar no gasta nada: resolver, y sólo leer cuando hay una sola candidata. */
@@ -138,8 +142,13 @@ export function Analizar() {
         {lectura && (
           <>
             {otraMoneda && <Nota tono="oro">De las monedas que se llaman <b>{simboloActual}</b>, la única con datos guardados es <b>{lectura.l?.nombre}</b>{lectura.l?.cadena ? <> en {lectura.l.cadena}</> : null}. Es la que estás viendo. La que elegiste todavía no tiene lectura: el análisis profundo la crea.</Nota>}
-            {lectura.l ? <LecturaDeterminista l={lectura.l} /> : lectura.moneda && lectura.sin_datos ? <SinDatosAun moneda={lectura.moneda} texto={lectura.sin_datos.texto} /> : null}
-            <Decidir simbolo={simboloActual} cupo={lectura.cupo} puedeProfundo={lectura.puede_profundo} onPedir={pedir} ocupado={pidiendo} error={errorPedido} />
+            {lectura.l ? <LecturaDeterminista l={lectura.l} />
+              : lectura.fuera && !lectura.fuera.analizable && lectura.moneda ? <NoDaParaAnalisis moneda={lectura.moneda} motivos={lectura.fuera.motivos} onOtra={otra} />
+              : lectura.fuera && lectura.moneda ? <PuedeAnalizarse moneda={lectura.moneda} medidas={lectura.fuera.medidas} />
+              : lectura.moneda && lectura.sin_datos ? <SinDatosAun moneda={lectura.moneda} texto={lectura.sin_datos.texto} /> : null}
+            {!(lectura.fuera && !lectura.fuera.analizable) && (
+              <Decidir simbolo={simboloActual} cupo={lectura.cupo} puedeProfundo={lectura.puede_profundo} onPedir={pedir} ocupado={pidiendo} error={errorPedido} />
+            )}
             {lectura.l?.origen_motor === 'simulador' && <Nota tono="mudo">Lectura simulada: los números salen de la última pasada que VETA hizo sobre esta moneda; el análisis en vivo todavía no está conectado.</Nota>}
           </>
         )}
