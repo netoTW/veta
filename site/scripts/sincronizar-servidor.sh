@@ -5,7 +5,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 # .env sin exportar: sólo las variables del servidor
-leer() { grep -E "^$1=" .env 2>/dev/null | head -1 | cut -d= -f2- | sed 's/^"//; s/"$//'; }
+leer() { grep -E "^$1=" .env 2>/dev/null | head -1 | cut -d= -f2- | sed 's/^"//; s/"$//' || true; }
 SSH_DEST="${VETA_SERVIDOR_SSH:-$(leer VETA_SERVIDOR_SSH)}"
 CLAVE="${VETA_SERVIDOR_CLAVE:-$(leer VETA_SERVIDOR_CLAVE)}"; CLAVE="${CLAVE/#\~/$HOME}"
 RUTA="${VETA_SERVIDOR_RUTA:-$(leer VETA_SERVIDOR_RUTA)}"
