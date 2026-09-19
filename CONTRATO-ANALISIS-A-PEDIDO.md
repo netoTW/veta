@@ -294,6 +294,9 @@ Reglas del campo:
 - Nada de «compra», retornos prometidos ni precios objetivo.
 - Si un dato no existe, no se menciona.
 
+**La lista de todo lo que hay que dejar de escribir está en `PATRONES-PROSA-MOTOR.md`**,
+generada desde el propio filtro sobre los informes reales, con cuántas veces aparece cada cosa.
+
 *Mientras no exista:* la web sigue componiendo el texto desde `ficha_esencial` y `niveles`, con
 el filtro por frases. **Cuando `narrado` llegue, el filtro se retira** y el informe pasa a ser
 la pieza central de la pantalla de resultado.

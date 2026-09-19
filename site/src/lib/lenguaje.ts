@@ -60,27 +60,32 @@ export const fraccionLlana = (f: string) => (f ? `a ${f} de su máximo históric
 
 /** Frases de control interno que no pueden llegar al cliente: criterios, mínimos, conteos
     de comparables. Si un texto del informe las trae, no se muestra. */
-const CRITERIO_INTERNO = new RegExp([
-  // criterios y mínimos del método
-  'pasan el criterio', 'el m\u00ednimo', 'm\u00ednimo \\d', 'comparables cumplen', 'criterio de corte',
-  // nombres del taller
-  'esc\u00e9ptico', 'verificador', 'redactor', 'el motor',
-  'sin comparables v\u00e1lidos', 'umbral', 'observable', 'no se usa para el tier',
-  // listas de descarte: trabajo interno, no lectura
-  'quedaron fuera', 'banda de tama\u00f1o', 'una esquina de lo que factura', 'top-\\d+ bruto',
-  'se descontaron \\d+ posiciones', 'supply total',
-  // lo que no hay no se muestra
-  'no se pudo medir', 'no se pudo calcular', 'no se pudieron reconstruir', 'no se pudo reconstruir', 'la serie cubre \\d+ semanas',
-  'dato ausente', 'cuenta como ausente', 'no cuenta a favor', 'sin dato ', 'no hay dato', 'no es calculable',
-  'no calculable', 'sin medici\u00f3n', 'no est\u00e1 calibrada',
-  // puntajes y rutas técnicas: nunca fueron para el cliente
-  'puntaje de', 'sobre 40', 'fuente: [a-z0-9/._-]+$', 'campo del paquete',
-  // hablar de nuestro propio proceso no es una lectura
-  'no se publica', 'no se muestra', 'no entra en el informe', 'sin respaldo',
-  // no hay con qué comparar: es un hueco, y los huecos no se enseñan
-  'no se puede comparar', 'no hay comparables', 'con los? que construir', 'con los? que medir',
-  'no tiene revenue', 'ni tenedores',
-].join('|'), 'i')
+/** Cada familia de patrones, con su nombre. Enumerable a propósito: de aquí sale la
+    lista que se le pasa al motor para que el Narrador deje de escribirlos
+    (ver PATRONES-PROSA-MOTOR.md). Añadir uno aquí lo añade al filtro y al informe. */
+export const FAMILIAS_INTERNAS: { clave: string; que: string; patrones: string[] }[] = [
+  { clave: 'criterio', que: 'Criterios y mínimos del método', patrones: [
+    'pasan el criterio', 'el m\u00ednimo', 'm\u00ednimo \\d', 'comparables cumplen', 'criterio de corte',
+    'no se usa para el tier'] },
+  { clave: 'taller', que: 'Nombres de los agentes y del sistema', patrones: [
+    'esc\u00e9ptico', 'verificador', 'redactor', 'el motor', 'umbral', 'observable'] },
+  { clave: 'descarte', que: 'Listas de descarte: trabajo interno, no lectura', patrones: [
+    'quedaron fuera', 'banda de tama\u00f1o', 'una esquina de lo que factura', 'top-\\d+ bruto',
+    'se descontaron \\d+ posiciones', 'supply total', 'sin comparables v\u00e1lidos'] },
+  { clave: 'ausente', que: 'Decir que un dato falta', patrones: [
+    'no se pudo medir', 'no se pudo calcular', 'no se pudieron reconstruir', 'no se pudo reconstruir',
+    'la serie cubre \\d+ semanas', 'dato ausente', 'cuenta como ausente', 'no cuenta a favor',
+    'sin dato ', 'no hay dato', 'no es calculable', 'no calculable', 'sin medici\u00f3n', 'no est\u00e1 calibrada'] },
+  { clave: 'puntaje', que: 'Puntajes internos y rutas técnicas', patrones: [
+    'puntaje de', 'sobre 40', 'fuente: [a-z0-9/._-]+$', 'campo del paquete'] },
+  { clave: 'proceso', que: 'Hablar de nuestro propio proceso editorial', patrones: [
+    'no se publica', 'no se muestra', 'no entra en el informe', 'sin respaldo'] },
+  { clave: 'sin_comparar', que: 'No hay con qué comparar: es un hueco', patrones: [
+    'no se puede comparar', 'no hay comparables', 'con los? que construir', 'con los? que medir',
+    'no tiene revenue', 'ni tenedores'] },
+]
+
+const CRITERIO_INTERNO = new RegExp(FAMILIAS_INTERNAS.flatMap((f) => f.patrones).join('|'), 'i')
 export const tieneCriterioInterno = (t?: string | null) => !!t && CRITERIO_INTERNO.test(t)
 
 /** Quita de un texto del informe las frases escritas para control interno: criterios, mínimos,
@@ -109,7 +114,7 @@ export function esAnalizable(r: { fundamentales?: { revenue_protocolo?: number |
 /* ---------- el texto que llega de afuera no siempre viene en nuestro idioma ----------
    Lo que el sistema de análisis escribe puede venir en voseo y en minúscula.
    Se corrige acá, al mostrarlo: es la última frontera antes del lector. */
-const VOSEO: Record<string, string> = {
+export const VOSEO: Record<string, string> = {
   sos: 'eres', tenés: 'tienes', podés: 'puedes', querés: 'quieres', sabés: 'sabes', valés: 'vales',
   venís: 'vienes', decís: 'dices', pedí: 'pide', mirá: 'mira', fijate: 'fíjate', tené: 'ten',
   poné: 'pon', hacé: 'haz', elegí: 'elige', probá: 'prueba', escribí: 'escribe', buscá: 'busca',
@@ -128,21 +133,32 @@ export function tuteo(t: string): string {
 /** Una frase que se muestra empieza en mayúscula, venga como venga. */
 const mayusculaInicial = (t: string) => (t ? t.charAt(0).toUpperCase() + t.slice(1) : t)
 
+/** Palabra del taller → palabra de todos los días. Enumerable: de aquí sale la
+    lista que se le pasa al motor (ver PATRONES-PROSA-MOTOR.md). El orden importa:
+    lo más específico primero. */
+export const TRADUCCIONES: { de: RegExp; a: string; nota: string }[] = [
+  { de: /\s*·\s*motor\s*§[\d.]+/g, a: '', nota: 'firma del sistema al final de una frase' },
+  { de: /\s*§\s*[\d.]+(\s*S\d+)?/g, a: '', nota: 'referencia a un apartado del método' },
+  { de: /\bumbrales\b/gi, a: 'límites', nota: 'término del taller' },
+  { de: /\bumbral\b/gi, a: 'límite', nota: 'término del taller' },
+  { de: /\bobservables\b/gi, a: 'señales', nota: 'término del taller' },
+  { de: /\bobservable\b/gi, a: 'señal', nota: 'término del taller' },
+  { de: /\bcorrida\b/gi, a: 'pasada', nota: 'término del taller' },
+  { de: /\bscanner\b/gi, a: 'rastreo', nota: 'término del taller' },
+  { de: /\brevenue anualizado\b/gi, a: 'ingresos anualizados', nota: 'inglés sin traducir' },
+  { de: /\brevenue\b/gi, a: 'ingresos', nota: 'inglés sin traducir' },
+  { de: /\b(el|El)\s+TVL\b/g, a: 'los fondos bloqueados', nota: 'sigla con artículo: cambia el número' },
+  { de: /\bTVL\b/g, a: 'fondos bloqueados', nota: 'sigla sin explicar' },
+  { de: /\bsupply\b/gi, a: 'circulante', nota: 'inglés sin traducir' },
+  { de: /,?\s*y la lectura de [^.]*?es '?sin lectura'?/gi, a: '', nota: 'coletilla que dice que falta el dato' },
+]
+
 export function llano(t?: string | null): string {
   if (!t) return ''
-  const crudo = sinReferencias(t)
-    .replace(/\s*·\s*motor\s*§[\d.]+/g, '').replace(/\s*§[\d.]+(\s*S\d+)?/g, '')
-    .replace(/\bumbrales\b/gi, 'límites').replace(/\bumbral\b/gi, 'límite')
-    .replace(/\bobservables\b/gi, 'señales').replace(/\bobservable\b/gi, 'señal')
-    .replace(/\bcorrida\b/gi, 'pasada').replace(/\bscanner\b/gi, 'rastreo')
-    .replace(/\brevenue anualizado\b/gi, 'ingresos anualizados').replace(/\brevenue\b/gi, 'ingresos').replace(/\bTVL\b/g, 'fondos bloqueados')
-    .replace(/\bsupply\b/gi, 'circulante')
-    // coletilla recurrente: la frase buena termina antes de decir que falta el dato
-    .replace(/,?\s*y la lectura de [^.]*?es '?sin lectura'?/gi, '')
-    .replace(/\s*§\s*[\d.]+/g, '')
-    .replace(/\s{2,}/g, ' ').trim()
-  const limpio = mayusculaInicial(tuteo(crudo))
-  return limpio
+  let crudo = sinReferencias(t)
+  for (const r of TRADUCCIONES) crudo = crudo.replace(r.de, r.a)
+  crudo = crudo.replace(/\s{2,}/g, ' ').trim()
+  return mayusculaInicial(tuteo(crudo))
 }
 
 /* ============================================================================
@@ -168,14 +184,15 @@ export const sinIdentificadores = (t: string) =>
 export interface Reparo { que: string; donde: string }
 
 /** Lo que nunca puede salir publicado, con el nombre del problema en claro. */
-const REPAROS: { que: string; re: RegExp }[] = [
+export const REPAROS: { que: string; re: RegExp }[] = [
   { que: 'vocabulario interno', re: /\b(motor|esc[eé]ptico|verificador|redactor|criterio|umbral|observable|corrida|paquete|scanner)\b/i },
   { que: 'identificador técnico', re: IDENTIFICADORES },
   { que: 'referencia a un apartado', re: /§\s*[\d.]+/ },
   { que: 'puntaje interno', re: /puntaje|sobre 40\b/i },
   { que: 'habla de un dato que falta', re: /dato ausente|no se pudo (medir|calcular|determinar|reconstruir)|sin lectura|sin dato\b|no hay dato|no hay comparables|no se puede comparar|no tiene (revenue|ingresos|fondos bloqueados)/i },
   { que: 'habla de nuestro proceso', re: /no se publica|no se muestra|queda fuera del|no entra en el informe|sin respaldo/i },
-  { que: 'consejo de compra o venta', re: /\b(compra|compr[aá]|vende|vend[eé]|comprar|vender)\b/i },
+  // "compra al contado" es un hecho del mercado, no un consejo: el patrón busca la recomendación
+  { que: 'consejo de compra o venta', re: /\b(recomend\w+|deber[ií]as?|convien\w+|es momento de|hay que)\s+(comprar|vender)\b|\b(compra|vende|comprar|vender)\s+(ya|ahora|antes de que|mientras)\b/i },
   { que: 'promesa de retorno', re: /\b(garantizad[oa]|seguro que|rentabilidad asegurada|precio objetivo|va a subir|va a bajar)\b/i },
   { que: 'voseo', re: /(?<!\p{L})(sos|ten[eé]s|pod[eé]s|quer[eé]s|sab[eé]s|ped[ií]|mir[aá]|fijate|pon[eé]|hac[eé]|eleg[ií]|prob[aá]|escrib[ií])(?!\p{L})/iu },
 ]

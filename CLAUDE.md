@@ -66,4 +66,5 @@ Todo lo marcado **[DISEÑO]** se propone antes de construir.
 
 `ESTADO-WEB.md` (estado, operación y qué falta), `SISTEMA-VISUAL.md` (paleta y piezas),
 `DESPLIEGUE.md` (producción), `HUECOS-CONTRATO.md` (lo que falta del motor),
-`CONTRATO-ANALISIS-A-PEDIDO.md` (la interfaz con el motor).
+`CONTRATO-ANALISIS-A-PEDIDO.md` (la interfaz con el motor),
+`PATRONES-PROSA-MOTOR.md` (lo que el filtro de lenguaje atrapa, para el Narrador).
