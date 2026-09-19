@@ -194,3 +194,14 @@ públicas, despliegue, heatmap del mapa de liquidación.
 - **Paso a paso para Pablo**: `DESPLIEGUE.md`. Plantilla del `.env` de producción:
   `site/despliegue/env.produccion.ejemplo`.
 - Pendiente fuera del despliegue: pagos, rate limiting, `/operacion/lanzar` (P8 del motor).
+
+## 13. Dominio canónico (2026-09-19)
+
+`https://www.vetalab.io` es el canónico; `vetalab.io` responde 308 hacia él. Por eso
+`BETTER_AUTH_URL=https://www.vetalab.io` y `VETA_ORIGENES` lleva los dos. Con el apex solo,
+el login devolvía `403 INVALID_ORIGIN`: el navegador manda `Origin: https://www.vetalab.io` y
+no estaba en la lista de confianza.
+
+La cookie de sesión sale sin atributo `Domain`, así que el navegador la ata a
+`www.vetalab.io` y no se comparte con `api.vetalab.io`. Es lo correcto: el navegador nunca
+habla con el subdominio de la API, porque Vercel reescribe `/api/*` del lado del servidor.
