@@ -110,12 +110,15 @@ export function Analizar() {
           </div>
           {!lectura && !resol && !noAnalizable && <FormatoAceptado />}
           {!lectura && !resol && !noAnalizable && (
+            <>
+            <p className="an-busca__sugk mono">{q.trim() ? 'Coinciden' : 'O empieza por una de éstas'}</p>
             <ul className="an-busca__sug" aria-label="Sugerencias">
               {sugerencias.map((m: Moneda) => (
                 <li key={m.simbolo}><button type="button" className={`an-sug ${m.con_informe ? 'is-informe' : ''}`} onClick={() => elegir(m)}><b className="mono">{m.simbolo}</b><span>{m.nombre}</span>{m.con_informe && <i className="mono">análisis previo</i>}</button></li>
               ))}
-              {universo.estado === 'ok' && !sugerencias.length && <li className="an-busca__nada body-muted">Nada con ese nombre en el universo que cubrimos.</li>}
+              {universo.estado === 'ok' && !sugerencias.length && <li className="an-busca__nada body-muted">Nada con ese nombre entre las monedas que cubrimos.</li>}
             </ul>
+            </>
           )}
           {universo.estado === 'ok' && !lectura && !resol && !noAnalizable && <p className="an-busca__nota mono">{universo.datos.monedas.length} monedas con cobertura hoy{universo.datos.motor === 'simulador' ? ' · respuestas simuladas por ahora' : ''}</p>}
         </form>
