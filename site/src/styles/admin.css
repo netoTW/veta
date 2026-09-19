@@ -421,3 +421,40 @@
 .a-op__motivo { color: var(--rojo-luz); font-size: 0.74rem; line-height: 1.4; max-width: 46ch; margin-top: 4px; } .a-op__nota-corrida { color: var(--ceniza-2); font-size: 0.74rem; max-width: 30ch; }
 .a-op__corridas td, .a-op__corridas th { vertical-align: top; }
 @media (max-width: 960px) { .a-op__servidor, .a-op__comps { grid-template-columns: 1fr; } .a-op__curso, .a-op__pedido { grid-template-columns: 1fr; } .a-op__alerta { grid-template-columns: 1fr; } }
+
+/* ============================================================================
+   Mesa · Contenido. Dos columnas: de qué informe, y las piezas.
+   El aviso de reparo pesa a propósito: es lo último antes de publicar fuera.
+   ========================================================================== */
+.a-cont { display: grid; grid-template-columns: minmax(230px, 300px) 1fr; gap: 26px; align-items: start; }
+.a-cont__eleccion { display: flex; flex-direction: column; gap: 12px; position: sticky; top: 92px; }
+.a-cont__lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1px; background: var(--hairline-2); border: 1px solid var(--hairline-2); max-height: 62vh; overflow-y: auto; }
+.a-cont__item { width: 100%; display: grid; grid-template-columns: 74px 1fr; gap: 2px 10px; padding: 11px 13px; background: var(--roca-2); border: 0; border-left: 2px solid transparent; color: var(--ceniza); font-family: inherit; text-align: left; cursor: pointer; transition: background 0.3s var(--ease), border-color 0.3s var(--ease); }
+.a-cont__item:hover { background: var(--roca-3); }
+.a-cont__item.is-activo { background: var(--roca-3); border-left-color: var(--oro); }
+.a-cont__item b { color: var(--hueso); font-size: 0.78rem; letter-spacing: 0.07em; }
+.a-cont__item span { font-size: 0.8rem; }
+.a-cont__item i { grid-column: 1; font-style: normal; color: var(--ceniza-2); font-size: 0.55rem; letter-spacing: 0.1em; text-transform: uppercase; }
+.a-cont__fecha { color: var(--ceniza-2); font-size: 0.58rem; letter-spacing: 0.06em; }
+
+.a-cont__piezas { display: flex; flex-direction: column; gap: 18px; min-height: 120px; }
+.a-pieza { border: 1px solid var(--hairline-2); background: var(--roca-2); }
+.a-pieza.is-reparo { border-color: rgba(181,71,62,0.4); }
+.a-pieza__cab { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; justify-content: space-between; padding: 16px 18px 12px; }
+.a-pieza__cab h3 { margin: 0; font-size: 1.05rem; color: var(--hueso); font-weight: 400; }
+.a-pieza__para { color: var(--ceniza-2); font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase; }
+.a-pieza__botones { display: flex; gap: 8px; }
+.a-pieza__texto { margin: 0; padding: 16px 18px 18px; background: var(--roca-0); border-top: 1px solid var(--hairline-2); color: var(--hueso); font-family: var(--font-body); font-size: 0.92rem; line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
+.a-pieza__reparos { padding: 14px 18px 16px; border-top: 1px solid rgba(181,71,62,0.3); background: rgba(181,71,62,0.05); display: flex; flex-direction: column; gap: 8px; }
+.a-pieza__reparos > span { color: var(--rojo-luz); font-size: 0.58rem; letter-spacing: 0.14em; text-transform: uppercase; }
+.a-pieza__reparos ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+.a-pieza__reparos li { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; font-size: 0.84rem; color: var(--ceniza); }
+.a-pieza__reparos li b { color: var(--hueso); font-weight: 500; }
+.a-pieza__reparos code { color: var(--rojo-luz); background: var(--roca-0); padding: 1px 6px; border: 1px solid var(--hairline-2); font-size: 0.74rem; }
+.a-pieza__reparos p { margin: 2px 0 0; font-size: 0.82rem; color: var(--ceniza-2); }
+
+@media (max-width: 900px) {
+  .a-cont { grid-template-columns: 1fr; }
+  .a-cont__eleccion { position: static; }
+  .a-cont__lista { max-height: 36vh; }
+}

@@ -30,6 +30,7 @@ const LINKS_ADMIN = [
   { to: '/admin/cuentas', label: 'Cuentas' },
   { to: '/admin/votacion', label: 'Votación' },
   { to: '/admin/consumo', label: 'Consumo' },
+  { to: '/admin/contenido', label: 'Contenido' },
   { to: '/admin/operacion', label: 'Operación' },
 ]
 

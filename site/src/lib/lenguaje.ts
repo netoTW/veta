@@ -73,6 +73,13 @@ const CRITERIO_INTERNO = new RegExp([
   'no se pudo medir', 'no se pudo calcular', 'no se pudieron reconstruir', 'no se pudo reconstruir', 'la serie cubre \\d+ semanas',
   'dato ausente', 'cuenta como ausente', 'no cuenta a favor', 'sin dato ', 'no hay dato', 'no es calculable',
   'no calculable', 'sin medici\u00f3n', 'no est\u00e1 calibrada',
+  // puntajes y rutas técnicas: nunca fueron para el cliente
+  'puntaje de', 'sobre 40', 'fuente: [a-z0-9/._-]+$', 'campo del paquete',
+  // hablar de nuestro propio proceso no es una lectura
+  'no se publica', 'no se muestra', 'no entra en el informe', 'sin respaldo',
+  // no hay con qué comparar: es un hueco, y los huecos no se enseñan
+  'no se puede comparar', 'no hay comparables', 'con los? que construir', 'con los? que medir',
+  'no tiene revenue', 'ni tenedores',
 ].join('|'), 'i')
 export const tieneCriterioInterno = (t?: string | null) => !!t && CRITERIO_INTERNO.test(t)
 
@@ -128,8 +135,57 @@ export function llano(t?: string | null): string {
     .replace(/\bumbrales\b/gi, 'límites').replace(/\bumbral\b/gi, 'límite')
     .replace(/\bobservables\b/gi, 'señales').replace(/\bobservable\b/gi, 'señal')
     .replace(/\bcorrida\b/gi, 'pasada').replace(/\bscanner\b/gi, 'rastreo')
+    .replace(/\brevenue anualizado\b/gi, 'ingresos anualizados').replace(/\brevenue\b/gi, 'ingresos').replace(/\bTVL\b/g, 'fondos bloqueados')
+    .replace(/\bsupply\b/gi, 'circulante')
+    // coletilla recurrente: la frase buena termina antes de decir que falta el dato
+    .replace(/,?\s*y la lectura de [^.]*?es '?sin lectura'?/gi, '')
     .replace(/\s*§\s*[\d.]+/g, '')
     .replace(/\s{2,}/g, ' ').trim()
   const limpio = mayusculaInicial(tuteo(crudo))
   return limpio
+}
+
+/* ============================================================================
+   Revisión antes de publicar fuera.
+
+   Lo que se copia de la plataforma a otro sitio ya no pasa por ninguna
+   pantalla nuestra: es la última oportunidad de ver qué se cuela. No corrige,
+   señala. Corregir a ciegas un texto que se va a publicar es peor que avisar.
+   ========================================================================== */
+
+/** Identificadores del taller que a veces viajan dentro de un paréntesis. */
+const IDENTIFICADORES = /\b(?:dl_[a-z_]+|[a-z]+_sobre_[a-z]+|[a-z]+_usd|ANCHORED|PRE_REVENUE|NARRATIVE|GOVERNANCE|fapi\/[a-z0-9/]+|api\/v\d)\b/g
+
+/** Quita los identificadores y el paréntesis que los envolvía si queda vacío. */
+export const sinIdentificadores = (t: string) =>
+  t.replace(IDENTIFICADORES, '')
+    .replace(/\(\s*[,;·\s]*\)/g, '')
+    .replace(/\(\s*,\s*/g, '(')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/\s+([,.;:])/g, '$1')
+    .trim()
+
+export interface Reparo { que: string; donde: string }
+
+/** Lo que nunca puede salir publicado, con el nombre del problema en claro. */
+const REPAROS: { que: string; re: RegExp }[] = [
+  { que: 'vocabulario interno', re: /\b(motor|esc[eé]ptico|verificador|redactor|criterio|umbral|observable|corrida|paquete|scanner)\b/i },
+  { que: 'identificador técnico', re: IDENTIFICADORES },
+  { que: 'referencia a un apartado', re: /§\s*[\d.]+/ },
+  { que: 'puntaje interno', re: /puntaje|sobre 40\b/i },
+  { que: 'habla de un dato que falta', re: /dato ausente|no se pudo (medir|calcular|determinar|reconstruir)|sin lectura|sin dato\b|no hay dato|no hay comparables|no se puede comparar|no tiene (revenue|ingresos|fondos bloqueados)/i },
+  { que: 'habla de nuestro proceso', re: /no se publica|no se muestra|queda fuera del|no entra en el informe|sin respaldo/i },
+  { que: 'consejo de compra o venta', re: /\b(compra|compr[aá]|vende|vend[eé]|comprar|vender)\b/i },
+  { que: 'promesa de retorno', re: /\b(garantizad[oa]|seguro que|rentabilidad asegurada|precio objetivo|va a subir|va a bajar)\b/i },
+  { que: 'voseo', re: /(?<!\p{L})(sos|ten[eé]s|pod[eé]s|quer[eé]s|sab[eé]s|ped[ií]|mir[aá]|fijate|pon[eé]|hac[eé]|eleg[ií]|prob[aá]|escrib[ií])(?!\p{L})/iu },
+]
+
+/** Revisa un texto ya compuesto. Devuelve un reparo por cada cosa encontrada. */
+export function revisarParaPublicar(texto: string): Reparo[] {
+  const out: Reparo[] = []
+  for (const r of REPAROS) {
+    const m = texto.match(r.re)
+    if (m) out.push({ que: r.que, donde: m[0] })
+  }
+  return out
 }

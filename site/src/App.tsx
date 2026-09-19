@@ -37,6 +37,7 @@ const VotacionAdmin = lazy(() => import('./producto/admin/Votacion').then((m) =>
 const Sistema = lazy(() => import('./components/Sistema').then((m) => ({ default: m.Sistema })))
 const Metodologia = lazy(() => import('./publico/Metodologia').then((m) => ({ default: m.Metodologia })))
 const Precios = lazy(() => import('./publico/Precios').then((m) => ({ default: m.Precios })))
+const ContenidoAdmin = lazy(() => import('./producto/admin/Contenido').then((m) => ({ default: m.Contenido })))
 const Acciones = lazy(() => import('./producto/admin/Acciones').then((m) => ({ default: m.Acciones })))
 
 function Portada() {
@@ -103,6 +104,7 @@ export default function App() {
             <Route path="/admin/operacion" element={<SoloAdmin><Operacion /></SoloAdmin>} />
             <Route path="/admin/consumo" element={<SoloAdmin><Consumo /></SoloAdmin>} />
             <Route path="/admin/votacion" element={<SoloAdmin><VotacionAdmin /></SoloAdmin>} />
+            <Route path="/admin/contenido" element={<SoloAdmin><ContenidoAdmin /></SoloAdmin>} />
             <Route path="/admin/acciones" element={<SoloAdmin><Acciones /></SoloAdmin>} />
           </Route>
         </Routes>
