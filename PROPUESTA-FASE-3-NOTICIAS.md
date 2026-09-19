@@ -1,5 +1,12 @@
 # FASE 3 [DISEÑO] — Noticias
 
+> **RESUELTO el 2026-09-19.** Noticias no se reemplaza: el motor construye el agente de
+> noticias (`gem-pipeline/DISENO-FASES-3-5.md`, fase 4) y la Agenda va como bloque dentro de
+> la sección. Tendencias: el agregado para todos, la lista con nombres sólo para Pro.
+> Contenido: camino A. Lo que la web necesita del motor está en **§10 de
+> CONTRATO-ANALISIS-A-PEDIDO.md**. Este documento queda como el razonamiento que llevó ahí.
+
+
 Propuesta. No está construido.
 
 Antes de proponer fui a ver qué materia prima existe de verdad. El resultado cambia

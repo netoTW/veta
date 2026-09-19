@@ -1,5 +1,10 @@
 # FASE 4 [DISEÑO] — El sitio público
 
+> **APROBADA el 2026-09-19**, en este orden. Ya en producción: la guía de estilo fuera de la
+> portada, los dos botones del hero arreglados, `/metodologia` y `/precios`. Pendientes: la
+> portada completa, Nosotros y las tres legales.
+
+
 Propuesta. No está construido: se construye cuando lo apruebes.
 
 ---
