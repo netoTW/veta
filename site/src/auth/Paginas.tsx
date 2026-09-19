@@ -228,7 +228,7 @@ export function Recuperar() {
       escena={escena}
       eyebrow="VETA · Recuperar contraseña"
       titulo={<>Una llave <em>nueva.</em></>}
-      lead="Decinos tu correo. Si hay una cuenta, te llega un enlace de una hora y de un solo uso para elegir otra contraseña."
+      lead="Dinos tu correo. Si hay una cuenta, te llega un enlace de una hora y de un solo uso para elegir otra contraseña."
       pie={<><span><Link to="/entrar">Volver a entrar</Link></span></>}
     >
       {hecho ? (
