@@ -52,7 +52,7 @@ export function Precios() {
   }
   const correo = (k: string) => {
     const c = cat?.contacto
-    if (!c) return '/entrar'
+    if (!c) return '/registro'
     const asunto = encodeURIComponent(`Quiero el plan ${k === 'pro' ? 'Pro' : 'Base'}`)
     const cuerpo = encodeURIComponent(`Hola. Quiero activar el plan ${k === 'pro' ? 'Pro' : 'Base'} en VETA.\n\nMi correo de la cuenta es: `)
     return `mailto:${c}?subject=${asunto}&body=${cuerpo}`
@@ -105,11 +105,13 @@ export function Precios() {
 
             <div className="planes__acciones">
               <Link to="/analizar" className="btn btn--ghost">Probar la lectura gratis</Link>
-              <a href={correo('base')} className="btn">Quiero el plan Base</a>
-              <a href={correo('pro')} className="btn btn--esmeralda">Quiero el plan Pro</a>
+              <a href={correo('base')} className="btn">{cat?.contacto ? 'Quiero el plan Base' : 'Crear cuenta y pedir Base'}</a>
+              <a href={correo('pro')} className="btn btn--esmeralda">{cat?.contacto ? 'Quiero el plan Pro' : 'Crear cuenta y pedir Pro'}</a>
             </div>
             {cat && !cat.cobro_automatico && (
-              <p className="planes__nota mono">El plan lo activamos a mano, el mismo día. Escríbenos y lo dejamos andando.</p>
+              <p className="planes__nota mono">{cat.contacto
+                ? 'El plan lo activamos a mano, el mismo día. Escríbenos y lo dejamos andando.'
+                : 'Crea tu cuenta gratis y desde ahí pides el plan. Lo activamos a mano, el mismo día.'}</p>
             )}
           </section>
 

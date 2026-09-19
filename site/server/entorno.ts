@@ -58,8 +58,9 @@ export const ENV = {
   /* Precios de cara al público, en USD al mes. Se cambian por variable de entorno,
      sin tocar código, porque van a moverse cuando el motor mida el costo real. */
   PRECIO: { gratis: 0, base: num('VETA_PRECIO_BASE', 30), pro: num('VETA_PRECIO_PRO', 50) } as Record<string, number>,
-  /** A dónde escribe quien quiere un plan mientras no haya cobro automático. */
-  CONTACTO: process.env.VETA_CONTACTO ?? process.env.VETA_ADMIN_EMAIL ?? '',
+  /** Dirección pública a la que escribe quien quiere un plan, mientras no haya cobro
+      automático. Se declara a propósito: NO cae al correo del admin, que es personal. */
+  CONTACTO: process.env.VETA_CONTACTO ?? '',
   /* Analiza tu moneda (spec §5): tope global de gasto mensual y costo estimado por análisis profundo. [JUICIO] */
   TOPE_MENSUAL_USD: num('VETA_TOPE_MENSUAL_USD', 60),
   COSTO_ESTIMADO_USD: num('VETA_COSTO_ESTIMADO_USD', 1.8),
