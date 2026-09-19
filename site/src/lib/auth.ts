@@ -14,13 +14,13 @@ export function mensajeAuth(code?: string, fallback?: string): string {
     case 'INVALID_PASSWORD':
     case 'USER_NOT_FOUND': return 'Correo o contraseña incorrectos.'
     case 'USER_ALREADY_EXISTS':
-    case 'USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL': return 'Ya hay una cuenta con ese correo. Entrá o recuperá la contraseña.'
+    case 'USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL': return 'Ya hay una cuenta con ese correo. Entra o recupera la contraseña.'
     case 'PASSWORD_TOO_SHORT': return 'La contraseña tiene que tener al menos 10 caracteres.'
     case 'PASSWORD_TOO_LONG': return 'La contraseña es demasiado larga.'
     case 'INVALID_EMAIL': return 'Ese correo no parece válido.'
-    case 'INVALID_TOKEN': return 'El enlace ya no sirve: pedí uno nuevo.'
+    case 'INVALID_TOKEN': return 'El enlace ya no sirve: pide uno nuevo.'
     case 'BANNED_USER': return 'Esta cuenta está suspendida.'
     case 'FAILED_TO_CREATE_USER': return 'No se pudo crear la cuenta.'
-    default: return fallback || 'No se pudo completar. Probá de nuevo.'
+    default: return fallback || 'No se pudo completar. Prueba de nuevo.'
   }
 }

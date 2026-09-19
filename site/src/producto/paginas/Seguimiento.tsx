@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { llano } from '../../lib/lenguaje'
 import { Cabecera, Exportar } from '../Shell'
 import { Cargando, Puerta, EstadoTesisBadge, TierBadge, Dato, Adv } from '../piezas'
 import { useBenchmark, useGemas, useSeguimiento } from '../../lib/datos'
@@ -21,10 +22,12 @@ import { MarcadorAgregado, MarcadorPersonal } from '../marcador'
    ========================================================================== */
 
 /** El campo del motor por su nombre llano dentro de una frase. */
-const llanoCampo = (t: string, campo: string) => (t || '').split(campo).join(CAMPO_LABEL[campo] ?? campo)
+const llanoCampo = (t: string, campo: string) => llano((t || '').split(campo).join(CAMPO_LABEL[campo] ?? campo))
 
 function Benchmark({ k, nombre, valor, detalle, motivo }: { k: string; nombre: string; valor: number | null; detalle?: BenchmarkDetalle; motivo?: string }) {
   const medible = detalle ? detalle.medible : valor !== null
+  // Lo que no se pudo medir no se enseña: una casilla vacía no informa, resta.
+  if (!medible) return null
   const why = detalle ? (MOTIVO_BENCHMARK_LABEL[detalle.motivo_codigo] ?? detalle.motivo_codigo) : undefined
   return (
     <div className="p-bench__b">
@@ -62,7 +65,7 @@ function Evaluacion({ ev }: { ev: EvaluacionInvalidacion }) {
       <div className="p-eval__grid">
         <div className="p-eval__c"><span className="mono">{campo} hoy</span><span className="num p-eval__v">{conUnidad(ev.valor, ev.unidad)}</span></div>
         <span className="p-eval__op num" aria-label={DIRECCION_LABEL[ev.direccion] ?? ev.direccion}>{ev.cumple ? DIRECCION_SIGNO[ev.direccion] : DIRECCION_SIGNO[ev.direccion] === '<' ? '≥' : '≤'}</span>
-        <div className="p-eval__c"><span className="mono">umbral · {DIRECCION_LABEL[ev.direccion] ?? ev.direccion}</span><span className="num p-eval__v">{conUnidad(ev.umbral, ev.unidad)}</span></div>
+        <div className="p-eval__c"><span className="mono">la invalida si queda {DIRECCION_LABEL[ev.direccion] ?? ev.direccion}</span><span className="num p-eval__v">{conUnidad(ev.umbral, ev.unidad)}</span></div>
       </div>
       <p className="p-eval__lectura">{llanoCampo(ev.motivo, ev.campo)}</p>
       <span className="p-eval__meta">{ev.fuente} · {fechaHora(ev.timestamp)}</span>
@@ -139,22 +142,22 @@ function ComoSeMide({ b }: { b: BenchmarkDef }) {
         <div className="p-vara">
           <div className="p-vara__h"><h3>{b.b1.nombre}</h3></div>
           <dl className="p-kv">
-            <dt>universo</dt><dd>{b.b1.universo}</dd>
-            <dt>ponderación</dt><dd>{b.b1.ponderacion}</dd>
-            <dt>tope</dt><dd className="num">{b.b1.n_maximo} monedas · {String(b.b1.criterio_de_corte ?? '')}</dd>
+            <dt>universo</dt><dd>{llano(String(b.b1.universo ?? ''))}</dd>
+            <dt>ponderación</dt><dd>{llano(String(b.b1.ponderacion ?? ''))}</dd>
+            <dt>tope</dt><dd className="num">{b.b1.n_maximo} monedas</dd>
             <dt>si falta una</dt><dd>{String(b.b1.que_pasa_si_falta_una ?? '')}</dd>
           </dl>
-          {b.b1.decidido_por_pablo && <p className="p-nota p-nota--regla">Decidido: {b.b1.decidido_por_pablo}</p>}
+          {b.b1.decidido_por_pablo && <p className="p-nota p-nota--regla">Decidido: {llano(String(b.b1.decidido_por_pablo))}</p>}
         </div>
         <div className="p-vara">
           <div className="p-vara__h"><h3>{b.b2.nombre}</h3></div>
           <dl className="p-kv">
-            <dt>regla</dt><dd>{b.b2.regla}</dd>
-            <dt>posición</dt><dd>{b.b2.posicion}</dd>
+            <dt>regla</dt><dd>{llano(String(b.b2.regla ?? ''))}</dd>
+            <dt>posición</dt><dd>{llano(String(b.b2.posicion ?? ''))}</dd>
             <dt>parámetros</dt><dd className="num">{b.b2.parametros.rapida_dias} / {b.b2.parametros.lenta_dias} días</dd>
             <dt>evaluación</dt><dd>{String(b.b2.evaluacion ?? '')}</dd>
           </dl>
-          {b.b2.decidido_por_pablo && <p className="p-nota p-nota--regla">Decidido: {b.b2.decidido_por_pablo}</p>}
+          {b.b2.decidido_por_pablo && <p className="p-nota p-nota--regla">Decidido: {llano(String(b.b2.decidido_por_pablo))}</p>}
         </div>
         <div className="p-varas__regla">{b.medicion?.precio ? `los tres retornos se miden sobre ${b.medicion.precio}` : 'cierre diario'}</div>
       </div>
@@ -210,7 +213,7 @@ export function Seguimiento() {
                     })}
                   </div>
                   <ul style={{ listStyle: 'none', padding: 0, margin: '18px 0 0', color: 'var(--ceniza)', fontSize: '0.84rem' }}>
-                    <Adv>El valor del observable, su umbral y si la condición se cumple se miden cada día contra la fuente declarada.</Adv>
+                    <Adv>Cada día se vuelve a medir la cifra que invalidaría la tesis, contra la fuente que el informe declara.</Adv>
                   </ul>
                   <Cargando st={bench}>{(b) => <ComoSeMide b={b} />}</Cargando>
                 </Puerta>

@@ -103,7 +103,7 @@ export function CuentaDetalle() {
                   <label className="a-dec__motivo"><span className="mono">Motivo</span><textarea rows={2} value={motivo} onChange={(e) => setMotivo(e.target.value)} placeholder="Por qué se suspende (queda en el registro)." /></label>
                   <button type="button" className="btn btn--ghost a-dec__rechazar" onClick={() => accion(() => api(`/api/admin/usuarios/${u.id}/estado`, { metodo: 'PATCH', cuerpo: { estado: 'suspendido', motivo } }), 'Suspendida.')}>Suspender</button>
                 </div>
-          ) : <p className="p-nota">Es tu cuenta: no podés suspenderla ni quitarte el rol.</p>}
+          ) : <p className="p-nota">Es tu cuenta: no puedes suspenderla ni quitarte el rol.</p>}
         </section>
 
         <section className="p-card a-cuenta--ancha">

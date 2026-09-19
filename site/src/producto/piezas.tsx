@@ -7,7 +7,7 @@ import { planMinimo, puede, useRol, type Rol, type Seccion, PLAN_LABEL, ROL_LABE
 import { ESTADO_TESIS_LABEL, TIER_LABEL, SEVERIDAD_CORTA, TIPO_ADV_LABEL, fechaHora } from '../lib/formato'
 import type { Estado } from '../lib/datos'
 import { SEVERIDADES, type Advertencia, type Fuente, type Severidad, type Tier } from '../lib/contrato'
-import { sinReferencias } from '../lib/lenguaje'
+import { sinReferencias, tieneCriterioInterno } from '../lib/lenguaje'
 
 /* ============================================================================
    Piezas comunes de las pantallas de datos.
@@ -126,13 +126,13 @@ export const porSeveridad = (items: Advertencia[]) =>
   Object.fromEntries(SEVERIDADES.map((sv) => [sv, items.filter((a) => a.severidad === sv).length])) as Record<Severidad, number>
 
 /** Una advertencia: marca por severidad + tipo + texto. Acepta string por compatibilidad. */
-export function Adv({ a, children, detalle = false }: { a?: Advertencia; children?: ReactNode; detalle?: boolean }) {
+export function Adv({ a, children, detalle = false, etiquetas = true }: { a?: Advertencia; children?: ReactNode; detalle?: boolean; etiquetas?: boolean }) {
   const sv = a?.severidad
   return (
     <li className={`p-adv p-adv--${sevClase(sv)}`}>
       <span className="p-adv__mark" aria-hidden="true" />
       <span className="p-adv__cuerpo">
-        {a && (
+        {a && etiquetas && (
           <span className="p-adv__meta">
             <span className="p-adv__sev">{SEVERIDAD_CORTA[sv ?? ''] ?? sv}</span>
             <span className="p-adv__tipo">{TIPO_ADV_LABEL[a.tipo] ?? a.tipo}</span>
@@ -182,18 +182,33 @@ function GrupoPlegable({ sv, lista, abierto, detalle }: { sv: Severidad; lista: 
     Lo que COMPROMETE la tesis va siempre abierto y primero; lo que limita la
     lectura y el contexto van agrupados y plegados con su contador visible.
     Jerarquizar no es esconder: el total está arriba y todo se abre con un clic. */
-export function Advertencias({ items, titulo = 'Advertencias', compacta = false, detalle = false }: { items: Advertencia[]; titulo?: string; compacta?: boolean; detalle?: boolean }) {
-  if (!items.length) return null
-  const c = porSeveridad(items)
-  const ord = ordenar(items)
+export function Advertencias({ items, titulo, compacta = false, detalle = false, completo = false }: { items: Advertencia[]; titulo?: string; compacta?: boolean; detalle?: boolean; completo?: boolean }) {
+  // Cliente: un solo bloque con los riesgos reales, en palabras normales. Lo que limita la
+  // lectura y las notas de método son trabajo interno y quedan en la mesa de revisión.
+  const usados = completo ? items : items.filter((a) => a.severidad === 'COMPROMETE_TESIS' && !tieneCriterioInterno(a.texto))
+  if (!usados.length) return null
+  const rotulo = titulo ?? (completo ? 'Advertencias' : 'Lo que podría salir mal')
+  if (!completo) {
+    return (
+      <section className="p-advs p-advs--compromete" aria-label={rotulo}>
+        <div className="p-advs__head">
+          <span className="p-advs__mark" aria-hidden="true" />
+          <span className="p-advs__titulo">{rotulo}</span>
+        </div>
+        <ul className="p-advs__lista">{ordenar(usados).map((a, i) => <Adv key={i} a={a} etiquetas={false} />)}</ul>
+      </section>
+    )
+  }
+  const c = porSeveridad(usados)
+  const ord = ordenar(usados)
   const grupos = SEVERIDADES.map((sv) => ({ sv, lista: ord.filter((a) => a.severidad === sv) })).filter((g) => g.lista.length)
   return (
-    <section className={`p-advs ${c.COMPROMETE_TESIS > 0 ? 'p-advs--compromete' : ''} ${compacta ? 'p-advs--compacta' : ''}`} aria-label={titulo}>
+    <section className={`p-advs ${c.COMPROMETE_TESIS > 0 ? 'p-advs--compromete' : ''} ${compacta ? 'p-advs--compacta' : ''}`} aria-label={rotulo}>
       <div className="p-advs__head">
         <span className="p-advs__mark" aria-hidden="true" />
-        <span className="p-advs__titulo">{titulo}</span>
-        <span className="p-advs__n num">{items.length} en total</span>
-        <ContadorSeveridad items={items} />
+        <span className="p-advs__titulo">{rotulo}</span>
+        <span className="p-advs__n num">{usados.length} en total</span>
+        <ContadorSeveridad items={usados} />
       </div>
       {grupos.map((g) => <GrupoPlegable key={g.sv} sv={g.sv} lista={g.lista} abierto={g.sv === 'COMPROMETE_TESIS'} detalle={detalle} />)}
     </section>

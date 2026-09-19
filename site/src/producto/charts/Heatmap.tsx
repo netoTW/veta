@@ -153,8 +153,8 @@ export function Heatmap({ liq, movil = false }: { liq: LiquidacionProyectada; mo
         {h && !h.hoy && (
           <div className="ch-tip" style={{ top: `${(ys[h.i] / H) * 100}%` }} role="status">
             <span className="mono">{precio(h.desde)} – {precio(h.hasta)}</span>
-            <span><b className="num">{usd(h.largos)}</b> largos si baja hasta acá</span>
-            <span><b className="num">{usd(h.cortos)}</b> cortos si sube hasta acá</span>
+            <span><b className="num">{usd(h.largos)}</b> largos si baja hasta aquí</span>
+            <span><b className="num">{usd(h.cortos)}</b> cortos si sube hasta aquí</span>
             {densa(h) && <span className="ch-tip__densa mono">zona más densa de este lado</span>}
           </div>
         )}

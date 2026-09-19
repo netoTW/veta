@@ -94,7 +94,7 @@ export function ComoSeMide({ def, compacto = false }: { def: BenchmarkDef; compa
       <p>Las dos definiciones se congelaron el <b>{fecha(def.congelado_en)}</b>, antes de publicar la primera gema, y no se pueden cambiar. Por eso es difícil y por eso casi nadie lo hace: cualquiera publica picks; medirlos contra un rival elegido antes de ver el resultado deja el marcador fuera del alcance de quien lo publica.</p>
       {!compacto && (
         <dl className="mk__def">
-          <dt>B1</dt><dd>{def.b1.nombre}: {def.b1.universo}. {String(def.b1.criterio_de_corte ?? '')}</dd>
+          <dt>B1</dt><dd>{def.b1.nombre}: {def.b1.universo}.</dd>
           <dt>B2</dt><dd>{def.b2.nombre}: {def.b2.regla}; {def.b2.posicion}.</dd>
           <dt>Medición</dt><dd>{def.medicion?.precio ?? 'cierre diario'}. Un benchmark que no se puede medir un día se dice con su motivo; nunca se muestra como cero.</dd>
           <dt>Veredicto</dt><dd>Al cierre del horizonte de cada gema, que se fijó al publicar y no se mueve. Mientras tanto es un marcador vivo.</dd>
@@ -168,7 +168,7 @@ export function PrediccionGema({ gemaId, simbolo }: { gemaId: string; simbolo: s
     return (
       <div className="mk__pred mk__pred--puerta">
         <span className="mk__k mono">Tu predicción</span>
-        <p>¿Le gana a la canasta al cierre? Con una cuenta marcás una vez, con fecha, y después ves tu acierto contra el de VETA.</p>
+        <p>¿Le gana a la canasta al cierre? Con una cuenta marcas una vez, con fecha, y después ves tu acierto frente al de VETA.</p>
         {!yo?.usuario && <Link to={`/entrar?volver=/gemas/${gemaId}`} className="btn btn--ghost">Entrar para predecir</Link>}
       </div>
     )
@@ -195,7 +195,7 @@ export function PrediccionGema({ gemaId, simbolo }: { gemaId: string; simbolo: s
   return (
     <div className="mk__pred">
       <span className="mk__k mono">Tu predicción · una sola vez, con fecha</span>
-      <p>¿{simbolo} le gana a la canasta al cierre del horizonte? Marcás una vez y no se cambia: después ves tu acierto contra el de VETA.</p>
+      <p>¿{simbolo} le gana a la canasta al cierre del horizonte? Marcas una vez y no se cambia: después ves tu acierto frente al de VETA.</p>
       <div className="mk__pred__botones">
         <button type="button" className="btn btn--esmeralda" disabled={!!ocupado} onClick={() => marcar('gana')}>{ocupado === 'gana' ? '…' : 'Creo que le gana'}</button>
         <button type="button" className="btn btn--ghost" disabled={!!ocupado} onClick={() => marcar('no_gana')}>{ocupado === 'no_gana' ? '…' : 'Creo que no le gana'}</button>

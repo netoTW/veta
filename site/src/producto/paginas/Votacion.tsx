@@ -29,8 +29,8 @@ export function Votacion() {
     <>
       <Cabecera
         eyebrow="Votación semanal · Pro"
-        titulo={<>Vos elegís qué <em>analizamos</em> esta semana</>}
-        lead="Cada semana el scanner revisa mil monedas y se queda con las pocas que dispararon una señal. De ésas, cuatro o cinco entran a votación. La más votada se analiza a fondo y el análisis se publica para todos."
+        titulo={<>Tú eliges qué <em>analizamos</em> esta semana</>}
+        lead="Cada semana revisamos mil monedas y nos quedamos con las pocas que dieron una señal real. De ésas, cuatro o cinco entran a votación. La más votada se analiza a fondo y el análisis se publica para todos."
       />
       <Cargando st={st}>{(d) => <Cuerpo d={d} />}</Cargando>
     </>
@@ -101,11 +101,11 @@ function Activa({ v: inicial, embudo }: { v: V; embudo: RespuestaVotacion['embud
       <div className="vt-activa__cab">
         <div>
           <p className="eyebrow mono" data-mat="oro"><span className="eyebrow__mark" aria-hidden="true" />Semana {v.semana.slice(-2)} · {cands.length} candidatas</p>
-          <h2 id="vt-activa-t" className="display vt-h2">{miVoto ? <>Tu voto ya está: <b>{miVoto.simbolo}</b></> : vencida ? 'Se cerró el plazo' : 'Elegí una piedra'}</h2>
+          <h2 id="vt-activa-t" className="display vt-h2">{miVoto ? <>Tu voto ya está: <b>{miVoto.simbolo}</b></> : vencida ? 'Se cerró el plazo' : 'Elige una piedra'}</h2>
           <p className="vt-lead body-muted">
             {miVoto ? `Lo marcaste el ${fechaHora(miVoto.fecha)}. Ahora se ve cómo va el recuento; la más votada brilla.`
               : vencida ? 'El recuento se hace a mano y se anuncia en esta misma página.'
-              : 'Cada piedra es una moneda que el scanner marcó. Lo que asoma en la superficie es la señal que detectó. Tocá una para leerla; votá una sola vez.'}
+              : 'Cada piedra es una moneda que nuestro rastreo marcó. Lo que asoma en la superficie es la señal que encontramos. Toca una para leerla; vota una sola vez.'}
           </p>
         </div>
         <Mecha abre={v.abre} cierra={v.cierra} estado={v.estado} />
@@ -131,7 +131,7 @@ function Activa({ v: inicial, embudo }: { v: V; embudo: RespuestaVotacion['embud
                 <span className="vt-cand__sym display">{c.simbolo}</span>
                 <span className="vt-cand__nombre">{c.nombre}</span>
               </div>
-              <ul className="vt-cand__senales" aria-label="Señales del scanner">
+              <ul className="vt-cand__senales" aria-label="Señales encontradas">
                 {c.disparadores.map((s) => <li key={s.disparador} className={`vt-senal vt-senal--${materialDe(s.disparador)}`} title={s.detalle}><span className="vt-senal__gema" aria-hidden="true" />{senalLlana(s.disparador)}</li>)}
                 {c.flags_riesgo.length > 0 && <li className="vt-senal vt-senal--rojo" title={c.flags_riesgo.join(' · ')}><span className="vt-senal__gema" aria-hidden="true" />{c.flags_riesgo.length === 1 ? '1 alerta' : `${c.flags_riesgo.length} alertas`}</li>}
               </ul>

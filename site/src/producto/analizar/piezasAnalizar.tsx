@@ -164,7 +164,7 @@ export function Decidir({ simbolo, cupo, puedeProfundo, onPedir, ocupado, error 
           <li>La lectura contraria: objeciones antes de escribir</li>
           <li>Cada cifra verificada contra su fuente</li>
         </ul>
-        <p className="an-decidir__regla">Tarda unos minutos. Podés irte: te avisamos cuando esté listo. Si falla o no pasa la verificación, no se descuenta.</p>
+        <p className="an-decidir__regla">Tarda unos minutos. Puedes irte: te avisamos cuando esté listo. Si falla o no pasa la verificación, no se descuenta.</p>
       </div>
       <div className="an-decidir__accion">
         {!puedeProfundo ? (
@@ -184,7 +184,7 @@ export function Decidir({ simbolo, cupo, puedeProfundo, onPedir, ocupado, error 
           </>
         ) : (
           <div className="an-confirma">
-            <p>{cupo && !cupo.ilimitado ? <>Usa <b>1 de tus {cupo.restantes}</b> de este ciclo.</> : <>Sin cupo: sos admin.</>} Mientras se hace vas a ver cada etapa. Si no termina, no se descuenta.</p>
+            <p>{cupo && !cupo.ilimitado ? <>Usa <b>1 de tus {cupo.restantes}</b> de este ciclo.</> : <>Sin cupo: eres admin.</>} Mientras se hace vas a ver cada etapa. Si no termina, no se descuenta.</p>
             {error && <p className="an-confirma__error">{error}</p>}
             <div className="an-confirma__botones">
               <button type="button" className="btn btn--ghost" onClick={() => setConfirmando(false)} disabled={ocupado}>Todavía no</button>

@@ -94,7 +94,7 @@ export function BandejaDetalle() {
           {pestana === 'advertencias' && (
             <section className="a-sec">
               <p className="p-nota">Todas, en ambos niveles. Primero las que comprometen la tesis.</p>
-              <Advertencias items={inf.ficha_esencial.advertencias} titulo="Ficha esencial" detalle />
+              <Advertencias completo items={inf.ficha_esencial.advertencias} titulo="Ficha esencial" detalle />
               {Object.entries(inf.niveles).map(([k, n]) => n.esencial.advertencias.length ? (
                 <div key={k} className="a-sec__grupo">
                   <span className="mono a-sec__k">{k} · {n.esencial.advertencias.length}</span>

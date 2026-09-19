@@ -18,15 +18,9 @@ import type { Watch } from '../../lib/contrato'
 const ESTADOS = ['VIGILANDO', 'RADAR', 'CERRADO'] as const
 const ESTADO_LABEL: Record<string, string> = { VIGILANDO: 'Vigilando', RADAR: 'Radar', CERRADO: 'Cerradas' }
 const ESTADO_DESC: Record<string, string> = {
-  VIGILANDO: 'Monedas analizadas sin tesis todavía. Cada una tiene un observable concreto: si cruza el umbral, el análisis se rehace.',
+  VIGILANDO: 'Monedas ya analizadas que todavía no tienen tesis. Cada una vigila una señal concreta: si se cumple, volvemos a analizarla.',
   RADAR: 'Proyectos con producto y tracción que aún no emiten token. El gatillo es que el token aparezca cotizando.',
   CERRADO: 'Salieron de la lista. El motivo queda escrito: es parte del historial.',
-}
-
-function umbral(w: Watch): string | null {
-  const u = w.observable_param?.umbral
-  if (u === undefined || u === null) return null
-  return `umbral ${num(Number(u))}`
 }
 
 /** El gatillo, en llano, a partir del tipo estructurado (no del texto). */
@@ -67,7 +61,7 @@ function Fila({ w, pl }: { w: Watch; pl: ReturnType<typeof plantillas> }) {
         )}
       </div>
       <div>
-        <span className="p-watch__k">{escenarioPropio ? 'Escenario que la activaría' : 'Por qué está acá'}</span>
+        <span className="p-watch__k">{escenarioPropio ? 'Escenario que la activaría' : 'Por qué está aquí'}</span>
         {escenarioPropio
           ? <p className="p-watch__txt">{sinReferencias(w.escenario_que_la_activaria)}</p>
           : <p className="p-watch__hueco">Sin escenario propio todavía: sólo el gatillo.</p>}
@@ -78,7 +72,6 @@ function Fila({ w, pl }: { w: Watch; pl: ReturnType<typeof plantillas> }) {
         <p className="p-watch__fuente">
           {w.fuente_a_vigilar}
           {slug && <> · {slug}</>}
-          {umbral(w) && <> · {umbral(w)}</>}
           {w.valor_al_anotar !== null && <> · al anotar {num(w.valor_al_anotar)}</>}
         </p>
       </div>

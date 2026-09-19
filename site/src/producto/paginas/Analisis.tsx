@@ -4,7 +4,7 @@ import { Cargando, TierBadge, Advertencias } from '../piezas'
 import { Cifras } from '../cifras'
 import { useAnalisis } from '../../lib/datos'
 import { fecha } from '../../lib/formato'
-import { estadoEconomicoLlano, sinReferencias } from '../../lib/lenguaje'
+import { estadoEconomicoLlano, sinReferencias, esAnalizable, limpiarProsa } from '../../lib/lenguaje'
 import type { Informe } from '../../lib/contrato'
 import { EmptyState } from '../../ui/EmptyState'
 
@@ -22,7 +22,7 @@ function lecturaDe(a: Informe) {
   const n = a.niveles
   const cap = (t: string) => (t ? t.charAt(0).toUpperCase() + t.slice(1) : '')
   return [n.fundamentales?.esencial?.texto, n.varas?.esencial?.texto, n.riesgo?.esencial?.texto, n.onchain?.esencial?.texto, n.microestructura?.esencial?.texto]
-    .filter(Boolean).map((t) => cap(sinReferencias(t!))).map((t) => (t.endsWith('.') ? t : t + '.'))
+    .map((t) => limpiarProsa(t)).filter(Boolean).map((t) => cap(sinReferencias(t))).map((t) => (t.endsWith('.') ? t : t + '.'))
 }
 
 /** Semana ISO (lunes) a la que pertenece una fecha. */
@@ -56,10 +56,6 @@ function PiezaDiaria({ a }: { a: Informe }) {
       </div>
       <aside className="p-diario__aside">
         <Cifras inf={a} card max={4} />
-        <div className="p-diario__motivo">
-          <span className="mono">Qué le falta para ser gema</span>
-          <p>{sinReferencias(a.motivo_sin_tesis || 'sin motivo declarado')}</p>
-        </div>
         <Advertencias items={f.advertencias} compacta />
       </aside>
     </article>
@@ -71,15 +67,18 @@ export function Analisis() {
   return (
     <Cargando st={st}>
       {(rows) => {
-        const orden = [...rows].sort((a, b) => String(b.fecha_publicacion).localeCompare(String(a.fecha_publicacion)))
+        // Sólo lo que tiene algo que medir. Una moneda sin ingresos ni capital depositado no
+        // da un análisis que valga la pena leer, y publicarla resta.
+        const analizables = rows.filter(esAnalizable)
+        const orden = [...analizables].sort((a, b) => String(b.fecha_publicacion).localeCompare(String(a.fecha_publicacion)))
         const ultimo = orden[0]
         const semanas = [...new Set(orden.map((a) => lunesDe(a.fecha_publicacion)))]
         return (
           <>
             <Cabecera
-              eyebrow={<>Análisis diario · {rows.length} {rows.length === 1 ? 'pieza' : 'piezas'}</>}
+              eyebrow={<>Análisis diario · {orden.length} {orden.length === 1 ? 'pieza' : 'piezas'}</>}
               titulo={<>Una moneda por día, con su lectura.</>}
-              lead="Cada día analizamos una moneda a fondo. Esto es lo que encontramos: qué es, cómo factura, qué mueve el precio y qué le falta para ser gema."
+              lead="Cada día tomamos una moneda y la analizamos a fondo: qué es, cómo factura, qué mueve su precio y qué tendría que pasar para que cambie la historia."
             />
             <div className="shell p-diario">
               {!ultimo && <div className="p-vacio"><EmptyState kind="vacio" title="Todavía no hay análisis publicados." /></div>}

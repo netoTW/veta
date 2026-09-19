@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import type { Informe } from '../lib/contrato'
 import { dias, fecha, mult, pct, precio, usd } from '../lib/formato'
-import { estadoEconomicoLlano, sinReferencias, traducirFactor, TIER_LLANO } from '../lib/lenguaje'
+import { estadoEconomicoLlano, sinReferencias, traducirFactor, TIER_LLANO, limpiarProsa } from '../lib/lenguaje'
 import { contradiccionesDelRegistro } from '../lib/contradicciones'
 
 /* ============================================================================
@@ -90,13 +90,14 @@ export function tesisCompuesta(inf: Informe): string {
   const varas = n.varas?.esencial?.texto || ''
   const esc = (n.escenarios?.esencial?.texto || '').split(';')[0]
   const cap = (t: string) => (t ? t.charAt(0).toUpperCase() + t.slice(1) : '')
-  return [fund, cap(varas), cap(esc)].filter(Boolean).map((t) => sinReferencias(t)).map((t) => (t.endsWith('.') ? t : t + '.')).join(' ')
+  return [fund, cap(varas), cap(esc)].map((t) => limpiarProsa(sinReferencias(t))).filter(Boolean).map((t) => (t.endsWith('.') ? t : t + '.')).join(' ')
 }
 
-/** ¿La prosa del Redactor sirve para el cliente? No, si contradice al motor o habla del proceso. */
+/** ¿La prosa escrita sirve para el cliente? No, si contradice a los números o habla del proceso. */
 export const prosaSirve = (inf: Informe, campo: string) => contradiccionesDelRegistro(inf).every((c) => c.campo !== campo)
 
 /** La tesis (o el motivo), siempre con la misma tipografía, venga de donde venga. */
 export function Prosa({ inf, campo, texto, className }: { inf: Informe; campo: string; texto: string; className?: string }) {
-  return <p className={className}>{prosaSirve(inf, campo) ? sinReferencias(texto) : tesisCompuesta(inf)}</p>
+  const t = prosaSirve(inf, campo) ? limpiarProsa(sinReferencias(texto)) : ''
+  return <p className={className}>{t || tesisCompuesta(inf)}</p>
 }

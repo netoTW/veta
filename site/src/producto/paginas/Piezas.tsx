@@ -78,7 +78,7 @@ export function Piezas() {
 
       <Pieza id="vacios" titulo="estados vacíos · vacío / sin datos / error">
         <div className="lab__grid3">
-          <EmptyState kind="vacio" title="Todavía no hay tesis en seguimiento." detail="Cuando se publique una gema, aparece acá con su condición de invalidación." />
+          <EmptyState kind="vacio" title="Todavía no hay tesis en seguimiento." detail="Cuando se publique una gema, aparece aquí con su condición de invalidación." />
           <EmptyState kind="sin-datos" title="Buscamos y no encontramos veta." detail="Sin comparables no hay magnitud, y una magnitud sin respaldo no se publica." />
           <EmptyState kind="error" title="No se pudieron cargar los datos." detail="404 /datos/gemas.json" />
         </div>

@@ -221,6 +221,18 @@ secciones, `varas` (las dos, lado a lado), `escenarios`, `asimetria`,
     CLI de los agentes, P8). El botón de la pestaña lo muestra tal cual y el pedido sigue en
     cola intacto.
 
+39. **No hay chequeo de analizabilidad exportado.** La web no puede saber por contrato si una
+    moneda da para un análisis que valga la pena leer. Mientras tanto aplica una regla propia
+    (`esAnalizable` en `src/lib/lenguaje.ts`): se publica en Análisis sólo si hay ingresos del
+    protocolo o capital depositado. Con eso, de 15 análisis quedaron 3. Hace falta que el motor
+    exporte su propio veredicto por informe.
+40. **La prosa del informe trae lenguaje de taller.** Los textos de `ficha_esencial`,
+    `niveles.*.esencial` y las advertencias mezclan lectura con control interno: «sólo 1 pasan
+    el criterio y el mínimo es 3», «Quedaron fuera: 15…», «el Escéptico dictaminó», «no se pudo
+    medir». La web los filtra frase por frase (`limpiarProsa`), lo que a veces deja el bloque
+    corto o vacío. Hace falta que el motor separe **texto para el cliente** de **nota interna**,
+    o que emita los dos.
+
 ## Resuelto en el Sprint 6
 
 | hueco | campo nuevo | cómo lo muestra la web |

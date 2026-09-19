@@ -10,10 +10,10 @@ import { MarcadorDeGema, PrediccionGema } from '../marcador'
 import { useEffect, useState } from 'react'
 import { puede, useRol } from '../../lib/acceso'
 import { fecha, fechaHora, mult, num, pct, precio, usd, conUnidad, TIPO_ESCENARIO, DIRECCION_LABEL, CAMPO_LABEL, dias } from '../../lib/formato'
-import type { Advertencia, Escenario, Informe, Invalidacion, Objecion, VaraRevenue } from '../../lib/contrato'
+import type { Advertencia, Escenario, Informe, Invalidacion, VaraRevenue } from '../../lib/contrato'
 import { EmptyState } from '../../ui/EmptyState'
 import { Cifras, Prosa, RiesgoLlano } from '../cifras'
-import { estadoEconomicoLlano } from '../../lib/lenguaje'
+import { estadoEconomicoLlano, tieneCriterioInterno, limpiarProsa } from '../../lib/lenguaje'
 
 /* ============================================================================
    Informe — el detalle de una gema (o de un análisis sin tesis).
@@ -92,8 +92,8 @@ function VaraRevenueBloque({ v, esAnalisis }: { v: VaraRevenue & { no_disponible
     return (
       <div className="p-vara">
         <div className="p-vara__h"><h3>Por revenue</h3><span className="mono">valuación relativa</span></div>
-        <Ausente motivo={v.no_disponible_motivo ?? 'sin valuación relativa disponible'} />
-        {esAnalisis && <p className="p-nota">Sin comparables no hay magnitud, y una magnitud sin respaldo no se publica.</p>}
+        <Ausente motivo={tieneCriterioInterno(v.no_disponible_motivo) ? 'No hay protocolos equivalentes con los que comparar esta moneda.' : (v.no_disponible_motivo ?? 'No hay con qué comparar esta moneda.')} />
+        {esAnalisis && <p className="p-nota">Sin comparables no publicamos una magnitud: preferimos no decirlo a decirlo sin respaldo.</p>}
       </div>
     )
   }
@@ -105,11 +105,6 @@ function VaraRevenueBloque({ v, esAnalisis }: { v: VaraRevenue & { no_disponible
         <Dato k="mediana de pares" v={num(v.mediana, 3)} sub={<>p25 {num(v.p25, 3)} · p75 {num(v.p75, 3)}</>} />
         <Dato k="brecha" v={v.hay_brecha ? `${mult(v.rango_min)} – ${mult(v.rango_max)}` : 'no hay'} tono={v.hay_brecha ? 'pos' : 'mudo'} sub={v.hay_brecha ? 'lo que implicaría cerrar la brecha' : 'cotiza en línea con sus pares'} />
       </div>
-      {v.objetada_por_esceptico && (
-        <ul style={{ listStyle: 'none', padding: 0 }}>
-          <Adv>Brecha objetada por el Escéptico: {v.objecion_citada}</Adv>
-        </ul>
-      )}
       {nivel === 'avanzado' && (
         <div className="p-avanzado">
           <div className="p-tabla-wrap">
@@ -133,7 +128,6 @@ function VaraRevenueBloque({ v, esAnalisis }: { v: VaraRevenue & { no_disponible
               {v.excluidos.map((e) => <div key={e.simbolo} style={{ display: 'contents' }}><dt>excluido {e.simbolo}</dt><dd>{e.motivo} <span className="mono" style={{ color: 'var(--ceniza-2)' }}>({e.regla})</span></dd></div>)}
             </dl>
           )}
-          <p className="p-nota">Criterio: {v.criterio}</p>
           <FuenteChip fuente={v.fuente} />
         </div>
       )}
@@ -170,28 +164,6 @@ function EscenarioFila({ e }: { e: Escenario }) {
     </div>
   )
 }
-
-function ObjecionFila({ o }: { o: Objecion }) {
-  const { nivel } = useNivel()
-  const urls = o.fuente.split('|').map((s) => s.trim()).filter((s) => /^https?:/.test(s))
-  return (
-    <div className="p-obj">
-      <span className={`p-obj__cambia p-obj__cambia--${o.que_conclusion_cambia}`}>cambia<br />{o.que_conclusion_cambia}</span>
-      <div className="p-obj__b">
-        <p className="p-obj__t">{o.objecion}</p>
-        {nivel === 'avanzado' && (
-          <>
-            <p className="p-obj__ev"><span className="mono">Evidencia</span>{o.evidencia}</p>
-            <p className="p-obj__ev"><span className="mono">Cambio propuesto</span>{o.cambio_propuesto}</p>
-            {urls.length > 0 && <p className="p-obj__fuente">{urls.map((u) => <a key={u} href={u} target="_blank" rel="noreferrer">{u}</a>).reduce<React.ReactNode[]>((acc, x, i) => (i ? [...acc, ' · ', x] : [x]), [])}</p>}
-            {!urls.length && <p className="p-obj__ev"><span className="mono">Fuente</span>{o.fuente}</p>}
-          </>
-        )}
-      </div>
-    </div>
-  )
-}
-
 
 /* ---------- el informe ---------- */
 /** ¿Pantalla angosta? Los charts tienen versión móvil propia, no la misma apretada. */
@@ -274,7 +246,7 @@ export function Cuerpo({ inf, esAnalisis }: { inf: Informe; esAnalisis: boolean 
         )}
 
         {/* ------------ las dos varas ------------ */}
-        <Seccion id="varas" titulo="Las dos varas" calidad={cal['3_estructura_mercado']} esencial={n.varas.esencial.texto} advertencias={n.varas.esencial.advertencias}>
+        <Seccion id="varas" titulo="Las dos varas" calidad={cal['3_estructura_mercado']} esencial={limpiarProsa(n.varas.esencial.texto)} advertencias={n.varas.esencial.advertencias}>
           {v && v.precio.serie.length > 1 && <PrecioMaximos v={v} fraccion={rf?.fraccion_del_maximo} movil={movil} />}
           <div className="p-varas" style={{ marginTop: 18 }}>
             <VaraRevenueBloque v={rv} esAnalisis={esAnalisis} />
@@ -304,7 +276,7 @@ export function Cuerpo({ inf, esAnalisis }: { inf: Informe; esAnalisis: boolean 
         </Seccion>
 
         {/* ------------ escenarios ------------ */}
-        <Seccion id="escenarios" titulo="Escenarios" esencial={n.escenarios.esencial.texto} advertencias={n.escenarios.esencial.advertencias}>
+        <Seccion id="escenarios" titulo="Escenarios" esencial={limpiarProsa(n.escenarios.esencial.texto)} advertencias={n.escenarios.esencial.advertencias}>
           {n.escenarios.disponible ? (
             <>
               <div style={{ marginTop: 18 }}><Escala rangos={ranges} /></div>
@@ -320,7 +292,7 @@ export function Cuerpo({ inf, esAnalisis }: { inf: Informe; esAnalisis: boolean 
         </Seccion>
 
         {/* ------------ asimetría ------------ */}
-        <Seccion id="asimetria" titulo="Asimetría" esencial={n.asimetria.esencial.texto} advertencias={n.asimetria.esencial.advertencias}>
+        <Seccion id="asimetria" titulo="Asimetría" esencial={limpiarProsa(n.asimetria.esencial.texto)} advertencias={n.asimetria.esencial.advertencias}>
           {n.asimetria.disponible ? (
             <>
               <div className="p-datos" style={{ marginTop: 18 }}>
@@ -339,7 +311,7 @@ export function Cuerpo({ inf, esAnalisis }: { inf: Informe; esAnalisis: boolean 
         </Seccion>
 
         {/* ------------ riesgo de cola ------------ */}
-        <Seccion id="riesgo" titulo="Riesgo de cola" calidad={cal['4_riesgo_cola']} esencial={n.riesgo.esencial.texto} advertencias={n.riesgo.esencial.advertencias}>
+        <Seccion id="riesgo" titulo="Riesgo de cola" calidad={cal['4_riesgo_cola']} esencial={limpiarProsa(n.riesgo.esencial.texto)} advertencias={n.riesgo.esencial.advertencias}>
           <Avanzado>
             <div className="p-varas">
               <div className="p-vara">
@@ -373,7 +345,7 @@ export function Cuerpo({ inf, esAnalisis }: { inf: Informe; esAnalisis: boolean 
         </Seccion>
 
         {/* ------------ microestructura ------------ */}
-        <Seccion id="micro" titulo="Microestructura" esencial={n.microestructura.esencial.texto} advertencias={n.microestructura.esencial.advertencias}>
+        <Seccion id="micro" titulo="Microestructura" esencial={limpiarProsa(n.microestructura.esencial.texto)} advertencias={n.microestructura.esencial.advertencias}>
           {v && (v.liquidacion_proyectada.disponible ? <Heatmap liq={v.liquidacion_proyectada} movil={movil} /> : <HeatmapAusente liq={v.liquidacion_proyectada} />)}
           {n.microestructura.disponible ? (
             <Avanzado>
@@ -402,12 +374,12 @@ export function Cuerpo({ inf, esAnalisis }: { inf: Informe; esAnalisis: boolean 
         </Seccion>
 
         {/* ------------ on-chain ------------ */}
-        <Seccion id="onchain" titulo="On-chain" calidad={cal['6_onchain']} esencial={n.onchain.esencial.texto} advertencias={n.onchain.esencial.advertencias}>
+        <Seccion id="onchain" titulo="On-chain" calidad={cal['6_onchain']} esencial={limpiarProsa(n.onchain.esencial.texto)} advertencias={n.onchain.esencial.advertencias}>
           {v && <Concentracion v={v} top10Neto={inf.onchain?.concentracion_top10_neta ?? null} />}
           <Avanzado>
             <div className="p-datos">
               <Dato k="top-10 neto" v={pct(inf.onchain.concentracion_top10_neta)} sub={inf.onchain.cota_superior ? 'cota superior' : undefined} />
-              <Dato k="top-50" v={inf.onchain.concentracion_top50 === null ? 'no calculable' : pct(inf.onchain.concentracion_top50)} tono="mudo" />
+              {inf.onchain.concentracion_top50 !== null && <Dato k="top-50" v={pct(inf.onchain.concentracion_top50)} tono="mudo" />}
               <Dato k="HHI" v={num(inf.onchain.hhi, 0)} sub={inf.onchain.hhi_etiqueta} />
               <Dato k="entidades etiquetadas" v={`${inf.onchain.entidades_etiquetadas.n_etiquetadas} de ${inf.onchain.entidades_etiquetadas.n_etiquetadas + inf.onchain.entidades_etiquetadas.n_sin_etiquetar}`} sub={Object.entries(inf.onchain.entidades_etiquetadas.por_tipo).map(([k, v]) => `${k} ${v}`).join(' · ')} />
               <Dato k="supply de referencia" v={num(inf.onchain.supply_referencia, 0)} tono="mudo" />
@@ -427,7 +399,7 @@ export function Cuerpo({ inf, esAnalisis }: { inf: Informe; esAnalisis: boolean 
         </Seccion>
 
         {/* ------------ fundamentales ------------ */}
-        <Seccion id="fundamentales" titulo="Fundamentales" calidad={cal['5_fundamentales']} esencial={n.fundamentales.esencial.texto} advertencias={n.fundamentales.esencial.advertencias}>
+        <Seccion id="fundamentales" titulo="Fundamentales" calidad={cal['5_fundamentales']} esencial={limpiarProsa(n.fundamentales.esencial.texto)} advertencias={n.fundamentales.esencial.advertencias}>
           {v && <><RevenueDiario v={v} total30d={inf.fundamentales?.revenue_protocolo_30d} movil={movil} /><TvlComparado v={v} /></>}
           <div className="p-datos" style={{ marginTop: 18 }}>
             <Dato k="puntaje" v={`${inf.fundamentales.puntaje_total} / 40`} tono="oro" />
@@ -454,17 +426,8 @@ export function Cuerpo({ inf, esAnalisis }: { inf: Informe; esAnalisis: boolean 
           </Avanzado>
         </Seccion>
 
-        {/* ------------ escéptico ------------ */}
-        <Seccion id="esceptico" titulo="Objeciones del Escéptico">
-          <p className="p-esencial">{inf.esceptico.objeciones.length} objeciones · {inf.esceptico.objeciones.filter((o) => o.que_conclusion_cambia === 'tier').length} cambiarían el tier · {inf.esceptico.objeciones.filter((o) => o.que_conclusion_cambia === 'tesis').length} la tesis{inf.esceptico.rechaza ? ' · RECHAZA' : ''}</p>
-          <div style={{ marginTop: 16 }}>{inf.esceptico.objeciones.map((o, i) => <ObjecionFila key={i} o={o} />)}</div>
-          {inf.esceptico.veredicto_bull && (
-            <div style={{ marginTop: 20 }}>
-              <span className="mono" style={{ color: 'var(--ceniza-2)', display: 'block', marginBottom: 8 }}>Veredicto sobre el escenario alcista · comparables {inf.esceptico.comparables_son_comparables ? 'son comparables' : 'NO son comparables'}</span>
-              <blockquote className="p-cita">{inf.esceptico.veredicto_bull}</blockquote>
-            </div>
-          )}
-        </Seccion>
+        {/* El detalle del control de calidad interno no va a vista de cliente: su
+            redacción es para la mesa de revisión. Se lee en /admin/bandeja. */}
 
         {/* ------------ benchmark ------------ */}
         {inf.benchmark_al_publicar && (
@@ -474,9 +437,7 @@ export function Cuerpo({ inf, esAnalisis }: { inf: Informe; esAnalisis: boolean 
             <div className="p-bench" style={{ marginTop: 16 }}>
               <div className="p-bench__b">
                 <span className="mono">B1 · canasta del universo</span>
-                {inf.benchmark_al_publicar.b1_n > 0
-                  ? <span className="p-bench__v num">{num(inf.benchmark_al_publicar.b1_n)} monedas</span>
-                  : <span className="p-bench__v is-nomedible">No medible</span>}
+                <span className="p-bench__v num">{num(inf.benchmark_al_publicar.b1_n)} monedas</span>
                 <p className="p-bench__why">{inf.benchmark_al_publicar.b1_nota}</p>
               </div>
               <div className="p-bench__b"><span className="mono">B2 · regla técnica</span><span className="p-bench__v num">{inf.benchmark_al_publicar.b2_parametros.rapida_dias} / {inf.benchmark_al_publicar.b2_parametros.lenta_dias} días</span><p className="p-bench__why">precio de la gema al publicar: {precio(inf.benchmark_al_publicar.precio_gema_al_publicar)}</p></div>

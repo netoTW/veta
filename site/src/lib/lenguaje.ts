@@ -57,3 +57,54 @@ export function microLlano(lectura?: string | null): string {
 
 /** "1/11" → "a 1/11 de su máximo histórico". */
 export const fraccionLlana = (f: string) => (f ? `a ${f} de su máximo histórico` : '')
+
+/** Frases de control interno que no pueden llegar al cliente: criterios, mínimos, conteos
+    de comparables. Si un texto del informe las trae, no se muestra. */
+const CRITERIO_INTERNO = new RegExp([
+  // criterios y mínimos del método
+  'pasan el criterio', 'el m\u00ednimo', 'm\u00ednimo \\d', 'comparables cumplen', 'criterio de corte',
+  // nombres del taller
+  'esc\u00e9ptico', 'verificador', 'redactor', 'el motor',
+  'sin comparables v\u00e1lidos', 'umbral', 'observable', 'no se usa para el tier',
+  // listas de descarte: trabajo interno, no lectura
+  'quedaron fuera', 'banda de tama\u00f1o', 'una esquina de lo que factura', 'top-\\d+ bruto',
+  'se descontaron \\d+ posiciones', 'supply total',
+  // lo que no hay no se muestra
+  'no se pudo medir', 'no se pudo calcular', 'no se pudieron reconstruir', 'no se pudo reconstruir', 'la serie cubre \\d+ semanas',
+  'dato ausente', 'cuenta como ausente', 'no cuenta a favor', 'sin dato ', 'no hay dato', 'no es calculable',
+  'no calculable', 'sin medici\u00f3n', 'no est\u00e1 calibrada',
+].join('|'), 'i')
+export const tieneCriterioInterno = (t?: string | null) => !!t && CRITERIO_INTERNO.test(t)
+
+/** Quita de un texto del informe las frases escritas para control interno: criterios, mínimos,
+    listas de descartes, conteos de comparables. Corta por punto y por " · ", que es como el
+    informe separa ideas. Si no queda nada legible, devuelve cadena vacía y no se muestra. */
+export function limpiarProsa(t?: string | null): string {
+  if (!t) return ''
+  const trozos = t.split(/(?<=\.)\s+|\s+·\s+/)
+  const buenos = trozos.filter((x) => x.trim() && !tieneCriterioInterno(x))
+  const out = buenos.join(' ').replace(/\s{2,}/g, ' ').trim()
+  return /[a-záéíóúñ]/i.test(out) ? out : ''
+}
+
+/** Mientras el motor no exporte su propio chequeo, una moneda es analizable si hay algo que
+    medir: ingresos del protocolo o capital depositado. Sin ninguno de los dos, el informe no
+    puede decir nada cuantitativo y no se publica en Análisis. (Hueco 39 del contrato.) */
+export function esAnalizable(r: { fundamentales?: { revenue_protocolo?: number | null; tvl?: number | null } | null }): boolean {
+  const f = r.fundamentales
+  if (!f) return false
+  return (typeof f.revenue_protocolo === 'number' && f.revenue_protocolo > 0)
+      || (typeof f.tvl === 'number' && f.tvl > 0)
+}
+
+/** Palabras del taller que no van a vista de cliente, cambiadas por las de todos los días.
+    Se aplica sobre texto que viene del informe, después de quitar las referencias. */
+export function llano(t?: string | null): string {
+  if (!t) return ''
+  return sinReferencias(t)
+    .replace(/\bumbrales\b/gi, 'límites').replace(/\bumbral\b/gi, 'límite')
+    .replace(/\bobservables\b/gi, 'señales').replace(/\bobservable\b/gi, 'señal')
+    .replace(/\bcorrida\b/gi, 'pasada').replace(/\bscanner\b/gi, 'rastreo')
+    .replace(/\s*§\s*[\d.]+/g, '')
+    .replace(/\s{2,}/g, ' ').trim()
+}

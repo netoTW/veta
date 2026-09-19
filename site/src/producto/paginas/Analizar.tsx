@@ -19,7 +19,7 @@ import {
    Analiza tu moneda.
 
    1. Buscás una moneda. 2. Ves la lectura estructural, gratis, al instante.
-   3. Recién ahí decidís si gastar un análisis del cupo. 4. La espera es un
+   3. Sólo entonces decides si gastar un análisis del cupo. 4. La espera es un
    momento: la roca refleja el avance real. 5. El resultado es tuyo; la mesa
    decide después si vale publicarlo. Nunca dice "es gema".
    ========================================================================== */
@@ -74,8 +74,8 @@ export function Analizar() {
     <>
       <Cabecera
         eyebrow="Analiza tu moneda"
-        titulo={<>Primero la lectura, <em>gratis</em>. Después decidís.</>}
-        lead="Escribí una moneda y en un segundo tenés la lectura estructural: si la mueve demanda real o apalancamiento, cuánto cae en un día malo, quién la tiene, si el token cobra y si se puede salir. Sin tesis ni veredicto. El análisis profundo, el que sí escribe una tesis y la ataca, usa un análisis de tu cupo."
+        titulo={<>Primero la lectura, <em>gratis</em>. Después decides.</>}
+        lead="Escribe una moneda y en un segundo tienes la lectura estructural: si la mueve demanda real o apalancamiento, cuánto cae en un día malo, quién la tiene, si el token cobra y si se puede salir. Sin tesis ni veredicto. El análisis profundo, el que sí escribe una tesis y la ataca, usa un análisis de tu cupo."
         acciones={rol !== 'visitante' ? <CupoChip cupo={cupo} /> : undefined}
       />
       <div className="shell an">
@@ -188,11 +188,11 @@ export function AnalizarSolicitud() {
                 <b>{s.enviada ? `Tu pedido está en la cola${s.posicion_cola ? `, en el puesto ${s.posicion_cola}` : ''}.` : 'Tu pedido espera por el tope de gasto de este mes.'}</b>{' '}
                 {s.enviada
                   ? 'Los análisis profundos los lanza el equipo a mano, uno por uno, porque cada uno gasta dinero real. No hay un tiempo garantizado: puede ser en minutos o al día siguiente.'
-                  : 'Arranca solo en cuanto se libere margen; no tenés que hacer nada.'}
+                  : 'Arranca solo en cuanto se libere margen; no tienes que hacer nada.'}
               </Nota>
               <p className="an-cola__que">{llano(s.detalle ?? '')}</p>
               <ul className="an-cola__lista">
-                <li>Cuando arranque vas a ver acá las etapas, y en la barra el avance.</li>
+                <li>Cuando arranque verás aquí las etapas, y en la barra el avance.</li>
                 <li>Te avisamos al terminar, también si te fuiste.</li>
                 <li>El cupo se descuenta sólo si el análisis termina y pasa la verificación.</li>
               </ul>
@@ -200,11 +200,11 @@ export function AnalizarSolicitud() {
           )}
           {(s.estado === 'en_curso' || s.estado === 'en_cola') && (
             <div className="an-espera__pie">
-              <p className="body-muted">Podés irte. Cuando termine te avisamos arriba, en la barra, y el resultado queda en <Link to="/analizar">tus análisis</Link>.</p>
+              <p className="body-muted">Puedes irte. Cuando termine te avisamos arriba, en la barra, y el resultado queda en <Link to="/analizar">tus análisis</Link>.</p>
               <BotonAviso />
             </div>
           )}
-          {s.estado === 'bloqueado' && <Nota tono="rojo">La verificación no dejó salir el informe{s.verificador?.motivo_bloqueo ? `: ${s.verificador.motivo_bloqueo}` : ''}. <b>No se descontó de tu cupo.</b></Nota>}
+          {s.estado === 'bloqueado' && <Nota tono="rojo">No pasó nuestro control de calidad{s.verificador?.motivo_bloqueo ? `: ${s.verificador.motivo_bloqueo}` : ''}. <b>No se descontó de tu cupo.</b></Nota>}
           {s.estado === 'fallido' && <Nota tono="rojo">{s.fallo?.texto ?? 'No se pudo terminar.'} <b>No se descontó de tu cupo.</b></Nota>}
           {s.estado === 'listo' && (
             <>

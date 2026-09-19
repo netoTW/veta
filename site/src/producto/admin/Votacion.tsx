@@ -56,7 +56,7 @@ export function VotacionAdmin() {
       <AdminCab
         eyebrow="Admin · Votación semanal"
         titulo={<>La <em>mesa</em> de la semana</>}
-        lead="La lista sale del ranking del scanner y sólo de ahí. Vos abrís la votación, mirás el recuento, la cerrás y decidís si se lanza el análisis. Lanzar cuesta dinero: nada se dispara solo."
+        lead="La lista sale del ranking del scanner y sólo de ahí. Tú abres la votación, miras el recuento, la cierras y decides si se lanza el análisis. Lanzar cuesta dinero: nada se dispara solo."
         mesa="tres"
         tiles={[
           { k: 'Votación', v: activa ? 'abierta' : 'ninguna', tono: activa ? 'esm' : 'mudo', sub: activa ? `semana ${activa.semana.slice(-2)} · cierra ${fecha(activa.cierra)}` : 'abrí una desde el ranking' },
@@ -192,7 +192,7 @@ function Crear({ ranking, onCreada }: { ranking: Ranking; onCreada: () => Promis
       <div className="a-vot__cab">
         <div>
           <span className="a-sec__k mono">Abrir la votación de la semana</span>
-          <h2 className="display a-vot__h2">Elegí de 4 a 5 del ranking</h2>
+          <h2 className="display a-vot__h2">Elige de 4 a 5 del ranking</h2>
           <p className="body-muted a-vot__lead">Corrida del {ranking.embudo.generado ? fechaHora(ranking.embudo.generado) : '—'}: {num(ranking.embudo.bajadas)} monedas → {num(ranking.embudo.con_disparador)} con señal. Las de arriba tienen más puntaje. No se aceptan propuestas fuera del ranking.</p>
         </div>
         <div className="a-vot__form">

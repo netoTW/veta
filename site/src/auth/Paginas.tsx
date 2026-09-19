@@ -126,11 +126,11 @@ export function Entrar() {
       escena={escena}
       eyebrow="VETA · Entrar"
       titulo={<>La piedra se abre <em>con la llave correcta.</em></>}
-      lead="Entrá a tu cuenta para leer las tesis, el seguimiento y la watchlist."
+      lead="Entra a tu cuenta para leer las tesis, el seguimiento y la watchlist."
       pie={<><span>¿Sin cuenta? <Link to="/registro">Crear una</Link></span><span><Link to="/recuperar">Olvidé mi contraseña</Link></span></>}
     >
       <form className="auth__form" onSubmit={enviar} noValidate>
-        {q.get('ok') === 'restablecida' && <p className="auth__ok mono">Contraseña nueva guardada. Entrá con ella.</p>}
+        {q.get('ok') === 'restablecida' && <p className="auth__ok mono">Contraseña nueva guardada. Entra con ella.</p>}
         <Campo id="email" label="Correo">
           <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} onFocus={() => escena.atenta(valido)} autoComplete="email" inputMode="email" required autoFocus />
         </Campo>
@@ -178,7 +178,7 @@ export function Registro() {
       eyebrow="VETA · Crear cuenta"
       titulo={<>Empezá por <em>la superficie.</em></>}
       lead="Una cuenta gratis muestra el titular y el tier de cada gema, y todos los análisis de monedas sin tesis. El plan se activa después."
-      pie={<><span>¿Ya tenés cuenta? <Link to="/entrar">Entrar</Link></span></>}
+      pie={<><span>¿Ya tienes cuenta? <Link to="/entrar">Entrar</Link></span></>}
     >
       <form className="auth__form" onSubmit={enviar} noValidate>
         <Campo id="nombre" label="Nombre">
@@ -234,7 +234,7 @@ export function Recuperar() {
       {hecho ? (
         <div className="auth__hecho">
           <p className="auth__ok mono">Si hay una cuenta con ese correo, el enlace ya está en camino.</p>
-          <p className="auth__ayuda">Vale una hora. Si no llega, revisá el correo no deseado o pedí otro.</p>
+          <p className="auth__ayuda">Vale una hora. Si no llega, revisa el correo no deseado o pide otro.</p>
           <button type="button" className="btn btn--ghost auth__btn" onClick={() => { setHecho(false); escena.reposo() }}>Pedir otro</button>
         </div>
       ) : (
@@ -258,7 +258,7 @@ export function Restablecer() {
   const token = q.get('token') ?? ''
   const [pass, setPass] = useState('')
   const [pass2, setPass2] = useState('')
-  const [msg, setMsg] = useState<string | null>(q.get('error') ? 'El enlace ya no sirve: pedí uno nuevo.' : null)
+  const [msg, setMsg] = useState<string | null>(q.get('error') ? 'El enlace ya no sirve: pide uno nuevo.' : null)
   const [ocupado, setOcupado] = useState(false)
   const valido = pass.length >= MIN_PASS && pass === pass2 && !!token
   useEffect(() => { if (escena.estado === 'atenta') escena.atenta(valido) }, [valido]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -279,8 +279,8 @@ export function Restablecer() {
     <Marco
       escena={escena}
       eyebrow="VETA · Nueva contraseña"
-      titulo={<>Elegí la <em>llave.</em></>}
-      lead={token ? 'Una contraseña nueva. Las sesiones abiertas se cierran.' : 'Este enlace no trae token. Pedí uno nuevo desde "Olvidé mi contraseña".'}
+      titulo={<>Elige la <em>llave.</em></>}
+      lead={token ? 'Una contraseña nueva. Las sesiones abiertas se cierran.' : 'Este enlace no trae token. Pide uno nuevo desde "Olvidé mi contraseña".'}
       pie={<><span><Link to="/recuperar">Pedir otro enlace</Link></span><span><Link to="/entrar">Entrar</Link></span></>}
     >
       <form className="auth__form" onSubmit={enviar} noValidate>

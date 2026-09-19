@@ -25,7 +25,7 @@ interface MiCuenta {
 const PLANES = [
   { k: 'gratis', rol: 'visitante' as const, t: 'Gratis', d: ['Titular y tier de cada gema', 'Análisis de monedas sin tesis', 'Ledger resumido', 'Análisis determinista instantáneo'] },
   { k: 'base', rol: 'base' as const, t: 'Base', d: ['Todo el informe: tesis, dos varas, escenarios, riesgo', 'Los dos niveles de lectura', 'Seguimiento diario', 'Watchlist y radar', 'Ledger detallado', '1–2 análisis profundos al mes'] },
-  { k: 'pro', rol: 'pro' as const, t: 'Pro', d: ['Todo lo del base', 'Acceso anticipado a gemas nuevas', 'Alertas de invalidación y gatillos', 'Exportación CSV/JSON', 'Solicitar monedas al scanner', 'Cupo mayor de análisis'] },
+  { k: 'pro', rol: 'pro' as const, t: 'Pro', d: ['Todo lo del base', 'Acceso anticipado a gemas nuevas', 'Alertas de invalidación y gatillos', 'Exportación CSV/JSON', 'Proponer monedas para analizar', 'Cupo mayor de análisis'] },
 ]
 
 export function Cuenta() {
@@ -60,7 +60,7 @@ export function Cuenta() {
 
   return (
     <>
-      <Cabecera eyebrow={<>Cuenta · {u.email}</>} titulo={<>Tu cuenta.</>} lead="Quién sos, qué plan tenés y cuánto cupo te queda. El plan lo activa VETA a mano por ahora." acciones={<button type="button" className="btn btn--ghost" onClick={async () => { await salir(); invalidarDatos(); nav('/entrar') }}>Salir</button>} />
+      <Cabecera eyebrow={<>Cuenta · {u.email}</>} titulo={<>Tu cuenta.</>} lead="Quién eres, qué plan tienes y cuánto cupo te queda. El plan lo activa VETA a mano por ahora." acciones={<button type="button" className="btn btn--ghost" onClick={async () => { await salir(); invalidarDatos(); nav('/entrar') }}>Salir</button>} />
       <div className="shell a-cuenta">
         <section className="p-card">
           <span className="mono a-sec__k">Identidad</span>
