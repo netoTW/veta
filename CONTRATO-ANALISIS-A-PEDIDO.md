@@ -328,3 +328,114 @@ devolvió el PEPE de Ethereum.
 lectura y, si no coinciden, lo dice en pantalla: «de las monedas que se llaman PEPE, la única
 con datos guardados es Pepe en Ethereum». No se hace pasar una por otra. Cuando el motor
 cierre este hueco, ese aviso se quita.
+
+---
+
+# 10. Noticias, agenda y tendencias  ·  la parte que le toca a la web
+
+Escrito contra `gem-pipeline/DISENO-FASES-3-5.md` (fase 4 del motor). El motor ya definió el
+agente, la verificación y la cadencia. Aquí va sólo lo que la web necesita para pintarlo, y los
+cinco puntos donde hay que ponerse de acuerdo antes de construir.
+
+Decisiones ya tomadas por Pablo (2026-09-19): la sección se llama **Noticias** y muestra lo que
+produce el motor. La **Agenda** va como bloque dentro de esa sección.
+
+## 10.1 Lo que la web va a pedir
+
+| Ruta | Cuándo | Para qué |
+|---|---|---|
+| `GET /noticias?dia=YYYY-MM-DD` | al abrir la sección | las piezas del día |
+| `GET /agenda?desde=&hasta=` | con la sección | el bloque de fechas |
+| `GET /tendencias` | con la sección | el bloque determinista |
+
+`dia` se interpreta en **UTC** y sin él devuelve el último día con piezas. Si un día no tiene
+nada, **200 con la lista vacía**, nunca 404: la web necesita distinguir «hoy no hubo» de «el
+motor no responde», y son dos pantallas distintas.
+
+## 10.2 Cinco cosas que hay que cerrar
+
+### 1. Despublicar lo escribe la web, no el motor
+
+El diseño dice que Pablo despublica desde el admin cambiando `publicada: false`. Eso obligaría a
+la web a escribir en el motor, y hoy la web **nunca** le escribe: para los informes, la decisión
+editorial vive en la tabla `publicacion` de la web y el motor ni se entera.
+
+**Propongo lo mismo aquí.** El motor publica y marca `publicada: true`; la web guarda sus propias
+filas de `publicacion` con `tipo: 'noticia'` y filtra al servir. Ventajas: despublicar funciona
+aunque el motor esté caído, queda registrado con autor y fecha como el resto, y el motor sigue
+siendo de sólo lectura para la web. **Si el motor prefiere su propio campo, hace falta un
+endpoint de escritura autenticado y decidir quién gana cuando los dos discrepan.**
+
+### 2. La agenda no puede filtrar informes sin aprobar
+
+El diseño dice que los eventos de moneda salen «de los informes en la bandeja o publicados».
+**Los de la bandeja no pueden salir a un cliente**: son informes que todavía no aprobó nadie, y
+enseñar sus catalizadores destapa qué estamos analizando antes de tiempo.
+
+La web puede filtrarlos ella misma, pero necesita el identificador exacto: que `origen` traiga
+el **`informe_id` tal cual** lo usa la web (`RAY-20260912-012647`), no una ruta ni un texto. Con
+eso, la web cruza contra su tabla `publicacion` y muestra sólo lo aprobado.
+
+Y una fila de agenda necesita `id` propio y estable, para que `agenda_ids[]` de cada noticia
+enganche con ella.
+
+### 3. Quién ve las tendencias
+
+Pablo decidió: **el agregado, para todos; la lista con nombres, sólo Pro.**
+
+Ojo con no mezclar dos cosas distintas:
+
+- **Tendencias de CoinGecko** (`/search/trending`): dato público. Se puede mostrar entero a
+  cualquiera, con nombres.
+- **El cruce con el rastreo** (volumen sobre su media, si tiene informe en la bandeja): eso es
+  nuestro embudo y es lo que se vela. Para quien no es Pro va en agregado y sin nombres.
+
+Por eso `GET /tendencias` tiene que separar los dos bloques en la respuesta, y marcar cuál es
+cuál. Si vienen mezclados en una sola lista, la web no puede aplicar la regla sin adivinar.
+
+### 4. El texto sale en español neutro con tuteo
+
+Las noticias se leen tal cual, sin que nadie las revise antes. Hoy el motor escribe en voseo:
+`/determinista` devuelve, literal, *«todavía no hay datos guardados de RAY… pedí uno profundo»*.
+La web lo corrige al mostrarlo, pero eso es un parche y con textos largos no alcanza.
+
+**Que el prompt del agente de noticias lo exija:** español neutro con tuteo, nunca voseo
+(*pedí, mirá, tenés, sos*), y primera letra en mayúscula. La lista negra que ya tiene el
+verificador es el sitio natural para comprobarlo.
+
+Al vocabulario prohibido que ya está en el diseño hay que sumarle el interno de siempre:
+*motor, Escéptico, Verificador, Redactor, criterio, umbral, observable, §, corrida, paquete,
+scanner*.
+
+### 5. Lo que no hay, no se muestra
+
+Si una pieza no trae `escenario_condicional` porque no hubo historial suficiente, que **no venga
+el campo**, en vez de venir vacío o con un texto de relleno. Lo mismo con `monedas` y con
+`cifras_verificadas`. La web no pinta huecos con nombre.
+
+## 10.3 Forma de `GET /tendencias` que la web puede pintar
+
+Lo que falta en el diseño. Propuesta:
+
+```json
+{ "calculado_en": "2026-09-19T12:35:00Z",
+  "publico": {
+    "monedas": [{"simbolo": "BTC", "nombre": "Bitcoin", "var_24h": 0.031, "var_7d": -0.048}],
+    "categorias": [{"nombre": "Restaking", "var_24h": 0.11}]
+  },
+  "rastreo": {
+    "agregado": {"n_monedas": 15, "por_volumen_anomalo": 15, "por_ingresos_sobre_capitalizacion": 3},
+    "monedas": [{"simbolo": "RAY", "vol_sobre_adv30": 3.9, "con_informe": true}]
+  } }
+```
+
+`publico` se muestra a todos. De `rastreo`, `agregado` se muestra a todos y `monedas` sólo a Pro.
+Servido así, la web aplica la regla sin decidir nada.
+
+## 10.4 Lo que la web construye cuando esto exista
+
+- **Sección Noticias**: las piezas del día, cada una con su fuente y su fecha a la vista.
+- **Bloque Agenda** dentro de la sección: lo que viene con fecha, y qué cambió en lo que ya
+  seguimos.
+- **Bloque Tendencias**: el público entero, el del rastreo según el plan.
+- **Admin**: despublicar una pieza, con el mismo registro de autor y fecha que los informes.
