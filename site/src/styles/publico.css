@@ -79,3 +79,84 @@
   .planes__cab > span { display: none; }
   .planes__col { padding: 12px 10px; border-color: var(--hairline-2); }
 }
+
+/* ============================================================================
+   Portada. Bloques anchos, una sola columna de lectura, y la caja para probar
+   como pieza central. El ritmo lo marcan las líneas finas, no las cajas.
+   ========================================================================== */
+.pz { padding-block: clamp(64px, 9vw, 120px); border-top: 1px solid var(--hairline-2); }
+.pz__col { width: 100%; max-width: 940px; margin-inline: auto; padding-inline: var(--gutter); display: flex; flex-direction: column; align-items: start; gap: 14px; }
+.pz__t { margin: 6px 0 0; font-size: clamp(1.6rem, 4.4vw, 2.6rem); line-height: 1.12; letter-spacing: -0.018em; color: var(--hueso); font-weight: 300; text-wrap: balance; max-width: 22ch; }
+.pz--promesa .pz__t, .pz--probar .pz__t, .pz--planes .pz__t { max-width: 26ch; }
+.pz__lead { margin: 4px 0 0; max-width: 60ch; color: var(--ceniza); font-size: 1.02rem; line-height: 1.65; text-wrap: pretty; }
+.pz__acciones { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; }
+
+/* ---------- la caja de ticker ---------- */
+.probar { width: 100%; max-width: 660px; margin-top: 16px; }
+.probar__form { display: flex; flex-wrap: wrap; gap: 10px; }
+.probar__input { flex: 1 1 260px; min-width: 0; background: var(--roca-2); border: 1px solid var(--hairline); color: var(--hueso); padding: 16px 18px; font-size: 1.05rem; letter-spacing: 0.08em; text-transform: uppercase; }
+.probar__input::placeholder { color: var(--ceniza-2); text-transform: none; letter-spacing: 0.04em; }
+.probar__input:focus-visible { outline: none; border-color: var(--oro); }
+.probar__btn { flex: 0 0 auto; }
+.probar__pie { margin: 10px 0 0; color: var(--ceniza-2); font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; }
+
+.probar__salida { margin-top: 22px; padding: 18px 20px; background: var(--roca-2); border: 1px solid var(--hairline-2); border-left: 2px solid var(--oro); display: flex; flex-direction: column; gap: 12px; align-items: start; }
+.probar__dice { margin: 0; color: var(--hueso); font-size: 0.98rem; line-height: 1.55; }
+.probar__dice b { color: var(--oro-luz); font-weight: 500; }
+
+.probar__cands { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.probar__cand { display: inline-flex; align-items: baseline; gap: 8px; padding: 9px 13px; background: var(--roca-3); border: 1px solid var(--hairline-2); color: var(--ceniza); font-family: inherit; font-size: 0.84rem; cursor: pointer; transition: border-color 0.3s var(--ease); }
+.probar__cand:hover { border-color: var(--oro); }
+.probar__cand b { color: var(--hueso); font-size: 0.8rem; letter-spacing: 0.07em; }
+.probar__cand i { font-style: normal; color: var(--ceniza-2); font-size: 0.6rem; letter-spacing: 0.08em; text-transform: uppercase; }
+
+.probar__lect { border-left-color: var(--esmeralda); }
+.probar__cab { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; }
+.probar__sym { font-size: 1.5rem; color: var(--hueso); font-weight: 400; letter-spacing: 0.02em; }
+.probar__nom { color: var(--ceniza); font-size: 0.9rem; }
+.probar__precio { color: var(--oro-luz); font-size: 0.82rem; margin-left: auto; font-variant-numeric: tabular-nums; }
+.probar__chips { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 1px; background: var(--hairline-2); border: 1px solid var(--hairline-2); width: 100%; }
+.probar__chip { flex: 1 1 118px; }
+.probar__chip { background: var(--roca-0); padding: 11px 13px; display: flex; flex-direction: column; gap: 3px; border-top: 2px solid transparent; min-width: 0; }
+.probar__chip-k { color: var(--ceniza-2); font-size: 0.55rem; letter-spacing: 0.1em; text-transform: uppercase; }
+.probar__chip b { font-size: 0.86rem; font-weight: 400; color: var(--hueso); }
+.probar__chip.is-esm { border-top-color: var(--esmeralda); } .probar__chip.is-esm b { color: var(--esmeralda-luz); }
+.probar__chip.is-oro { border-top-color: var(--oro); } .probar__chip.is-oro b { color: var(--oro-luz); }
+.probar__chip.is-rojo { border-top-color: var(--rojo); } .probar__chip.is-rojo b { color: var(--rojo-luz); }
+.probar__chip.is-mudo { border-top-color: var(--hairline); } .probar__chip.is-mudo b { color: var(--ceniza-2); }
+.probar__chip.is-hueso b { color: var(--hueso); }
+.probar__acciones { display: flex; flex-wrap: wrap; gap: 10px; }
+.probar__aviso { margin: 0; color: var(--ceniza-2); font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase; }
+
+/* ---------- el informe recortado ---------- */
+.pz__gema { width: 100%; max-width: 660px; margin-top: 8px; padding: 18px 20px; background: var(--roca-2); border: 1px solid var(--hairline-2); border-left: 2px solid var(--oro); }
+.pz__gema header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; }
+.pz__gema-sym { color: var(--hueso); font-size: 0.92rem; letter-spacing: 0.08em; }
+.pz__gema-nom { color: var(--ceniza); font-size: 0.86rem; }
+.pz__gema-fecha { color: var(--ceniza-2); font-size: 0.6rem; letter-spacing: 0.08em; margin-left: auto; }
+.pz__gema-titular { margin: 10px 0 0; color: var(--hueso); font-size: 1.02rem; line-height: 1.55; text-wrap: pretty; }
+.pz__gema-velo { margin: 12px 0 0; padding-top: 12px; border-top: 1px solid var(--hairline-2); color: var(--ceniza-2); font-size: 0.58rem; letter-spacing: 0.12em; text-transform: uppercase; }
+
+/* ---------- los cinco pasos, en corto ---------- */
+.pz__pasos { list-style: none; margin: 8px 0 4px; padding: 0; display: flex; flex-wrap: wrap; gap: 1px; background: var(--hairline-2); border: 1px solid var(--hairline-2); width: 100%; }
+.pz__pasos li { flex: 1 1 165px; min-width: 0; background: var(--roca-2); padding: 16px 16px 18px; display: flex; flex-direction: column; gap: 5px; }
+.pz__paso-n { color: var(--oro); font-size: 0.62rem; letter-spacing: 0.14em; font-variant-numeric: tabular-nums; }
+.pz__pasos b { color: var(--hueso); font-weight: 400; font-size: 0.98rem; }
+.pz__paso-d { color: var(--ceniza); font-size: 0.84rem; line-height: 1.5; }
+
+@media (max-width: 640px) {
+  .probar__input { font-size: 1rem; }
+  .probar__form { flex-direction: column; }
+  .probar__btn { width: 100%; }
+}
+
+/* el ejemplo publicado: lo que se ve y lo que queda velado */
+.pz__gema-tier { font-size: 0.58rem; letter-spacing: 0.12em; text-transform: uppercase; }
+.pz__gema-tier.is-bajo { color: var(--esmeralda-luz); }
+.pz__gema-tier.is-medio { color: var(--oro-luz); }
+.pz__gema-tier.is-alto { color: var(--rojo-luz); }
+.pz__gema-velado { list-style: none; margin: 14px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.pz__gema-velado li { height: 8px; background: linear-gradient(to right, rgba(236,230,216,0.10), rgba(236,230,216,0.02)); }
+.pz__gema-velado li:nth-child(2) { width: 92%; }
+.pz__gema-velado li:nth-child(3) { width: 78%; }
+.pz__gema-velado li:nth-child(4) { width: 58%; }

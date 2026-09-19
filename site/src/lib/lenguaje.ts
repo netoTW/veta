@@ -189,3 +189,13 @@ export function revisarParaPublicar(texto: string): Reparo[] {
   }
   return out
 }
+
+/** Cada lectura del bloque determinista, con su palabra y su color. */
+export const LECTURA_LABEL: Record<string, { t: string; tono: 'esm' | 'oro' | 'rojo' | 'mudo' | 'hueso' }> = {
+  demanda_real: { t: 'Demanda real', tono: 'esm' }, apalancamiento: { t: 'Castillo de apalancamiento', tono: 'rojo' }, mixta: { t: 'Mixta', tono: 'oro' },
+  contenida: { t: 'Cola contenida', tono: 'esm' }, alta: { t: 'Cola alta', tono: 'oro' }, extrema: { t: 'Cola extrema', tono: 'rojo' },
+  dispersa: { t: 'Dispersa', tono: 'esm' }, concentrada: { t: 'Concentrada', tono: 'oro' }, muy_concentrada: { t: 'Muy concentrada', tono: 'rojo' },
+  captura_verificada: { t: 'El token cobra, verificado', tono: 'esm' }, captura_declarada: { t: 'Cobra, sin verificar', tono: 'oro' }, sin_captura: { t: 'No cobra', tono: 'rojo' },
+  profunda: { t: 'Profunda', tono: 'esm' }, suficiente: { t: 'Suficiente', tono: 'oro' }, fina: { t: 'Fina', tono: 'rojo' },
+  sin_dato: { t: 'Sin dato', tono: 'mudo' },
+}

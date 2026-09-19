@@ -1,7 +1,6 @@
 import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Outlet } from 'react-router-dom'
 import { Nav } from './components/Nav'
-import { Hero } from './components/Hero'
 import { Footer } from './components/Footer'
 import { useLenis, useReveals } from './lib/motion'
 import { ProveedorSesion } from './lib/sesion'
@@ -35,25 +34,11 @@ const Consumo = lazy(() => import('./producto/admin/Consumo').then((m) => ({ def
 const VotacionAdmin = lazy(() => import('./producto/admin/Votacion').then((m) => ({ default: m.VotacionAdmin })))
 /* La guía de estilo sale de la portada: queda en /sistema, sin enlace en la navegación. */
 const Sistema = lazy(() => import('./components/Sistema').then((m) => ({ default: m.Sistema })))
+const Portada = lazy(() => import('./publico/Portada').then((m) => ({ default: m.Portada })))
 const Metodologia = lazy(() => import('./publico/Metodologia').then((m) => ({ default: m.Metodologia })))
 const Precios = lazy(() => import('./publico/Precios').then((m) => ({ default: m.Precios })))
 const ContenidoAdmin = lazy(() => import('./producto/admin/Contenido').then((m) => ({ default: m.Contenido })))
 const Acciones = lazy(() => import('./producto/admin/Acciones').then((m) => ({ default: m.Acciones })))
-
-function Portada() {
-  useLenis()
-  useReveals()
-  return (
-    <>
-      <a className="skip-link" href="#top">Saltar al contenido</a>
-      <Nav />
-      <main>
-        <Hero />
-      </main>
-      <Footer />
-    </>
-  )
-}
 
 /* La guía de estilo, fuera de la portada. */
 function GuiaVisual() {
@@ -76,7 +61,7 @@ export default function App() {
     <BrowserRouter>
       <ProveedorSesion>
         <Routes>
-          <Route path="/" element={<Portada />} />
+          <Route path="/" element={<Suspense fallback={null}><Portada /></Suspense>} />
           <Route path="/metodologia" element={<Suspense fallback={null}><Metodologia /></Suspense>} />
           <Route path="/precios" element={<Suspense fallback={null}><Precios /></Suspense>} />
           {/* Referencia interna del sistema visual. Sin enlace en la navegación. */}

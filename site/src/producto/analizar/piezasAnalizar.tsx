@@ -4,7 +4,8 @@ import { AuthEscena, type EstadoEscena } from '../../auth/AuthEscena'
 import { controlInicial, type Control } from '../../three/HeroScene'
 import { Dato, Advertencias, PlanBadge, Puerta } from '../piezas'
 import { fecha, fechaHora, mult, num, precio, usd } from '../../lib/formato'
-import { llano } from '../../lib/lenguaje'
+import { llano, LECTURA_LABEL } from '../../lib/lenguaje'
+export { LECTURA_LABEL }
 export { llano }
 
 /** Texto del motor sin sus referencias internas: «· motor §4.1», «§8 S7», «(§3)». */
@@ -54,14 +55,6 @@ export const ETAPA_LABEL: Record<Etapa, { titulo: string; que: string }> = {
   esceptico: { titulo: 'Buscando los contraargumentos', que: 'se ataca la lectura antes de darla por buena' },
   redactando: { titulo: 'Redactando', que: 'tesis en una línea, escenarios, qué la invalidaría' },
   verificando: { titulo: 'Comprobando cada cifra', que: 'número por número contra su fuente; si no coincide, no sale' },
-}
-export const LECTURA_LABEL: Record<string, { t: string; tono: 'esm' | 'oro' | 'rojo' | 'mudo' | 'hueso' }> = {
-  demanda_real: { t: 'Demanda real', tono: 'esm' }, apalancamiento: { t: 'Castillo de apalancamiento', tono: 'rojo' }, mixta: { t: 'Mixta', tono: 'oro' },
-  contenida: { t: 'Cola contenida', tono: 'esm' }, alta: { t: 'Cola alta', tono: 'oro' }, extrema: { t: 'Cola extrema', tono: 'rojo' },
-  dispersa: { t: 'Dispersa', tono: 'esm' }, concentrada: { t: 'Concentrada', tono: 'oro' }, muy_concentrada: { t: 'Muy concentrada', tono: 'rojo' },
-  captura_verificada: { t: 'El token cobra, verificado', tono: 'esm' }, captura_declarada: { t: 'Cobra, sin verificar', tono: 'oro' }, sin_captura: { t: 'No cobra', tono: 'rojo' },
-  profunda: { t: 'Profunda', tono: 'esm' }, suficiente: { t: 'Suficiente', tono: 'oro' }, fina: { t: 'Fina', tono: 'rojo' },
-  sin_dato: { t: 'Sin dato', tono: 'mudo' },
 }
 export const BLOQUES: { k: keyof Pick<Lectura, 'demanda' | 'riesgo_cola' | 'concentracion' | 'tokenomics' | 'liquidez'>; titulo: string; pregunta: string }[] = [
   { k: 'demanda', titulo: 'Demanda', pregunta: '¿La mueve compra real o apalancamiento?' },
