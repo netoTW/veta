@@ -178,3 +178,74 @@
 .a-cons__cmd--chico { padding: 6px 10px; font-size: 0.66rem; }
 .a-cons__pedido { grid-template-columns: 28px minmax(180px, 1fr) minmax(200px, 1.2fr) 120px 40px; }
 .a-cons__pos { color: var(--ceniza-2); font-size: 0.7rem; }
+
+/* ============================================================================
+   Fase 2: qué se acepta, elegir entre monedas homónimas, y los dos "no".
+   Los dos "no" (no existe / no da para análisis) dicen siempre que no se gastó
+   nada: ése es el miedo real de quien escribe un ticker.
+   ========================================================================== */
+.an-formato { font-size: 0.72rem; line-height: 1.6; letter-spacing: 0.01em; max-width: 60ch; }
+.an-formato b { color: var(--hueso); font-weight: 500; }
+.an-formato .mono { color: var(--oro-luz); font-size: 0.68rem; letter-spacing: 0.06em; }
+
+/* ---------- elegir entre candidatas ---------- */
+.an-cand { display: flex; flex-direction: column; gap: 18px; padding: 26px 0 8px; animation: an-sube 0.5s var(--ease) both; }
+.an-cand__head { display: flex; flex-direction: column; gap: 8px; }
+.an-cand__k { color: var(--oro); font-size: 0.58rem; letter-spacing: 0.18em; text-transform: uppercase; }
+.an-cand__head h2 { margin: 0; font-size: clamp(1.4rem, 3vw, 2rem); color: var(--hueso); font-weight: 400; line-height: 1.15; }
+.an-cand__head h2 em { font-style: normal; color: var(--oro-luz); letter-spacing: 0.04em; }
+.an-cand__lead { margin: 0; color: var(--ceniza); font-size: 0.88rem; }
+.an-cand__lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1px; background: var(--hairline-2); border: 1px solid var(--hairline-2); }
+.an-cand__item { width: 100%; display: grid; grid-template-columns: 96px minmax(140px, 1.4fr) auto auto auto auto; align-items: center; gap: 14px; padding: 15px 18px; background: var(--roca-2); border: 0; border-left: 2px solid transparent; color: var(--ceniza); font-family: inherit; text-align: left; cursor: pointer; transition: background 0.3s var(--ease), border-color 0.3s var(--ease); }
+.an-cand__item:hover { background: var(--roca-3); border-left-color: var(--oro); }
+.an-cand__sim { color: var(--hueso); font-size: 0.92rem; letter-spacing: 0.08em; }
+.an-cand__nom { color: var(--ceniza); font-size: 0.88rem; }
+.an-cand__cadena, .an-cand__mcap, .an-cand__contrato { color: var(--ceniza-2); font-size: 0.66rem; letter-spacing: 0.04em; justify-self: end; }
+.an-cand__previo { font-style: normal; color: var(--esmeralda-luz); font-size: 0.55rem; letter-spacing: 0.1em; text-transform: uppercase; justify-self: end; }
+.an-cand__item.is-corta { opacity: 0.55; }
+.an-cand__item.is-corta:hover { border-left-color: var(--ceniza-2); }
+.an-cand__otra { align-self: start; }
+
+/* ---------- los dos "no" ---------- */
+.an-nada, .an-noanal { display: flex; flex-direction: column; align-items: start; gap: 12px; padding: 34px 0 14px; max-width: 64ch; animation: an-sube 0.5s var(--ease) both; }
+.an-nada h2, .an-noanal h2 { margin: 0; font-size: clamp(1.3rem, 2.8vw, 1.85rem); color: var(--hueso); font-weight: 400; line-height: 1.2; }
+.an-nada h2 em { font-style: normal; color: var(--oro-luz); letter-spacing: 0.04em; }
+.an-nada p, .an-noanal p { margin: 0; color: var(--ceniza); font-size: 0.95rem; line-height: 1.6; text-wrap: pretty; }
+.an-nada__marca { width: 34px; height: 1px; background: linear-gradient(to right, var(--oro), transparent); }
+.an-nada__gratis, .an-noanal__gratis { color: var(--esmeralda-luz); font-size: 0.6rem; letter-spacing: 0.12em; text-transform: uppercase; }
+.an-noanal__head { display: flex; align-items: baseline; gap: 10px; }
+.an-noanal__sim { color: var(--hueso); font-size: 0.86rem; letter-spacing: 0.08em; }
+.an-noanal__nom { color: var(--ceniza-2); font-size: 0.8rem; }
+@keyframes an-sube { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+@media (max-width: 720px) {
+  .an-cand__item { grid-template-columns: 76px 1fr; row-gap: 6px; }
+  .an-cand__item > :nth-child(n+3) { grid-column: 2; justify-self: start; }
+}
+
+/* ---------- mis análisis, en la cuenta ---------- */
+.a-mis__lista { list-style: none; margin: 0 0 10px; padding: 0; display: flex; flex-direction: column; gap: 1px; background: var(--hairline-2); border-top: 1px solid var(--hairline-2); border-bottom: 1px solid var(--hairline-2); }
+.a-mis__fila { display: grid; grid-template-columns: 84px minmax(100px, 1fr) auto auto 132px; align-items: center; gap: 12px; padding: 11px 4px; background: var(--roca-2); color: var(--ceniza); text-decoration: none; border-left: 2px solid transparent; transition: background 0.3s var(--ease), border-color 0.3s var(--ease); }
+.a-mis__fila:hover { background: var(--roca-3); border-left-color: var(--oro); }
+.a-mis__sim { color: var(--hueso); font-size: 0.82rem; letter-spacing: 0.08em; padding-left: 12px; }
+.a-mis__nom { font-size: 0.82rem; }
+.a-mis__estado, .a-mis__cupo, .a-mis__fecha { font-size: 0.62rem; letter-spacing: 0.08em; justify-self: end; }
+.a-mis__estado.is-esm { color: var(--esmeralda-luz); } .a-mis__estado.is-oro { color: var(--oro-luz); }
+.a-mis__estado.is-rojo { color: var(--rojo-luz); } .a-mis__estado.is-mudo { color: var(--ceniza-2); }
+.a-mis__cupo.is-mudo { color: var(--ceniza-2); } .a-mis__cupo.is-hueso { color: var(--ceniza); } .a-mis__cupo.is-esm { color: var(--esmeralda-luz); } .a-mis__fecha { color: var(--ceniza-2); padding-right: 12px; }
+@media (max-width: 720px) {
+  .a-mis__fila { grid-template-columns: 84px 1fr; row-gap: 4px; }
+  .a-mis__fila > :nth-child(n+3) { grid-column: 2; justify-self: start; padding-right: 0; }
+}
+
+/* ---------- el informe narrado: lo primero que se lee ---------- */
+.an-narra { display: flex; flex-direction: column; gap: 16px; padding: 38px 0 30px; max-width: 74ch; border-bottom: 1px solid var(--hairline-2); }
+.an-narra__k { color: var(--oro); font-size: 0.58rem; letter-spacing: 0.18em; text-transform: uppercase; }
+.an-narra__titular { margin: 0; font-size: clamp(1.5rem, 3.4vw, 2.3rem); line-height: 1.16; color: var(--hueso); font-weight: 400; text-wrap: balance; }
+.an-narra__cuerpo { display: flex; flex-direction: column; gap: 13px; }
+.an-narra__cuerpo p { margin: 0; color: var(--ceniza); font-size: 1rem; line-height: 1.65; text-wrap: pretty; }
+.an-narra__riesgos { margin-top: 6px; padding: 16px 20px; border: 1px solid var(--hairline-2); background: var(--roca-2); border-left: 2px solid var(--oro); }
+.an-narra__riesgos h3 { margin: 0 0 9px; font-size: 0.98rem; color: var(--hueso); font-weight: 400; }
+.an-narra__riesgos ul { margin: 0; padding-left: 17px; display: flex; flex-direction: column; gap: 7px; color: var(--ceniza); font-size: 0.92rem; line-height: 1.55; }
+.an-narra__riesgos li::marker { color: var(--oro); }
+.an-narra__cierre { margin: 4px 0 0; padding-left: 15px; border-left: 1px solid var(--esmeralda); color: var(--hueso); font-size: 0.97rem; line-height: 1.6; text-wrap: pretty; }

@@ -41,7 +41,7 @@ export function Cuenta() {
   if (!yo?.usuario) {
     return (
       <>
-        <Cabecera eyebrow="Cuenta" titulo={<>Todavía no entraste.</>} lead="Con una cuenta gratis ves el titular y el tier de cada gema y todos los análisis sin tesis." />
+        <Cabecera eyebrow="Cuenta" titulo={<>Todavía no has entrado.</>} lead="Con una cuenta gratis ves el titular y el tier de cada gema y todos los análisis sin tesis." />
         <div className="shell"><EmptyState kind="vacio" title="Sin sesión." action={<><Link to="/entrar" className="btn">Entrar</Link> <Link to="/registro" className="btn btn--ghost">Crear cuenta</Link></>} /></div>
         <div className="shell" id="plan"><Planes actual="gratis" /></div>
       </>
@@ -79,6 +79,7 @@ export function Cuenta() {
           </div>
           <p className="p-nota">Un análisis que falla o no se publica no consume cupo.</p>
         </section>
+        <MisAnalisis />
         <section className="p-card">
           <span className="mono a-sec__k">Contraseña</span>
           <form className="auth__form" onSubmit={cambiar}>
@@ -88,12 +89,64 @@ export function Cuenta() {
             {msg && <p className={msg.tipo === 'ok' ? 'auth__ok mono' : 'auth__error'} role="status">{msg.texto}</p>}
             <button type="submit" className="btn btn--ghost" disabled={ocupado}>{ocupado ? 'Guardando…' : 'Cambiar contraseña'}</button>
           </form>
-          <p className="p-nota">Se guarda hasheada: nadie puede verla. Si la perdés, <Link to="/recuperar">se recupera por correo</Link>.</p>
+          <p className="p-nota">Se guarda hasheada: nadie puede verla. Si la pierdes, <Link to="/recuperar">se recupera por correo</Link>.</p>
         </section>
       </div>
       <div className="shell" style={{ marginTop: 20 }}><MarcadorPersonal /></div>
       <div className="shell" id="plan" style={{ marginTop: 28 }}><Planes actual={u.rol === 'admin' ? 'admin' : u.plan} /></div>
     </>
+  )
+}
+
+/* ---------- cada análisis que pediste, y cuál gastó cupo ----------
+   Vive acá porque la pregunta ("¿en qué se me fue el cupo?") es de cuenta,
+   no de búsqueda. La lista de /analizar es la corta; ésta es la completa. */
+interface MiAnalisis { id: string; simbolo: string; nombre: string | null; nivel: string; estado: string; consume_cupo: boolean; creada: string; terminada: string | null }
+/* Lo reservado se devuelve si el análisis no llega a término: la fila tiene que decir
+   lo mismo que el contador de cupo, o parece que se cobró dos veces. */
+function cupoDe(a: MiAnalisis): { t: string; tono: string } {
+  if (!a.consume_cupo) return { t: 'sin costo', tono: 'mudo' }
+  if (a.estado === 'listo') return { t: 'usó 1', tono: 'hueso' }
+  if (a.estado === 'fallido' || a.estado === 'bloqueado') return { t: 'devuelto', tono: 'esm' }
+  return { t: 'reservado', tono: 'mudo' }
+}
+
+const ESTADO_CUENTA: Record<string, { t: string; tono: string }> = {
+  en_cola: { t: 'En cola', tono: 'mudo' }, en_curso: { t: 'En marcha', tono: 'oro' }, listo: { t: 'Listo', tono: 'esm' },
+  fallido: { t: 'No terminó', tono: 'rojo' }, bloqueado: { t: 'No pasó la comprobación', tono: 'rojo' },
+}
+
+function MisAnalisis() {
+  const [lista, setLista] = useState<MiAnalisis[] | null>(null)
+  useEffect(() => { api<{ solicitudes: MiAnalisis[] }>('/api/analizar/solicitudes').then((d) => setLista(d.solicitudes.filter((x) => x.nivel === 'profundo')), () => setLista([])) }, [])
+  const gastados = (lista ?? []).filter((a) => a.consume_cupo && a.estado === 'listo').length
+  return (
+    <section className="p-card a-mis">
+      <span className="mono a-sec__k">Mis análisis</span>
+      {!lista?.length ? (
+        <p className="p-nota">Todavía no has pedido ninguno. <Link to="/analizar">Analiza tu primera moneda</Link>; la primera lectura es gratis.</p>
+      ) : (
+        <>
+          <ul className="a-mis__lista">
+            {lista.map((a) => {
+              const e = ESTADO_CUENTA[a.estado] ?? { t: a.estado, tono: 'mudo' }
+              return (
+                <li key={a.id}>
+                  <Link to={`/analizar/s/${a.id}`} className="a-mis__fila">
+                    <b className="mono a-mis__sim">{a.simbolo}</b>
+                    <span className="a-mis__nom">{a.nombre ?? ''}</span>
+                    <span className={`a-mis__estado mono is-${e.tono}`}>{e.t}</span>
+                    <span className={`a-mis__cupo mono is-${cupoDe(a).tono}`}>{cupoDe(a).t}</span>
+                    <span className="a-mis__fecha mono">{fechaHora(a.terminada ?? a.creada)}</span>
+                  </Link>
+                </li>
+              )
+            })}
+          </ul>
+          <p className="p-nota">{gastados === 0 ? 'Ninguno gastó cupo todavía.' : gastados === 1 ? 'Uno gastó cupo.' : `${gastados} gastaron cupo.`} Los que no terminaron o no pasaron la comprobación se devuelven enteros.</p>
+        </>
+      )}
+    </section>
   )
 }
 

@@ -11,7 +11,8 @@
      manual (pipeline/lanzar_pedidos.py). La web sólo espeja y explica.
    ========================================================================== */
 import { ENV } from './entorno.ts'
-import type { Motor, Moneda, LecturaDeterminista, SinDatos, Solicitud, Progreso } from './motorTipos.ts'
+import type { Motor, Moneda, LecturaDeterminista, SinDatos, Solicitud, Progreso, Resolucion } from './motorTipos.ts'
+import { resolverEnUniverso } from './resolver.ts'
 
 const TIMEOUT_MS = 8000
 async function llamar<T>(ruta: string, init?: RequestInit): Promise<{ status: number; cuerpo: T | null }> {
@@ -40,6 +41,13 @@ export const motor: Motor = {
       }).catch((e) => { console.warn('[motor] universo:', (e as Error).message); return universoCache?.datos ?? [] }).finally(() => { universoEnVuelo = null })
     }
     return universoCache ? universoCache.datos : universoEnVuelo
+  },
+  /** Si el motor todavía no tiene /resolver, se resuelve contra el universo (§9.1). */
+  async resolver(consulta: string): Promise<Resolucion> {
+    const r = await llamar<Resolucion & { error?: string }>('/resolver', { method: 'POST', body: JSON.stringify({ consulta }) }).catch(() => ({ status: 0, cuerpo: null }))
+    if (r.status === 200 && r.cuerpo && Array.isArray(r.cuerpo.candidatas)) return r.cuerpo
+    if (r.status === 404 && r.cuerpo?.error === 'sin_cobertura') return { consulta, interpretada_como: 'ticker', candidatas: [] }
+    return resolverEnUniverso(consulta, await this.universo())
   },
   async determinista(simbolo): Promise<LecturaDeterminista | SinDatos | null> {
     const r = await llamar<LecturaDeterminista | { error?: string; texto?: string }>('/determinista', { method: 'POST', body: JSON.stringify({ simbolo }) })

@@ -4,7 +4,21 @@ export type Etapa = 'recolectando' | 'calculando' | 'esceptico' | 'redactando' |
 export const ETAPAS: Etapa[] = ['recolectando', 'calculando', 'esceptico', 'redactando', 'verificando']
 export type EstadoSolicitud = 'en_cola' | 'en_curso' | 'listo' | 'fallido' | 'bloqueado'
 
-export interface Moneda { simbolo: string; nombre: string; id_coingecko?: string; cadena?: string; con_informe: boolean }
+export interface Moneda { simbolo: string; nombre: string; id_coingecko?: string; cadena?: string; con_informe: boolean
+  /** §9.2: lo dice el motor. `null` = todavía no lo informa y no se puede afirmar nada. */
+  analizable?: boolean | null; motivo_no_analizable?: string }
+
+/** §9.1: una candidata concreta detrás de lo que el usuario escribió. */
+export interface Candidata extends Moneda { contrato?: string | null; mcap_usd?: number | null; vol24h_usd?: number | null }
+export interface Resolucion {
+  consulta: string
+  interpretada_como: 'ticker' | 'contrato' | 'nombre'
+  /** Si el usuario escribió un par (BTCUSDT), el ticker limpio. */
+  normalizada?: string | null
+  candidatas: Candidata[]
+  /** true cuando la lista sale del universo de la web y no de /resolver del motor. */
+  aproximada?: boolean
+}
 
 /** Lo que la web manda al motor (una línea de cola-web.jsonl o un POST). */
 export interface Solicitud {
@@ -51,6 +65,8 @@ export interface SinDatos { sin_datos: true; codigo: string; texto: string }
 export interface Motor {
   nombre: 'simulador' | 'motor'
   universo(): Promise<Moneda[]>
+  /** §9.1. Devuelve las monedas que pueden ser lo que el usuario escribió. */
+  resolver(consulta: string): Promise<Resolucion>
   determinista(simbolo: string): Promise<LecturaDeterminista | SinDatos | null>
   solicitarProfundo(s: Solicitud): Promise<void>
   progreso(id: string): Promise<Progreso | null>

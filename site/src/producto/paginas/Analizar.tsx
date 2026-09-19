@@ -12,7 +12,8 @@ import { Loader } from '../../ui/Loader'
 import type { Informe } from '../../lib/contrato'
 import {
   LecturaDeterminista, SinDatosAun, Decidir, EscenaAnalisis, Etapas, Transcurrido, BotonAviso, CupoChip, Nota, useCupo, useUniverso, llano,
-  type Lectura, type Cupo, type Solicitud, type Moneda,
+  FormatoAceptado, Candidatas, SinCoincidencia, NoAnalizable, InformeNarrado, narradoDe,
+  type Lectura, type Cupo, type Solicitud, type Moneda, type Candidata, type Resolucion,
 } from '../analizar/piezasAnalizar'
 
 /* ============================================================================
@@ -32,6 +33,8 @@ export function Analizar() {
   const cupoSt = useCupo()
   const [q, setQ] = useState(params.get('m') ?? '')
   const [lectura, setLectura] = useState<{ l: Lectura | null; sin_datos: { codigo: string; texto: string } | null; moneda: Moneda | null; cupo: Cupo | null; puede_profundo: boolean } | null>(null)
+  const [resol, setResol] = useState<Resolucion | null>(null)
+  const [noAnalizable, setNoAnalizable] = useState<Moneda | null>(null)
   const [buscando, setBuscando] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [pidiendo, setPidiendo] = useState(false)
@@ -46,14 +49,14 @@ export function Analizar() {
 
   const analizar = useCallback(async (simbolo: string) => {
     const sym = simbolo.trim().toUpperCase(); if (!sym) return
-    setBuscando(true); setError(null); setLectura(null); setErrorPedido(null)
+    setBuscando(true); setError(null); setLectura(null); setErrorPedido(null); setResol(null); setNoAnalizable(null)
     try {
       const r = await api<{ lectura: Lectura | null; sin_datos: { codigo: string; texto: string } | null; moneda: Moneda | null; cupo: Cupo | null; puede_profundo: boolean }>('/api/analizar/determinista', { cuerpo: { simbolo: sym } })
       setLectura({ l: r.lectura, sin_datos: r.sin_datos, moneda: r.moneda, cupo: r.cupo, puede_profundo: r.puede_profundo }); setQ(sym); setParams({ m: sym }, { replace: true })
     } catch (e) { setError(e instanceof ErrorApi ? e.message : String(e)) } finally { setBuscando(false) }
   }, [setParams])
 
-  useEffect(() => { const m = params.get('m'); if (m && !lectura && !buscando && !error) analizar(m) }, [params, lectura, buscando, error, analizar])
+  useEffect(() => { const m = params.get('m'); if (m && !lectura && !buscando && !error && !resol && !noAnalizable) analizar(m) }, [params, lectura, buscando, error, resol, noAnalizable, analizar])
 
   const pedir = async () => {
     if (!lectura) return
@@ -66,7 +69,27 @@ export function Analizar() {
       setErrorPedido(e instanceof ErrorApi ? e.message : String(e))
     } finally { setPidiendo(false) }
   }
-  const enviar = (ev: FormEvent) => { ev.preventDefault(); analizar(sugerencias[0] && !monedas.some((m) => m.simbolo === q.trim().toUpperCase()) ? sugerencias[0].simbolo : q) }
+  /* Una moneda elegida de la lista: si no da para análisis se dice acá, antes de ofrecer gastar nada. */
+  const elegir = useCallback((c: Candidata | Moneda) => {
+    setResol(null)
+    if (c.analizable === false) { setNoAnalizable(c); setQ(c.simbolo); return }
+    analizar(c.simbolo)
+  }, [analizar, setParams])
+
+  /* Buscar no gasta nada: resolver, y sólo leer cuando hay una sola candidata. */
+  const enviar = async (ev: FormEvent) => {
+    ev.preventDefault()
+    const consulta = q.trim(); if (!consulta) return
+    setBuscando(true); setError(null); setLectura(null); setResol(null); setNoAnalizable(null); setErrorPedido(null)
+    try {
+      const r = await api<Resolucion>('/api/analizar/resolver', { cuerpo: { consulta } })
+      if (r.candidatas.length === 1) { setBuscando(false); elegir(r.candidatas[0]); return }
+      setResol(r)
+    } catch (e) {
+      setError(e instanceof ErrorApi ? e.message : String(e))
+    } finally { setBuscando(false) }
+  }
+  const otra = () => { setResol(null); setNoAnalizable(null); setLectura(null); setError(null); setQ(''); setParams({}, { replace: true }); inputRef.current?.focus() }
   const cupo = lectura?.cupo ?? (cupoSt.estado === 'ok' ? cupoSt.datos.cupo : null)
   const simboloActual = lectura?.l?.simbolo ?? lectura?.moneda?.simbolo ?? ''
 
@@ -74,29 +97,32 @@ export function Analizar() {
     <>
       <Cabecera
         eyebrow="Analiza tu moneda"
-        titulo={<>Primero la lectura, <em>gratis</em>. Después decides.</>}
-        lead="Escribe una moneda y en un segundo tienes la lectura estructural: si la mueve demanda real o apalancamiento, cuánto cae en un día malo, quién la tiene, si el token cobra y si se puede salir. Sin tesis ni veredicto. El análisis profundo, el que sí escribe una tesis y la ataca, usa un análisis de tu cupo."
+        titulo={<>Pon a <em>nuestro equipo</em> a analizar tu moneda</>}
+        lead="Escribe un ticker y empezamos. La primera lectura es gratis."
         acciones={rol !== 'visitante' ? <CupoChip cupo={cupo} /> : undefined}
       />
       <div className="shell an">
-        <form className={`an-busca ${lectura ? 'is-chica' : ''}`} onSubmit={enviar} role="search">
+        <form className={`an-busca ${lectura || resol || noAnalizable ? 'is-chica' : ''}`} onSubmit={enviar} role="search">
           <label className="vh" htmlFor="an-q">Moneda</label>
           <div className="an-busca__campo">
             <input ref={inputRef} id="an-q" className="an-busca__input mono" value={q} onChange={(e) => { setQ(e.target.value); if (lectura) setLectura(null) }} placeholder="RAY, ORCA, PENDLE…" autoComplete="off" spellCheck={false} />
             <button type="submit" className="btn an-busca__btn" disabled={buscando || !q.trim()}>{buscando ? 'Leyendo…' : 'Leer'}</button>
           </div>
-          {!lectura && (
+          {!lectura && !resol && !noAnalizable && <FormatoAceptado />}
+          {!lectura && !resol && !noAnalizable && (
             <ul className="an-busca__sug" aria-label="Sugerencias">
               {sugerencias.map((m: Moneda) => (
-                <li key={m.simbolo}><button type="button" className={`an-sug ${m.con_informe ? 'is-informe' : ''}`} onClick={() => analizar(m.simbolo)}><b className="mono">{m.simbolo}</b><span>{m.nombre}</span>{m.con_informe && <i className="mono">análisis previo</i>}</button></li>
+                <li key={m.simbolo}><button type="button" className={`an-sug ${m.con_informe ? 'is-informe' : ''}`} onClick={() => elegir(m)}><b className="mono">{m.simbolo}</b><span>{m.nombre}</span>{m.con_informe && <i className="mono">análisis previo</i>}</button></li>
               ))}
               {universo.estado === 'ok' && !sugerencias.length && <li className="an-busca__nada body-muted">Nada con ese nombre en el universo que cubrimos.</li>}
             </ul>
           )}
-          {universo.estado === 'ok' && !lectura && <p className="an-busca__nota mono">{universo.datos.monedas.length} monedas con cobertura hoy{universo.datos.motor === 'simulador' ? ' · respuestas simuladas por ahora' : ''}</p>}
+          {universo.estado === 'ok' && !lectura && !resol && !noAnalizable && <p className="an-busca__nota mono">{universo.datos.monedas.length} monedas con cobertura hoy{universo.datos.motor === 'simulador' ? ' · respuestas simuladas por ahora' : ''}</p>}
         </form>
 
         {buscando && <div className="p-cargando"><Loader size={72} label="Leyendo" /></div>}
+        {resol && !buscando && (resol.candidatas.length ? <Candidatas r={resol} onElegir={elegir} onOtra={otra} /> : <SinCoincidencia r={resol} onOtra={otra} />)}
+        {noAnalizable && !buscando && <NoAnalizable moneda={noAnalizable} onOtra={otra} />}
         {error && <EmptyState kind="sin-datos" title="No la encontramos" detail={error} action={<button type="button" className="btn btn--ghost" onClick={() => { setError(null); inputRef.current?.focus() }}>Probar otra</button>} />}
         {lectura && (
           <>
@@ -105,7 +131,7 @@ export function Analizar() {
             {lectura.l?.origen_motor === 'simulador' && <Nota tono="mudo">Lectura simulada: los números salen de la última pasada que VETA hizo sobre esta moneda; el análisis en vivo todavía no está conectado.</Nota>}
           </>
         )}
-        {!lectura && !buscando && !error && <MisAnalisis />}
+        {!lectura && !resol && !noAnalizable && !buscando && !error && <MisAnalisis />}
       </div>
     </>
   )
@@ -166,6 +192,7 @@ export function AnalizarSolicitud() {
   if (!s) return <div className="shell p-cargando"><Loader size={72} label="Cargando" /></div>
 
   const inf = s.estado === 'listo' && s.resultado ? (s.resultado as unknown as Informe) : null
+  const narrado = s.estado === 'listo' ? narradoDe(s.resultado) : null
   return (
     <div className={`an-sol an-sol--${s.estado}`}>
       <div className="shell"><Volver to="/analizar" label="Analiza tu moneda" /></div>
@@ -217,6 +244,7 @@ export function AnalizarSolicitud() {
       </section>
       {inf && (
         <div className="an-resultado">
+          {narrado && <div className="shell"><InformeNarrado n={narrado} simbolo={s.simbolo} /></div>}
           <ProveedorNivel><Cuerpo inf={inf} esAnalisis /></ProveedorNivel>
         </div>
       )}

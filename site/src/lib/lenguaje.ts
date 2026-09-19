@@ -99,12 +99,37 @@ export function esAnalizable(r: { fundamentales?: { revenue_protocolo?: number |
 
 /** Palabras del taller que no van a vista de cliente, cambiadas por las de todos los días.
     Se aplica sobre texto que viene del informe, después de quitar las referencias. */
+/* ---------- el texto que llega de afuera no siempre viene en nuestro idioma ----------
+   Lo que el sistema de análisis escribe puede venir en voseo y en minúscula.
+   Se corrige acá, al mostrarlo: es la última frontera antes del lector. */
+const VOSEO: Record<string, string> = {
+  sos: 'eres', tenés: 'tienes', podés: 'puedes', querés: 'quieres', sabés: 'sabes', valés: 'vales',
+  venís: 'vienes', decís: 'dices', pedí: 'pide', mirá: 'mira', fijate: 'fíjate', tené: 'ten',
+  poné: 'pon', hacé: 'haz', elegí: 'elige', probá: 'prueba', escribí: 'escribe', buscá: 'busca',
+  esperá: 'espera', revisá: 'revisa', usá: 'usa', dejá: 'deja', andá: 've', avisá: 'avisa', mandá: 'manda',
+}
+/* Nada de \b: las palabras terminan en vocal acentuada y \b no la reconoce como letra. */
+const RE_VOSEO = new RegExp(`(?<!\\p{L})(${Object.keys(VOSEO).join('|')})(?!\\p{L})`, 'giu')
+/** Cambia el voseo por tuteo y respeta si la palabra venía en mayúscula. */
+export function tuteo(t: string): string {
+  return t.replace(RE_VOSEO, (m) => {
+    const con = VOSEO[m.toLowerCase()]
+    if (!con) return m
+    return m[0] === m[0].toUpperCase() ? con.charAt(0).toUpperCase() + con.slice(1) : con
+  })
+}
+/** Una frase que se muestra empieza en mayúscula, venga como venga. */
+const mayusculaInicial = (t: string) => (t ? t.charAt(0).toUpperCase() + t.slice(1) : t)
+
 export function llano(t?: string | null): string {
   if (!t) return ''
-  return sinReferencias(t)
+  const crudo = sinReferencias(t)
+    .replace(/\s*·\s*motor\s*§[\d.]+/g, '').replace(/\s*§[\d.]+(\s*S\d+)?/g, '')
     .replace(/\bumbrales\b/gi, 'límites').replace(/\bumbral\b/gi, 'límite')
     .replace(/\bobservables\b/gi, 'señales').replace(/\bobservable\b/gi, 'señal')
     .replace(/\bcorrida\b/gi, 'pasada').replace(/\bscanner\b/gi, 'rastreo')
     .replace(/\s*§\s*[\d.]+/g, '')
     .replace(/\s{2,}/g, ' ').trim()
+  const limpio = mayusculaInicial(tuteo(crudo))
+  return limpio
 }

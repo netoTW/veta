@@ -18,7 +18,8 @@ import { randomBytes } from 'node:crypto'
 import { ENV } from './entorno.ts'
 import * as contenido from './contenido.ts'
 import { rankingScanner } from './votacion.ts'
-import { ETAPAS, type Motor, type Moneda, type LecturaDeterminista, type Solicitud, type Progreso, type Etapa, type Bloque } from './motorTipos.ts'
+import { ETAPAS, type Motor, type Moneda, type LecturaDeterminista, type Solicitud, type Progreso, type Etapa, type Bloque, type Resolucion } from './motorTipos.ts'
+import { resolverEnUniverso } from './resolver.ts'
 
 type Reg = Record<string, unknown>
 const n = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : null)
@@ -166,6 +167,7 @@ function avanzar(t: Trabajo, ahoraMs: number) {
 export const motor: Motor = {
   nombre: 'simulador',
   async universo() { return universo() },
+  async resolver(consulta: string): Promise<Resolucion> { return resolverEnUniverso(consulta, universo()) },
   async determinista(simbolo) {
     const sym = simbolo.toUpperCase()
     const r = informeDe(sym); if (r) return deterministaDeInforme(r)

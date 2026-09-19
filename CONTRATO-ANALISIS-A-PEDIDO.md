@@ -185,3 +185,115 @@ una frase llana, cifras con unidad y la fuente. **Sin tesis, sin escenarios, sin
   `fallido` (`motor_no_disponible`), devuelve el cupo y avisa.
 - Los textos y fuentes del motor pueden traer referencias internas («· motor §4.1», «§8 S7»):
   la web las quita antes de mostrarlas.
+
+---
+
+# §9. Lo que la fase 2 necesita del motor (2026-09-19)
+
+Cuatro añadidos. La web ya está construida contra ellos: mientras no existan, cae a un modo
+degradado que se describe en cada punto, así que **no rompen nada al llegar**.
+
+## 9.1 `POST /resolver` — de lo que escribe el usuario a una moneda concreta
+
+Hoy la web sólo puede buscar por coincidencia de ticker dentro de `/universo`, que trae una
+entrada por símbolo y sin dirección de contrato. Eso deja fuera dos casos reales: el mismo
+ticker en varias cadenas, y el usuario que pega un contrato.
+
+```
+POST /resolver   { "consulta": "btc" | "0xA0b8…" | "pepe" }
+```
+
+```json
+{
+  "consulta": "pepe",
+  "interpretada_como": "ticker",
+  "candidatas": [
+    { "simbolo": "PEPE", "nombre": "Pepe", "id_coingecko": "pepe", "cadena": "Ethereum",
+      "contrato": "0x6982508145454ce325ddbe47a25d4ec3d2311933",
+      "mcap_usd": 4100000000, "vol24h_usd": 890000000, "con_informe": true,
+      "analizable": true, "motivo_no_analizable": "" },
+    { "simbolo": "PEPE", "nombre": "Pepe (Solana)", "id_coingecko": "pepe-sol", "cadena": "Solana",
+      "contrato": "Bz9…", "mcap_usd": 1200000, "vol24h_usd": 40000, "con_informe": false,
+      "analizable": false, "motivo_no_analizable": "volumen por debajo de 2.000.000 USD al día" }
+  ]
+}
+```
+
+- `interpretada_como`: `ticker` | `contrato` | `nombre`.
+- **Orden**: la más probable primero (capitalización descendente). La web muestra la lista tal
+  como llega.
+- **Una candidata** → la web sigue directo. **Varias** → el usuario elige. **Ninguna** → 404
+  con `{ "error": "sin_cobertura", "texto": "…" }`.
+- Se aceptan direcciones EVM (`0x` + 40 hex) y base58 de Solana. Si la consulta es un contrato
+  y existe, `candidatas` trae una sola entrada.
+- **Sufijos de par**: si llega `BTCUSDT`, `BTC-PERP` o `BTC/USD`, se resuelve como `BTC` y se
+  devuelve `"normalizada": "BTC"` para que la web pueda avisarlo.
+
+*Mientras no exista:* la web resuelve contra `/universo` por coincidencia de símbolo y nombre,
+nunca ofrece elegir entre candidatas y rechaza las direcciones de contrato con un mensaje claro.
+
+## 9.2 `analizable` — el chequeo que hoy la web improvisa (cierra el hueco 39)
+
+Campo nuevo en `/resolver`, en cada entrada de `/universo` y en la respuesta de
+`/determinista`:
+
+```json
+"analizable": false,
+"motivo_no_analizable": "sin ingresos ni capital depositado medibles: no hay con qué construir una lectura"
+```
+
+El motivo va **en lenguaje de cliente**: es lo que se le muestra a quien pidió la moneda.
+
+Regla dura de la web: **si `analizable` es `false`, el análisis profundo no se ofrece y no se
+descuenta cupo.** Si el motor acepta un pedido profundo sobre una moneda no analizable, la web
+lo trata como error del pedido, no como análisis fallido.
+
+*Mientras no exista:* la web aplica su propia regla (hay ingresos del protocolo o capital
+depositado) y lo dice como estimación propia.
+
+## 9.3 `POST /profundo` acepta contrato
+
+Además de `simbolo`, la solicitud puede traer `contrato` y `cadena`. Al menos uno de los dos
+caminos tiene que identificar la moneda sin ambigüedad:
+
+```json
+{ "id": "sol-…", "nivel": "profundo", "simbolo": "PEPE",
+  "id_coingecko": "pepe", "contrato": "0x6982…", "cadena": "Ethereum", … }
+```
+
+Cuando el usuario eligió entre candidatas, la web manda **siempre** `id_coingecko`, que es la
+identificación sin ambigüedad. `simbolo` viaja igual, para los registros.
+
+## 9.4 `narrado` — el informe escrito para el cliente (capa de cliente del hueco 40)
+
+Hoy el texto del informe mezcla lectura y control interno, y la web lo filtra frase por frase.
+Ese filtro es un parche: recorta de más y a veces deja un bloque vacío.
+
+En `Progreso.resultado`, junto al registro completo, un objeto nuevo:
+
+```json
+"narrado": {
+  "titular": "Raydium factura de verdad y el token cobra parte de esa caja.",
+  "parrafos": [
+    "El protocolo cobra comisiones por cada intercambio y el 12 % financia recompras…",
+    "Frente a protocolos del mismo tamaño y el mismo negocio, cotiza en línea…"
+  ],
+  "riesgos": [
+    "La mayor parte de las comisiones viene de un solo producto; si pierde cuota, la caja se achica.",
+    "Cuatro de las diez mayores posiciones no están identificadas."
+  ],
+  "cierre": "Lo que habría que ver para cambiar de opinión: que el TVL baje de 843 M USD durante 30 días."
+}
+```
+
+Reglas del campo:
+- **Escrito para el cliente.** Nada de *criterio, umbral, observable, Escéptico, Verificador,
+  motor, §, corrida, paquete*, ni listas de descarte, ni «no se pudo medir».
+- `riesgos` es la fuente del bloque **«Lo que podría salir mal»**. Ahí va el riesgo real, en
+  palabras normales, sin dramatismo.
+- Nada de «compra», retornos prometidos ni precios objetivo.
+- Si un dato no existe, no se menciona.
+
+*Mientras no exista:* la web sigue componiendo el texto desde `ficha_esencial` y `niveles`, con
+el filtro por frases. **Cuando `narrado` llegue, el filtro se retira** y el informe pasa a ser
+la pieza central de la pantalla de resultado.

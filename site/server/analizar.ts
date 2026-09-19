@@ -20,6 +20,7 @@ import { sesionDe, type Sesion } from './auth.ts'
 import { rolDe, puede, planMinimo, type Rol } from '../src/lib/matriz.ts'
 import { motor, type Solicitud, type Progreso, type EstadoSolicitud } from './motor.ts'
 import { cupoDe, reservar, devolver, hayMargen, gastoMes, fijarTope, type Cupo } from './cupo.ts'
+import { esContrato } from './resolver.ts'
 
 type Vars = { sesion: Sesion | null; rol: Rol }
 export const analizarApp = new Hono<{ Variables: Vars }>()
@@ -114,6 +115,21 @@ function encolar(sol: Solicitud) {
 /* ======================= rutas ======================= */
 analizarApp.get('/universo', async (c) => c.json({ monedas: await motor.universo(), motor: motor.nombre }))
 
+/** §9.1: qué monedas pueden ser lo que el usuario escribió. Una, varias o ninguna. */
+analizarApp.post('/resolver', async (c) => {
+  const { consulta } = await c.req.json().catch(() => ({})) as { consulta?: string }
+  const q = (consulta ?? '').trim()
+  if (!q) return c.json({ error: 'consulta_requerida' }, 400)
+  if (q.length > 80) return c.json({ error: 'consulta_larga' }, 400)
+  try {
+    const r = await motor.resolver(q)
+    return c.json({ ...r, es_contrato: esContrato(q), puede_profundo: puede(c.get('rol'), 'analiza.profundo'), plan_minimo: planMinimo('analiza.profundo') })
+  } catch (e) {
+    console.warn('[analizar] resolver', (e as Error).message)
+    return c.json({ error: 'motor_no_disponible', detalle: 'El sistema de análisis no respondió. Prueba en un momento.' }, 503)
+  }
+})
+
 analizarApp.get('/cupo', async (c) => c.json({ cupo: cupoSerializable(await cupoDeSesion(c.get('sesion'), c.get('rol'))), plan_minimo: planMinimo('analiza.profundo'), puede_profundo: puede(c.get('rol'), 'analiza.profundo') }))
 
 analizarApp.post('/determinista', async (c) => {
@@ -146,6 +162,10 @@ analizarApp.post('/profundo', async (c) => {
   if (!sym) return c.json({ error: 'simbolo_requerido' }, 400)
   const moneda = (await motor.universo()).find((m) => m.simbolo === sym)
   if (!moneda) return c.json({ error: 'no_encontrada', detalle: `${sym} no está entre las monedas que cubrimos.` }, 404)
+  // §9.2: si el motor dice que no es analizable, no se pide y no se toca el cupo.
+  if (moneda.analizable === false) {
+    return c.json({ error: 'no_analizable', detalle: moneda.motivo_no_analizable || `${sym} no tiene datos suficientes para un análisis que valga la pena. No se descontó nada.` }, 422)
+  }
   const viva = await bd.uno("SELECT id FROM solicitud WHERE usuario_id = ? AND simbolo = ? AND nivel = 'profundo' AND estado IN ('en_cola','en_curso')", [s.user.id, sym]) as { id: string } | undefined
   if (viva) return c.json({ error: 'ya_en_curso', detalle: 'Ya hay un análisis de esa moneda en marcha.', id: viva.id }, 409)
   const cupo = (await cupoDeSesion(s, rol))!

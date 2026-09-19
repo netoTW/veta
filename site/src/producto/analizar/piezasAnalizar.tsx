@@ -4,10 +4,10 @@ import { AuthEscena, type EstadoEscena } from '../../auth/AuthEscena'
 import { controlInicial, type Control } from '../../three/HeroScene'
 import { Dato, Advertencias, PlanBadge, Puerta } from '../piezas'
 import { fecha, fechaHora, mult, num, precio, usd } from '../../lib/formato'
-import { sinReferencias } from '../../lib/lenguaje'
+import { llano } from '../../lib/lenguaje'
+export { llano }
 
 /** Texto del motor sin sus referencias internas: «· motor §4.1», «§8 S7», «(§3)». */
-export const llano = (t: string) => sinReferencias(t).replace(/\s*·\s*motor\s*§[\d.]+/g, '').replace(/\s*§[\d.]+(\s*S\d+)?/g, '').replace(/\s{2,}/g, ' ').trim()
 import { useDatos } from '../../lib/datos'
 import type { Advertencia, Tier } from '../../lib/contrato'
 
@@ -38,7 +38,11 @@ export interface Solicitud {
   fallo: { codigo: string; texto: string } | null; verificador: { estado: string; motivo_bloqueo: string } | null; resultado: Record<string, unknown> | null; tier: Tier | null
   enviada?: boolean; posicion_cola?: number | null
 }
-export interface Moneda { simbolo: string; nombre: string; id_coingecko?: string; cadena?: string; con_informe: boolean }
+export interface Moneda { simbolo: string; nombre: string; id_coingecko?: string; cadena?: string; con_informe: boolean
+  /** null = todavía no se sabe, y entonces no se afirma nada. Sólo `false` cierra la puerta. */
+  analizable?: boolean | null; motivo_no_analizable?: string }
+export interface Candidata extends Moneda { contrato?: string | null; mcap_usd?: number | null; vol24h_usd?: number | null }
+export interface Resolucion { consulta: string; interpretada_como: 'ticker' | 'contrato' | 'nombre'; normalizada?: string | null; candidatas: Candidata[]; aproximada?: boolean }
 
 export const useCupo = () => useDatos<{ cupo: Cupo | null; plan_minimo: string; puede_profundo: boolean }>('/api/analizar/cupo')
 export const useUniverso = () => useDatos<{ monedas: Moneda[]; motor: string }>('/api/analizar/universo')
@@ -47,9 +51,9 @@ export const useUniverso = () => useDatos<{ monedas: Moneda[]; motor: string }>(
 export const ETAPA_LABEL: Record<Etapa, { titulo: string; que: string }> = {
   recolectando: { titulo: 'Trayendo los datos', que: 'precio, futuros, ingresos, quién tiene el token' },
   calculando: { titulo: 'Calculando el riesgo', que: 'cola de caídas, las dos varas, concentración' },
-  esceptico: { titulo: 'Buscando objeciones', que: 'el escéptico ataca la lectura antes de que se escriba' },
+  esceptico: { titulo: 'Buscando los contraargumentos', que: 'se ataca la lectura antes de darla por buena' },
   redactando: { titulo: 'Redactando', que: 'tesis en una línea, escenarios, qué la invalidaría' },
-  verificando: { titulo: 'Verificando cifras', que: 'cada número contra su fuente; si no coincide, no sale' },
+  verificando: { titulo: 'Comprobando cada cifra', que: 'número por número contra su fuente; si no coincide, no sale' },
 }
 export const LECTURA_LABEL: Record<string, { t: string; tono: 'esm' | 'oro' | 'rojo' | 'mudo' | 'hueso' }> = {
   demanda_real: { t: 'Demanda real', tono: 'esm' }, apalancamiento: { t: 'Castillo de apalancamiento', tono: 'rojo' }, mixta: { t: 'Mixta', tono: 'oro' },
@@ -148,6 +152,112 @@ export function SinDatosAun({ moneda, texto }: { moneda: Moneda; texto: string }
   )
 }
 
+/* ---------- el informe escrito para quien lo pidió (contrato §9.4) ----------
+   Cuando el sistema lo entrega, manda él: va arriba de todo y el registro
+   completo queda debajo, para quien quiera comprobar cada cifra. */
+export interface Narrado { titular: string; parrafos: string[]; riesgos?: string[]; cierre?: string }
+export const narradoDe = (r: unknown): Narrado | null => {
+  const n = (r as { narrado?: Narrado } | null)?.narrado
+  return n && typeof n.titular === 'string' && Array.isArray(n.parrafos) ? n : null
+}
+
+export function InformeNarrado({ n, simbolo }: { n: Narrado; simbolo: string }) {
+  return (
+    <section className="an-narra" aria-labelledby="an-narra-t">
+      <span className="an-narra__k mono">{simbolo} · lo que encontramos</span>
+      <h2 id="an-narra-t" className="display an-narra__titular">{llano(n.titular)}</h2>
+      <div className="an-narra__cuerpo">
+        {n.parrafos.map((t, i) => <p key={i}>{llano(t)}</p>)}
+      </div>
+      {!!n.riesgos?.length && (
+        <div className="an-narra__riesgos">
+          <h3 className="display">Lo que podría salir mal</h3>
+          <ul>{n.riesgos.map((t, i) => <li key={i}>{llano(t)}</li>)}</ul>
+        </div>
+      )}
+      {n.cierre && <p className="an-narra__cierre">{llano(n.cierre)}</p>}
+    </section>
+  )
+}
+
+/* ---------- qué se acepta en la caja ---------- */
+export function FormatoAceptado() {
+  return (
+    <p className="an-formato body-muted">
+      Escribe el <b>ticker</b> solo: <span className="mono">RAY</span>, no <span className="mono">RAYUSDT</span>.
+      También vale el <b>nombre</b> de la moneda o una <b>dirección de contrato</b>.
+    </p>
+  )
+}
+
+/* ---------- varias monedas se llaman igual: que elija quien pregunta ----------
+   Sólo aparece cuando hay más de una. Con una sola no se pregunta nada. */
+export function Candidatas({ r, onElegir, onOtra }: { r: Resolucion; onElegir: (c: Candidata) => void; onOtra: () => void }) {
+  return (
+    <section className="an-cand" aria-labelledby="an-cand-t">
+      <div className="an-cand__head">
+        <span className="an-cand__k mono">{r.candidatas.length} coinciden</span>
+        <h2 id="an-cand-t" className="display">
+          {r.interpretada_como === 'contrato'
+            ? <>Ese contrato aparece en más de una moneda</>
+            : <>Más de una moneda coincide con <em className="mono">{r.normalizada ?? r.consulta.toUpperCase()}</em></>}
+        </h2>
+        <p className="an-cand__lead">Elige cuál es la tuya. Mirar no gasta nada.</p>
+      </div>
+      <ul className="an-cand__lista">
+        {r.candidatas.map((c) => (
+          <li key={`${c.simbolo}-${c.contrato ?? c.id_coingecko ?? c.nombre}`}>
+            <button type="button" className={`an-cand__item ${c.analizable === false ? 'is-corta' : ''}`} onClick={() => onElegir(c)}>
+              <b className="mono an-cand__sim">{c.simbolo}</b>
+              <span className="an-cand__nom">{c.nombre}</span>
+              {c.cadena && <span className="an-cand__cadena mono">{c.cadena}</span>}
+              {typeof c.mcap_usd === 'number' && <span className="an-cand__mcap mono">{usd(c.mcap_usd)}</span>}
+              {c.contrato && <span className="an-cand__contrato mono">{c.contrato.slice(0, 6)}…{c.contrato.slice(-4)}</span>}
+              {c.con_informe && <i className="an-cand__previo mono">análisis previo</i>}
+            </button>
+          </li>
+        ))}
+      </ul>
+      <button type="button" className="btn btn--ghost an-cand__otra" onClick={onOtra}>Ninguna de estas</button>
+    </section>
+  )
+}
+
+/* ---------- lo que escribió no corresponde a ninguna moneda ---------- */
+export function SinCoincidencia({ r, onOtra }: { r: Resolucion; onOtra: () => void }) {
+  const q = r.consulta.trim()
+  return (
+    <section className="an-nada" aria-live="polite">
+      <span className="an-nada__marca" aria-hidden="true" />
+      <h2 className="display">No encontramos <em className="mono">{q.length > 18 ? `${q.slice(0, 8)}…${q.slice(-6)}` : q}</em></h2>
+      {r.interpretada_como === 'contrato'
+        ? <p>Leímos eso como una dirección de contrato. Todavía no la tenemos asociada a ninguna moneda que cubramos. Prueba con el ticker.</p>
+        : r.normalizada
+          ? <p>Leímos <span className="mono">{r.consulta.toUpperCase()}</span> como <span className="mono">{r.normalizada}</span>, que es el par de un exchange. Ni así aparece entre las monedas que cubrimos hoy.</p>
+          : <p>No está entre las monedas que cubrimos hoy. Cubrimos las que tienen volumen real y datos públicos de los que fiarse.</p>}
+      <p className="an-nada__gratis mono">No se gastó nada: buscar es gratis.</p>
+      <button type="button" className="btn btn--ghost" onClick={onOtra}>Probar con otra</button>
+    </section>
+  )
+}
+
+/* ---------- se encontró, pero no da para un análisis ----------
+   Es un no explicado, no un error, y se dice antes de ofrecer gastar cupo. */
+export function NoAnalizable({ moneda, onOtra }: { moneda: Moneda; onOtra: () => void }) {
+  return (
+    <section className="an-noanal" aria-live="polite">
+      <div className="an-noanal__head">
+        <b className="mono an-noanal__sim">{moneda.simbolo}</b>
+        <span className="an-noanal__nom">{moneda.nombre}</span>
+      </div>
+      <h2 className="display">Esta moneda no da para un análisis nuestro</h2>
+      <p>{llano(moneda.motivo_no_analizable) || 'No publica ingresos ni fondos bloqueados, y sin eso el análisis sería una opinión con formato de informe. Preferimos no cobrártelo.'}</p>
+      <p className="an-noanal__gratis mono">No se descontó nada de tu cupo.</p>
+      <button type="button" className="btn btn--ghost" onClick={onOtra}>Analizar otra</button>
+    </section>
+  )
+}
+
 /* ---------- decidir gastar cupo ---------- */
 export function Decidir({ simbolo, cupo, puedeProfundo, onPedir, ocupado, error }: { simbolo: string; cupo: Cupo | null; puedeProfundo: boolean; onPedir: () => void; ocupado: boolean; error: string | null }) {
   const [confirmando, setConfirmando] = useState(false)
@@ -161,7 +271,7 @@ export function Decidir({ simbolo, cupo, puedeProfundo, onPedir, ocupado, error 
         <ul className="an-decidir__lista">
           <li>Una tesis en una línea y qué la invalidaría, con número</li>
           <li>Escenarios con rango y horizonte, contra dos varas</li>
-          <li>La lectura contraria: objeciones antes de escribir</li>
+          <li>La lectura contraria, buscada a propósito antes de escribir</li>
           <li>Cada cifra verificada contra su fuente</li>
         </ul>
         <p className="an-decidir__regla">Tarda unos minutos. Puedes irte: te avisamos cuando esté listo. Si falla o no pasa la verificación, no se descuenta.</p>
