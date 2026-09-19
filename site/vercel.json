@@ -4,7 +4,7 @@
   "buildCommand": "npm run build:web",
   "outputDirectory": "dist",
   "rewrites": [
-    { "source": "/api/:path*", "destination": "https://api.TU-DOMINIO/api/:path*" },
+    { "source": "/api/:path*", "destination": "https://api.vetalab.io/api/:path*" },
     { "source": "/((?!assets/).*)", "destination": "/index.html" }
   ],
   "headers": [
