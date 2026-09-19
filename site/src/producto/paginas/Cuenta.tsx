@@ -164,7 +164,7 @@ function Planes({ actual }: { actual: string }) {
           </article>
         ))}
       </div>
-      <p className="p-nota" style={{ marginTop: 12 }}>Los precios son suposiciones hasta que haya usuarios reales; el cobro llega con el proveedor de pago. Mientras tanto, escribinos y activamos el plan.</p>
+      <p className="p-nota" style={{ marginTop: 12 }}>Los precios son suposiciones hasta que haya usuarios reales; el cobro llega con el proveedor de pago. Mientras tanto, escríbenos y activamos el plan.</p>
     </section>
   )
 }

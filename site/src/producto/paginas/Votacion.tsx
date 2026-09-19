@@ -199,7 +199,7 @@ function ActivaVelada({ v, embudo, ultima }: { v: V; embudo: RespuestaVotacion['
         <div>
           <p className="eyebrow mono" data-mat="oro"><span className="eyebrow__mark" aria-hidden="true" />Semana {v.semana.slice(-2)} · votación abierta</p>
           <h2 id="vt-velada-t" className="display vt-h2">Hay {v.n_candidatas} piedras sobre la mesa</h2>
-          <p className="vt-lead body-muted">Son las que quedaron después de revisar {embudo.bajadas ? num(embudo.bajadas) : 'mil'} monedas. Los socios Pro las están mirando y votando cuál se analiza. Vos vas a leer el análisis de la ganadora, como todos; lo que no ves es la lista.</p>
+          <p className="vt-lead body-muted">Son las que quedaron después de revisar {embudo.bajadas ? num(embudo.bajadas) : 'mil'} monedas. Los socios Pro las están mirando y votando cuál se analiza. Vas a leer el análisis de la ganadora, como todos; lo que no ves es la lista.</p>
         </div>
         <Mecha abre={v.abre} cierra={v.cierra} estado={v.estado} />
       </div>
