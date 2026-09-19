@@ -12,6 +12,7 @@ Group=veta
 WorkingDirectory=/opt/veta-web/site
 Environment=NODE_ENV=production
 Environment=PORT=8790
+Environment=VETA_HOST=127.0.0.1
 ExecStart=/usr/bin/node node_modules/.bin/tsx server/index.ts
 Restart=always
 RestartSec=5

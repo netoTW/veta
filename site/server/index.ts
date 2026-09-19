@@ -180,6 +180,6 @@ if (ENV.SERVIR_DIST) {
 await migrar()
 await sembrar()
 console.log(`[alertas] ${await sincronizarAlertas()} nuevas`)
-serve({ fetch: app.fetch, port: ENV.PUERTO }, (info) => {
+serve({ fetch: app.fetch, port: ENV.PUERTO, ...(ENV.HOST ? { hostname: ENV.HOST } : {}) }, (info) => {
   console.log(`[veta] servidor en http://localhost:${info.port} · datos ${ENV.DATOS} · base ${ENV.DATABASE_URL ? 'postgres' : ENV.DB}${ENV.SERVIR_DIST ? ' · sirviendo dist/' : ''}`)
 })

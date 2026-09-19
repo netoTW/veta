@@ -37,6 +37,8 @@ const num = (k: string, d: number) => { const v = process.env[k]; return v === u
 export const ENV = {
   PRODUCCION: process.env.NODE_ENV === 'production',
   PUERTO: num('PORT', 8787),
+  /** Interfaz donde escucha. En producción, 127.0.0.1: sólo Caddy llega, el firewall deja de ser lo único que protege. */
+  HOST: process.env.VETA_HOST ?? '',
   /** Origen público de la web (lo que ve el navegador). En dev es el de Vite. */
   URL_PUBLICA: process.env.BETTER_AUTH_URL ?? 'http://localhost:5173',
   ORIGENES_CONFIABLES: (process.env.VETA_ORIGENES ?? 'http://localhost:5173,http://localhost:5310').split(',').map((s) => s.trim()).filter(Boolean),
