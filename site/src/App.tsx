@@ -37,6 +37,10 @@ const Sistema = lazy(() => import('./components/Sistema').then((m) => ({ default
 const Portada = lazy(() => import('./publico/Portada').then((m) => ({ default: m.Portada })))
 const Metodologia = lazy(() => import('./publico/Metodologia').then((m) => ({ default: m.Metodologia })))
 const Precios = lazy(() => import('./publico/Precios').then((m) => ({ default: m.Precios })))
+const Nosotros = lazy(() => import('./publico/Nosotros').then((m) => ({ default: m.Nosotros })))
+const Terminos = lazy(() => import('./publico/Legales').then((m) => ({ default: m.Terminos })))
+const Privacidad = lazy(() => import('./publico/Legales').then((m) => ({ default: m.Privacidad })))
+const Contacto = lazy(() => import('./publico/Legales').then((m) => ({ default: m.Contacto })))
 const ContenidoAdmin = lazy(() => import('./producto/admin/Contenido').then((m) => ({ default: m.Contenido })))
 const Acciones = lazy(() => import('./producto/admin/Acciones').then((m) => ({ default: m.Acciones })))
 
@@ -64,6 +68,10 @@ export default function App() {
           <Route path="/" element={<Suspense fallback={null}><Portada /></Suspense>} />
           <Route path="/metodologia" element={<Suspense fallback={null}><Metodologia /></Suspense>} />
           <Route path="/precios" element={<Suspense fallback={null}><Precios /></Suspense>} />
+          <Route path="/nosotros" element={<Suspense fallback={null}><Nosotros /></Suspense>} />
+          <Route path="/terminos" element={<Suspense fallback={null}><Terminos /></Suspense>} />
+          <Route path="/privacidad" element={<Suspense fallback={null}><Privacidad /></Suspense>} />
+          <Route path="/contacto" element={<Suspense fallback={null}><Contacto /></Suspense>} />
           {/* Referencia interna del sistema visual. Sin enlace en la navegación. */}
           <Route path="/sistema" element={<Suspense fallback={null}><GuiaVisual /></Suspense>} />
           <Route path="/entrar" element={<Suspense fallback={null}><Entrar /></Suspense>} />

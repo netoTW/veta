@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 
 /* El nav público no expone el laboratorio de diseño: sólo entrar y la acción. */
-const LINKS: { href: string; label: string }[] = [{ href: '/metodologia', label: 'Cómo trabajamos' }, { href: '/precios', label: 'Planes' }]
+const LINKS: { href: string; label: string }[] = [{ href: '/metodologia', label: 'Cómo trabajamos' }, { href: '/nosotros', label: 'Nosotros' }, { href: '/precios', label: 'Planes' }]
 
 export function Nav() {
   const [stuck, setStuck] = useState(false)
