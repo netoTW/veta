@@ -134,6 +134,16 @@ analizarApp.post('/resolver', async (c) => {
 
 analizarApp.get('/cupo', async (c) => c.json({ cupo: cupoSerializable(await cupoDeSesion(c.get('sesion'), c.get('rol'))), plan_minimo: planMinimo('analiza.profundo'), puede_profundo: puede(c.get('rol'), 'analiza.profundo') }))
 
+/** §9.5: el veredicto de analizabilidad, aparte, porque tarda. No gasta cupo. */
+analizarApp.post('/analizable', async (c) => {
+  const { simbolo, contrato, cadena, id_coingecko } = await c.req.json().catch(() => ({})) as { simbolo?: string; contrato?: string; cadena?: string; id_coingecko?: string }
+  const sym = (simbolo ?? '').trim().toUpperCase()
+  if (!sym) return c.json({ error: 'simbolo_requerido' }, 400)
+  const an = await motor.analizable(sym, { contrato: contrato?.trim() || null, cadena: cadena?.trim() || null, id_coingecko: id_coingecko?.trim() || null }).catch(() => null)
+  if (!an) return c.json({ error: 'motor_no_disponible', detalle: 'No pudimos comprobar esa moneda ahora mismo.' }, 503)
+  return c.json({ analizable: an.analizable, medidas: an.medidas ?? null, motivos: an.faltantes?.map((x) => x.cliente).filter(Boolean) ?? [], motivo: an.cliente || '' })
+})
+
 analizarApp.post('/determinista', async (c) => {
   const { simbolo, contrato, cadena, id_coingecko, nombre } = await c.req.json().catch(() => ({})) as { simbolo?: string; contrato?: string; cadena?: string; id_coingecko?: string; nombre?: string }
   const sym = (simbolo ?? '').trim().toUpperCase()
@@ -155,7 +165,10 @@ analizarApp.post('/determinista', async (c) => {
       return c.json({ ...base, moneda: monedaFuera, elegida, fuera_universo: { analizable: an.analizable, medidas: an.medidas ?? null, motivos: an.faltantes?.map((f) => f.cliente).filter(Boolean) ?? [] } })
     }
     if (!r) return c.json({ error: 'motor_no_disponible', detalle: 'El sistema de análisis no respondió. Prueba en un momento.' }, 503)
-    return c.json({ id: null, lectura: null, sin_datos: { codigo: r.codigo, texto: r.texto }, moneda, cupo: cupoSerializable(await cupoDeSesion(s, c.get('rol'))), puede_profundo: puede(c.get('rol'), 'analiza.profundo'), plan_minimo: planMinimo('analiza.profundo') })
+    // Sin lectura guardada. El veredicto de analizabilidad no se espera aquí: el motor
+    // sale a la red para calcularlo y tarda hasta medio minuto. La pantalla aparece ya y
+    // el cliente lo pide aparte, en /analizable.
+    return c.json({ id: null, lectura: null, sin_datos: { codigo: r.codigo, texto: r.texto }, moneda, elegida, pedir_veredicto: true, cupo: cupoSerializable(await cupoDeSesion(s, c.get('rol'))), puede_profundo: puede(c.get('rol'), 'analiza.profundo'), plan_minimo: planMinimo('analiza.profundo') })
   }
   const lectura = r
   const id = nuevoId(); const t = ahora()

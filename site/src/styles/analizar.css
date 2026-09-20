@@ -263,3 +263,7 @@
 .an-noanal__motivos { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 9px; max-width: 64ch; }
 .an-noanal__motivos li { color: var(--ceniza); font-size: 0.95rem; line-height: 1.55; padding-left: 16px; position: relative; }
 .an-noanal__motivos li::before { content: ""; position: absolute; left: 0; top: 9px; width: 6px; height: 6px; transform: rotate(45deg); background: var(--rojo); }
+.an-sug__cadena { color: var(--ceniza-2) !important; text-transform: none !important; letter-spacing: 0.04em !important; }
+.an-sug__mcap { color: var(--oro-luz) !important; text-transform: none !important; letter-spacing: 0.04em !important; font-variant-numeric: tabular-nums; }
+.an-busca__sug { align-items: stretch; }
+.an-sug { gap: 10px; flex-wrap: wrap; }

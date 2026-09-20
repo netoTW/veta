@@ -15,8 +15,10 @@ import type { Motor, Moneda, LecturaDeterminista, SinDatos, Solicitud, Progreso,
 import { resolverEnUniverso } from './resolver.ts'
 
 const TIMEOUT_MS = 8000
-async function llamar<T>(ruta: string, init?: RequestInit): Promise<{ status: number; cuerpo: T | null }> {
-  const r = await fetch(`${ENV.MOTOR_URL}${ruta}`, { ...init, signal: AbortSignal.timeout(TIMEOUT_MS), headers: { 'Content-Type': 'application/json', ...(init?.headers ?? {}) } })
+/** /analizable consulta fuentes en vivo: medido, tarda hasta medio minuto. */
+const TIMEOUT_LARGO_MS = 60000
+async function llamar<T>(ruta: string, init?: RequestInit, timeout = TIMEOUT_MS): Promise<{ status: number; cuerpo: T | null }> {
+  const r = await fetch(`${ENV.MOTOR_URL}${ruta}`, { ...init, signal: AbortSignal.timeout(timeout), headers: { 'Content-Type': 'application/json', ...(init?.headers ?? {}) } })
   const texto = await r.text().catch(() => '')
   let cuerpo: T | null = null
   try { cuerpo = texto ? (JSON.parse(texto) as T) : null } catch { cuerpo = null }
@@ -55,7 +57,7 @@ export const motor: Motor = {
     if (ref?.cadena) q.set('cadena', ref.cadena)
     if (ref?.contrato) q.set('contrato', ref.contrato)
     if (ref?.id_coingecko) q.set('id', ref.id_coingecko)
-    const r = await llamar<Analizabilidad>(`/analizable?${q}`).catch((e) => { console.warn('[motor] analizable:', (e as Error).message); return { status: 0, cuerpo: null } })
+    const r = await llamar<Analizabilidad>(`/analizable?${q}`, undefined, TIMEOUT_LARGO_MS).catch((e) => { console.warn('[motor] analizable:', (e as Error).message); return { status: 0, cuerpo: null } })
     if (r.status === 200 && r.cuerpo && typeof r.cuerpo.analizable === 'boolean') return r.cuerpo
     return null
   },

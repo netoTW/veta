@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { Cabecera } from '../Shell'
 import { ProveedorNivel, TierBadge, Volver } from '../piezas'
@@ -6,7 +6,7 @@ import { Cuerpo } from './InformeDetalle'
 import { api, ErrorApi, invalidarDatos } from '../../lib/datos'
 import { useRol } from '../../lib/acceso'
 import { useSesion } from '../../lib/sesion'
-import { fechaHora } from '../../lib/formato'
+import { fechaHora, usd } from '../../lib/formato'
 import { EmptyState } from '../../ui/EmptyState'
 import { Loader } from '../../ui/Loader'
 import type { Informe } from '../../lib/contrato'
@@ -29,6 +29,7 @@ import {
 interface Elegida { contrato?: string | null; cadena?: string | null; nombre?: string; id_coingecko?: string }
 /** §9.5: lo que dice el motor de una moneda que no está en el universo. */
 interface Fuera { analizable: boolean; medidas: MedidasFuera | null; motivos: string[] }
+interface Veredicto extends Fuera { motivo?: string }
 
 export function Analizar() {
   const [params, setParams] = useSearchParams()
@@ -41,30 +42,64 @@ export function Analizar() {
   const [resol, setResol] = useState<Resolucion | null>(null)
   const [noAnalizable, setNoAnalizable] = useState<Moneda | null>(null)
   const [elegida, setElegida] = useState<Elegida | null>(null)
+  /* El veredicto tarda (el motor sale a la red), así que la pantalla no lo espera:
+     aparece con "todavía no hay lectura" y se completa cuando llega. */
+  const [veredicto, setVeredicto] = useState<Veredicto | null>(null)
+  const pidiendoVer = useRef(0)
   const [buscando, setBuscando] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [pidiendo, setPidiendo] = useState(false)
   const [errorPedido, setErrorPedido] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  /* Qué símbolo se cargó ya desde la URL. Sirve para dos cosas: que el efecto no vuelva a
+     disparar en cada tecla, y que no vuelva a llamar SIN la candidata elegida, que era lo
+     que borraba el nombre y la cadena de la moneda escogida. */
+  const cargadoDeUrl = useRef<string | null>(null)
 
-  const monedas = universo.estado === 'ok' ? universo.datos.monedas : []
-  const sugerencias = useMemo(() => {
-    const t = q.trim().toLowerCase(); if (!t) return monedas.filter((m) => m.con_informe).slice(0, 6)
-    return monedas.filter((m) => m.simbolo.toLowerCase().startsWith(t) || m.nombre.toLowerCase().includes(t)).slice(0, 8)
-  }, [q, monedas])
+
+  /* Un solo buscador. Las sugerencias salen del mismo resolver que usa el botón Leer,
+     así que traen nombre, cadena y capitalización y distinguen homónimas. Antes había
+     dos búsquedas distintas en la misma caja: ésta y un filtro sobre el universo, que
+     para SPX devolvía "SPX · SPX" sin cadena ni tamaño. */
+  const [sugeridas, setSugeridas] = useState<Candidata[]>([])
+  const pidiendoSug = useRef(0)
+  useEffect(() => {
+    const t = q.trim()
+    if (t.length < 2 || lectura || resol || noAnalizable) { setSugeridas([]); return }
+    const mio = ++pidiendoSug.current
+    const id = setTimeout(() => {
+      api<Resolucion>('/api/analizar/resolver', { cuerpo: { consulta: t } })
+        .then((r) => { if (mio === pidiendoSug.current) setSugeridas(r.candidatas.slice(0, 6)) })
+        .catch(() => { if (mio === pidiendoSug.current) setSugeridas([]) })
+    }, 280)
+    return () => clearTimeout(id)
+  }, [q, lectura, resol, noAnalizable])
 
   const analizar = useCallback(async (simbolo: string, ref?: Elegida) => {
     const sym = simbolo.trim().toUpperCase(); if (!sym) return
     setElegida(ref ?? null)
-    setBuscando(true); setError(null); setLectura(null); setErrorPedido(null); setResol(null); setNoAnalizable(null)
+    cargadoDeUrl.current = sym
+    setBuscando(true); setError(null); setLectura(null); setErrorPedido(null); setResol(null); setNoAnalizable(null); setVeredicto(null)
     try {
-      const r = await api<{ lectura: Lectura | null; sin_datos: { codigo: string; texto: string } | null; moneda: Moneda | null; cupo: Cupo | null; puede_profundo: boolean; fuera_universo?: Fuera }>('/api/analizar/determinista',
+      const r = await api<{ lectura: Lectura | null; sin_datos: { codigo: string; texto: string } | null; moneda: Moneda | null; cupo: Cupo | null; puede_profundo: boolean; fuera_universo?: Fuera; pedir_veredicto?: boolean }>('/api/analizar/determinista',
         { cuerpo: { simbolo: sym, contrato: ref?.contrato ?? undefined, cadena: ref?.cadena ?? undefined, id_coingecko: ref?.id_coingecko ?? undefined, nombre: ref?.nombre ?? undefined } })
       setLectura({ l: r.lectura, sin_datos: r.sin_datos, moneda: r.moneda, cupo: r.cupo, puede_profundo: r.puede_profundo, fuera: r.fuera_universo ?? null }); setQ(sym); setParams({ m: sym }, { replace: true })
+      if (r.pedir_veredicto) {
+        const mio = ++pidiendoVer.current
+        api<Veredicto>('/api/analizar/analizable', { cuerpo: { simbolo: sym, contrato: ref?.contrato ?? undefined, cadena: ref?.cadena ?? undefined, id_coingecko: ref?.id_coingecko ?? undefined } })
+          .then((v) => { if (mio === pidiendoVer.current) setVeredicto(v) })
+          .catch(() => { /* si no llega, se queda la pantalla de "todavía no hay lectura" */ })
+      }
     } catch (e) { setError(e instanceof ErrorApi ? e.message : String(e)) } finally { setBuscando(false) }
   }, [setParams])
 
-  useEffect(() => { const m = params.get('m'); if (m && !lectura && !buscando && !error && !resol && !noAnalizable) analizar(m) }, [params, lectura, buscando, error, resol, noAnalizable, analizar])
+  /* Sólo una carga por símbolo, y sólo cuando llega de la URL (un enlace compartido). */
+  useEffect(() => {
+    const m = params.get('m')
+    if (!m || cargadoDeUrl.current === m) return
+    cargadoDeUrl.current = m
+    analizar(m)
+  }, [params, analizar])
 
   const pedir = async () => {
     if (!lectura) return
@@ -117,18 +152,28 @@ export function Analizar() {
         <form className={`an-busca ${lectura || resol || noAnalizable ? 'is-chica' : ''}`} onSubmit={enviar} role="search">
           <label className="vh" htmlFor="an-q">Moneda</label>
           <div className="an-busca__campo">
-            <input ref={inputRef} id="an-q" className="an-busca__input mono" value={q} onChange={(e) => { setQ(e.target.value); if (lectura) setLectura(null) }} placeholder="RAY, ORCA, PENDLE…" autoComplete="off" spellCheck={false} />
+            <input ref={inputRef} id="an-q" className="an-busca__input mono" value={q} onChange={(e) => {
+              setQ(e.target.value)
+              if (lectura || resol || noAnalizable) { setLectura(null); setResol(null); setNoAnalizable(null); setError(null) }
+            }} placeholder="RAY, ORCA, PENDLE…" autoComplete="off" spellCheck={false} />
             <button type="submit" className="btn an-busca__btn" disabled={buscando || !q.trim()}>{buscando ? 'Leyendo…' : 'Leer'}</button>
           </div>
           {!lectura && !resol && !noAnalizable && <FormatoAceptado />}
           {!lectura && !resol && !noAnalizable && (
             <>
-            <p className="an-busca__sugk mono">{q.trim() ? 'Coinciden' : 'O empieza por una de éstas'}</p>
-            <ul className="an-busca__sug" aria-label="Sugerencias">
-              {sugerencias.map((m: Moneda) => (
-                <li key={m.simbolo}><button type="button" className={`an-sug ${m.con_informe ? 'is-informe' : ''}`} onClick={() => elegir(m)}><b className="mono">{m.simbolo}</b><span>{m.nombre}</span>{m.con_informe && <i className="mono">análisis previo</i>}</button></li>
+            <p className="an-busca__sugk mono">Coinciden</p>
+            <ul className="an-busca__sug" aria-label="Monedas que coinciden">
+              {sugeridas.map((c) => (
+                <li key={`${c.simbolo}-${c.contrato ?? c.id_coingecko ?? c.nombre}`}>
+                  <button type="button" className={`an-sug ${c.con_informe ? 'is-informe' : ''}`} onClick={() => elegir(c)}>
+                    <b className="mono">{c.simbolo}</b>
+                    <span>{c.nombre}</span>
+                    {c.cadena && <i className="mono an-sug__cadena">{c.cadena}</i>}
+                    {typeof c.mcap_usd === 'number' && <i className="mono an-sug__mcap">{usd(c.mcap_usd)}</i>}
+                    {c.con_informe && <i className="mono">análisis previo</i>}
+                  </button>
+                </li>
               ))}
-              {universo.estado === 'ok' && !sugerencias.length && <li className="an-busca__nada body-muted">Nada con ese nombre entre las monedas que cubrimos.</li>}
             </ul>
             </>
           )}
@@ -142,11 +187,20 @@ export function Analizar() {
         {lectura && (
           <>
             {otraMoneda && <Nota tono="oro">De las monedas que se llaman <b>{simboloActual}</b>, la única con datos guardados es <b>{lectura.l?.nombre}</b>{lectura.l?.cadena ? <> en {lectura.l.cadena}</> : null}. Es la que estás viendo. La que elegiste todavía no tiene lectura: el análisis profundo la crea.</Nota>}
-            {lectura.l ? <LecturaDeterminista l={lectura.l} />
-              : lectura.fuera && !lectura.fuera.analizable && lectura.moneda ? <NoDaParaAnalisis moneda={lectura.moneda} motivos={lectura.fuera.motivos} onOtra={otra} />
-              : lectura.fuera && lectura.moneda ? <PuedeAnalizarse moneda={lectura.moneda} medidas={lectura.fuera.medidas} />
-              : lectura.moneda && lectura.sin_datos ? <SinDatosAun moneda={lectura.moneda} texto={lectura.sin_datos.texto} /> : null}
-            {!(lectura.fuera && !lectura.fuera.analizable) && (
+            {(() => {
+              const v = lectura.fuera ?? veredicto
+              /* El universo guarda una entrada hueca por símbolo ("SPX · SPX"). Si quien
+                 pregunta eligió una candidata concreta, manda su nombre y su cadena. */
+              const m = lectura.moneda && elegida
+                ? { ...lectura.moneda, nombre: elegida.nombre || lectura.moneda.nombre, cadena: elegida.cadena ?? lectura.moneda.cadena }
+                : lectura.moneda
+              if (lectura.l) return <LecturaDeterminista l={lectura.l} />
+              if (v && !v.analizable && m) return <NoDaParaAnalisis moneda={m} motivos={v.motivos} onOtra={otra} />
+              if (v && m) return <PuedeAnalizarse moneda={m} medidas={v.medidas} />
+              if (m && lectura.sin_datos) return <SinDatosAun moneda={m} texto={lectura.sin_datos.texto} />
+              return null
+            })()}
+            {!((lectura.fuera ?? veredicto) && !(lectura.fuera ?? veredicto)!.analizable) && (
               <Decidir simbolo={simboloActual} cupo={lectura.cupo} puedeProfundo={lectura.puede_profundo} onPedir={pedir} ocupado={pidiendo} error={errorPedido} />
             )}
             {lectura.l?.origen_motor === 'simulador' && <Nota tono="mudo">Lectura simulada: los números salen de la última pasada que VETA hizo sobre esta moneda; el análisis en vivo todavía no está conectado.</Nota>}
