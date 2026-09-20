@@ -57,7 +57,10 @@ export async function visualesPara(id: string, rol: Rol) {
   const r = g ?? a
   if (!r || !(await visiblePara(r, rol))) return null
   if (g && !puede(rol, 'gemas.informe')) return null
-  return visualesTodos()[id] ?? null
+  const v = visualesTodos()[id] ?? null
+  // El propio visual puede venir marcado, aunque su informe esté aprobado.
+  if (v && rol !== 'admin' && ((v as { solo_admin?: boolean }).solo_admin || (v as { bloqueado?: boolean }).bloqueado)) return null
+  return v
 }
 
 /* ---------- estado de publicación ---------- */
@@ -84,6 +87,12 @@ export async function estadoPublicacion(r: Registro): Promise<EstadoPublicacion>
 /** Visible para un rol: aprobado en su versión actual y, para base, pasada la ventana de anticipo del pro. */
 async function visiblePara(r: Registro, rol: Rol): Promise<boolean> {
   if (rol === 'admin') return true
+  // El motor marca lo que sólo puede ver la mesa. Se comprueba antes que nada, para que
+  // valga en las listas, en el detalle, en el seguimiento y en los visuales a la vez.
+  if ((r as { solo_admin?: boolean }).solo_admin) return false
+  // Un informe que cambió de tipo deja una versión final marcada: la vieja no se lista,
+  // porque si no la misma moneda aparece en gemas y en análisis.
+  if ((r as { reclasificado_a?: string }).reclasificado_a) return false
   const p = await estadoPublicacion(r)
   if (p.estado !== 'aprobado' || !p.publicado_en) return false
   if (r.tipo === 'gema' && !puede(rol, 'gemas.anticipado')) {

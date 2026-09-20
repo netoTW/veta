@@ -736,3 +736,15 @@
 .p-graf__zt { fill: var(--oro-luz); font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.08em; opacity: 0.85; }
 .p-graf__mt { fill: var(--oro-luz); font-family: var(--font-mono); font-size: 9.5px; letter-spacing: 0.08em; }
 .p-graf__pie { display: flex; flex-wrap: wrap; gap: 6px 16px; justify-content: space-between; padding: 9px 12px; border-top: 1px solid var(--hairline-2); color: var(--ceniza-2); font-size: 0.58rem; letter-spacing: 0.08em; text-transform: uppercase; }
+
+/* el veredicto direccional y las piezas que ya manda el motor */
+.p-cli__dir { margin: 0; align-self: start; font-size: 0.6rem; letter-spacing: 0.14em; text-transform: uppercase; padding: 4px 10px; border: 1px solid var(--hairline); }
+.p-cli__dir.is-alcista { color: var(--esmeralda-luz); border-color: rgba(31,164,111,0.4); }
+.p-cli__dir.is-bajista { color: var(--rojo-luz); border-color: rgba(181,71,62,0.4); }
+.p-cli__dir.is-neutral { color: var(--ceniza); }
+.p-cli__ht { margin: 0 0 8px; font-size: 1.05rem; font-weight: 400; color: var(--hueso); letter-spacing: -0.005em; }
+.p-cli__porque { margin: 8px 0 0 !important; color: var(--ceniza-2) !important; font-size: 0.88rem !important; }
+.p-cli__vp { margin-top: 8px !important; color: var(--ceniza) !important; font-size: 0.92rem !important; }
+.p-avz__prosa { display: flex; flex-direction: column; gap: 12px; padding-block: 4px 18px; }
+.p-avz__prosa p { margin: 0; color: var(--ceniza); font-size: 0.92rem; line-height: 1.6; max-width: 72ch; }
+.p-avz__prosa b { display: block; color: var(--oro); font-size: 0.58rem; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 4px; font-weight: 500; }

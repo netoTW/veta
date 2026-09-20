@@ -7,6 +7,7 @@ import { fecha, num, precio } from '../../lib/formato'
 import { limpiarProsa, llano, sinIdentificadores, revisarParaPublicar, type Reparo } from '../../lib/lenguaje'
 import { tesisCompuesta } from '../cifras'
 import type { Informe } from '../../lib/contrato'
+import type { InformeCliente } from '../paginas/InformeDetalle'
 import type { FilaBandeja } from './Bandeja'
 
 /* ============================================================================
@@ -26,7 +27,30 @@ const sano = (t?: string | null) => sinIdentificadores(limpiarProsa(llano(t ?? '
 /** Una frase suelta del informe, ya limpia, o cadena vacía si no quedó nada. */
 const bloque = (inf: Informe, k: string) => sano((inf.niveles as unknown as Record<string, { esencial?: { texto?: string } }> | undefined)?.[k]?.esencial?.texto)
 
+/* El motor ya escribe el texto de cliente (contrato §11). Cuando viene, manda él:
+   no hay que filtrar nada porque no trae vocabulario de taller. El camino de abajo
+   queda para los informes viejos, que todavía no lo traen. */
+function desdeInformeCliente(inf: Informe, ic: InformeCliente): Pieza[] | null {
+  if (!ic?.lectura?.veredicto) return null
+  const linea = `${inf.simbolo} · ${inf.nombre}${inf.cadena ? ` · ${inf.cadena}` : ''}`
+  const dir = ic.lectura.direccion ? `${ic.lectura.direccion}${ic.lectura.horizonte_dias ? ` a ${ic.lectura.horizonte_dias} días` : ''}` : ''
+  const crudas = [
+    { clave: 'ficha', titulo: 'Ficha corta', para: 'Para un mensaje o un pie de imagen',
+      texto: [linea, dir, '', ic.lectura.veredicto, '', (ic.lectura.parrafos ?? [])[0] ?? ''].filter(Boolean).join('\n').trim() },
+    { clave: 'hallazgo', titulo: 'Lo que el resto no ve', para: 'La pieza que más se comparte',
+      texto: (() => {
+        const h = (ic.hallazgos?.length ? ic.hallazgos : ic.hallazgo ? [ic.hallazgo] : [])[0]
+        return h?.titular ? [linea, '', h.titular, '', ...(h.parrafos ?? [])].join('\n').trim() : ''
+      })() },
+    { clave: 'riesgos', titulo: 'Lo que podría salir mal', para: 'Para acompañar cualquier pieza',
+      texto: ic.riesgos?.length ? [linea, '', ...ic.riesgos.map((r) => `· ${r}`)].join('\n').trim() : '' },
+  ]
+  return crudas.filter((x) => x.texto).map((x) => ({ ...x, reparos: revisarParaPublicar(x.texto) }))
+}
+
 function componer(inf: Informe): Pieza[] {
+  const ic = (inf as unknown as { informe_cliente?: InformeCliente }).informe_cliente
+  if (ic) { const p = desdeInformeCliente(inf, ic); if (p?.length) return p }
   const f = (inf as unknown as { ficha_esencial?: Record<string, unknown> }).ficha_esencial ?? {}
   const ref = f.precio_y_fecha_referencia as { precio_usd?: number; fecha?: string } | undefined
   const titular = sinIdentificadores(tesisCompuesta(inf))
@@ -95,7 +119,7 @@ export function Contenido() {
       <AdminCab
         eyebrow="Mesa · Contenido"
         titulo={<>Piezas listas, desde lo que ya aprobaste.</>}
-        lead="Se arman con campos que pasaron la comprobación de cifras, sin llamar a ningún modelo: ninguna cifra puede salir inventada. El lenguaje sí viene del sistema de análisis, así que cada pieza se revisa antes de que la copies."
+        lead="Se arman con el texto de cliente que ya escribe el sistema de análisis, sin llamar a ningún modelo: ninguna cifra puede salir inventada. Cada pieza se revisa igualmente antes de que la copies."
         tiles={[
           { k: 'Informes aprobados', v: filas ? num(filas.length) : '—' },
           { k: 'Piezas de este informe', v: inf ? String(piezas.length) : '—', tono: 'hueso' },

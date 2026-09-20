@@ -190,14 +190,17 @@ export interface NivelesCliente {
   escenarios?: { nombre?: string; min_x?: number; max_x?: number; un_solo_nivel?: boolean; dias?: number; condicion?: string }[]
   parrafos?: string[]
 }
+export interface Hallazgo { titular?: string; parrafos?: string[]; por_que_no_se_ve?: string }
 export interface InformeCliente {
   que_paso?: { titular?: string; parrafos?: string[]; cuando?: string }
-  lectura?: { veredicto?: string; parrafos?: string[] }
-  hallazgo?: { titular?: string; parrafos?: string[]; por_que_no_se_ve?: string }
+  lectura?: { veredicto?: string; parrafos?: string[]; direccion?: string; horizonte_dias?: number }
+  hallazgo?: Hallazgo
+  hallazgos?: Hallazgo[]
   niveles?: NivelesCliente
   vigilar?: { senal?: string; parrafos?: string[] }
   invalida?: { condicion?: string }
   riesgos?: string[]
+  avanzado?: Record<string, string>
 }
 
 /* ---------- el gráfico de precio: serie real, máximo marcado y zonas de volumen ---------- */
@@ -251,6 +254,10 @@ function GraficoPrecio({ n }: { n: NivelesCliente }) {
       </figcaption>
     </figure>
   )
+}
+
+const AVANZADO_LABEL: Record<string, string> = {
+  riesgo: 'Riesgo', valuacion: 'Valuación', mercado: 'Mercado', captura: 'Captura de valor', metodo: 'Método',
 }
 
 function SeccionCliente({ n, k, titulo, children }: { n: string; k: string; titulo?: string; children: React.ReactNode }) {
@@ -392,6 +399,12 @@ export function Cuerpo({ inf, esAnalisis }: { inf: Informe; esAnalisis: boolean 
 
       {/* ---- 2 · Nuestra lectura ---- */}
       <SeccionCliente n="2" k="Nuestra lectura" titulo={ic?.lectura?.veredicto ? llano(ic.lectura.veredicto) : undefined}>
+        {ic?.lectura?.direccion && delCatalogo('lectura.direccion', ic.lectura.direccion) && (
+          <p className={`p-cli__dir mono is-${ic.lectura.direccion}`}>
+            {delCatalogo('lectura.direccion', ic.lectura.direccion)}
+            {ic.lectura.horizonte_dias ? ` · ${ic.lectura.horizonte_dias} días` : ''}
+          </p>
+        )}
         {ic?.lectura?.parrafos?.length
           ? ic.lectura.parrafos.map((t, i) => <p key={i} className="p-cli__p p-cli__p--grande">{prosaDeCliente(t)}</p>)
           : <Prosa inf={inf} campo="ficha_esencial.tesis_una_linea" texto={f.tesis_una_linea} className="p-cli__p p-cli__p--grande" />}
@@ -399,14 +412,21 @@ export function Cuerpo({ inf, esAnalisis }: { inf: Informe; esAnalisis: boolean 
       </SeccionCliente>
 
       {/* ---- 3 · Lo que el resto no ve. Idem. ---- */}
-      {ic?.hallazgo?.titular && (
-        <SeccionCliente n="3" k="Lo que el resto no ve" titulo={llano(ic.hallazgo.titular)}>
-          <div className="p-cli__hallazgo">
-            {(ic.hallazgo.parrafos ?? []).map((t, i) => <p key={i}>{prosaDeCliente(t)}</p>)}
-          </div>
-          {ic.hallazgo.por_que_no_se_ve && <p className="p-cli__p">{prosaDeCliente(ic.hallazgo.por_que_no_se_ve)}</p>}
-        </SeccionCliente>
-      )}
+      {(() => {
+        const hs = (ic?.hallazgos?.length ? ic.hallazgos : ic?.hallazgo ? [ic.hallazgo] : []).filter((h) => h?.titular)
+        if (!hs.length) return null
+        return (
+          <SeccionCliente n="3" k="Lo que el resto no ve" titulo={hs.length === 1 ? llano(hs[0].titular!) : undefined}>
+            {hs.map((h, i) => (
+              <div key={i} className="p-cli__hallazgo">
+                {hs.length > 1 && <h3 className="p-cli__ht display">{llano(h.titular!)}</h3>}
+                {(h.parrafos ?? []).map((t, j) => <p key={j}>{prosaDeCliente(t)}</p>)}
+                {h.por_que_no_se_ve && <p className="p-cli__porque">{prosaDeCliente(h.por_que_no_se_ve)}</p>}
+              </div>
+            ))}
+          </SeccionCliente>
+        )
+      })()}
 
       {/* ---- 4 · Niveles ---- */}
       <Niveles inf={inf} nc={ic?.niveles ?? null} />
@@ -415,7 +435,11 @@ export function Cuerpo({ inf, esAnalisis }: { inf: Informe; esAnalisis: boolean 
       <SeccionCliente n="5" k="Qué vigilar y qué invalida">
         <div className="p-cli__vigilar">
           {ic?.vigilar?.senal && (
-            <div><span className="mono p-cli__et">Qué vigilar</span><p>{prosaDeCliente(ic.vigilar.senal)}</p></div>
+            <div>
+              <span className="mono p-cli__et">Qué vigilar</span>
+              <p>{prosaDeCliente(ic.vigilar.senal)}</p>
+              {(ic.vigilar.parrafos ?? []).map((t, i) => <p key={i} className="p-cli__vp">{prosaDeCliente(t)}</p>)}
+            </div>
           )}
           <div className="p-cli__inval">
             <span className="mono p-cli__et">Qué invalida la lectura</span>
@@ -424,13 +448,28 @@ export function Cuerpo({ inf, esAnalisis }: { inf: Informe; esAnalisis: boolean 
               : <p>{prosaDeCliente(ic?.invalida?.condicion || f.que_la_invalidaria || '')}</p>}
           </div>
         </div>
-        <Advertencias items={f.advertencias} />
+        {ic?.riesgos?.length ? (
+          <div className="p-advs">
+            <div className="p-advs__head"><span className="mono">Lo que podría salir mal</span></div>
+            <ul className="p-advs__lista">
+              {ic.riesgos.map((t, i) => <li key={i} className="p-adv"><span className="p-adv__texto">{prosaDeCliente(t)}</span></li>)}
+            </ul>
+          </div>
+        ) : <Advertencias items={f.advertencias} />}
       </SeccionCliente>
 
       <div className="shell">
         <details className="p-avz">
           <summary>Avanzado<span className="mono p-avz__pista">las dos varas, asimetría, riesgo de cola, microestructura y método</span></summary>
           <div className="p-avz__cuerpo">
+            {ic?.avanzado && Object.keys(ic.avanzado).length > 0 && (
+              <div className="shell p-avz__prosa">
+                {Object.entries(ic.avanzado).map(([k, v]) => {
+                  const t = prosaDeCliente(v)
+                  return t ? <p key={k}><b className="mono">{AVANZADO_LABEL[k] ?? k}</b>{t}</p> : null
+                })}
+              </div>
+            )}
       <div className="shell"><SelectorNivel /></div>
 
       <div className="shell">

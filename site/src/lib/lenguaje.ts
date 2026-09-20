@@ -266,6 +266,10 @@ export const CATALOGO_MOTOR: Record<string, CampoCatalogo> = {
       GOVERNANCE: 'El token es sólo gobernanza: no participa de la caja',
     },
   },
+  'lectura.direccion': {
+    que: 'Hacia dónde apunta la lectura',
+    valores: { alcista: 'Alcista', neutral: 'Neutral', bajista: 'Bajista' },
+  },
   'escenarios[].tipo': {
     que: 'Qué escenario es',
     valores: {
