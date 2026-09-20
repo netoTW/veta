@@ -80,6 +80,13 @@ export const FAMILIAS_INTERNAS: { clave: string; que: string; patrones: string[]
     'puntaje de', 'sobre 40', 'fuente: [a-z0-9/._-]+$', 'campo del paquete'] },
   { clave: 'proceso', que: 'Hablar de nuestro propio proceso editorial', patrones: [
     'no se publica', 'no se muestra', 'no entra en el informe', 'sin respaldo'] },
+  { clave: 'metodo', que: 'Notas de método estadístico o de fuente', patrones: [
+    'student-?t', 'bootstrap', '\\bskew\\b', '\\badapter\\b', '\\bEWMA\\b', '\\bMLE\\b',
+    'colas gruesas', 'var\u2089\u2085', 'cvar\u2089\u2085', '\\bVaR\\b', '\\bCVaR\\b',
+    'ventana observada', 'observaciones\\)', 'de bloques sobre'] },
+  { clave: 'no_aplica', que: 'Marcadores de dato que no aplica', patrones: [
+    '\\bn/d\\b', '\\bN/D\\b', '\\bnd\\b(?= )', 'sin valor', 'calidad parcial',
+    'no se pudo evaluar', 'no se pudo determinar', 'no est\u00e1 comprobado', 'no alcanzan los datos'] },
   { clave: 'sin_comparar', que: 'No hay con qué comparar: es un hueco', patrones: [
     'no se puede comparar', 'no hay comparables', 'con los? que construir', 'con los? que medir',
     'no tiene revenue', 'ni tenedores'] },
@@ -111,6 +118,18 @@ export function esAnalizable(r: { fundamentales?: { revenue_protocolo?: number |
 
 /** Palabras del taller que no van a vista de cliente, cambiadas por las de todos los días.
     Se aplica sobre texto que viene del informe, después de quitar las referencias. */
+const IDENTIFICADORES = /\b(?:dl_[a-z_]+|[a-z]+_sobre_[a-z]+|[a-z]+_usd|ANCHORED|PRE_REVENUE|NARRATIVE|GOVERNANCE|fapi\/[a-z0-9/]+|api\/v\d)\b/g
+
+/** Quita los identificadores y el paréntesis que los envolvía si queda vacío. */
+export const sinIdentificadores = (t: string) =>
+  t.replace(IDENTIFICADORES, '')
+    .replace(/\(\s*[,;·\s]*\)/g, '')
+    .replace(/\(\s*,\s*/g, '(')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/\s+([,.;:])/g, '$1')
+    .trim()
+
+
 /* ---------- el texto que llega de afuera no siempre viene en nuestro idioma ----------
    Lo que el sistema de análisis escribe puede venir en voseo y en minúscula.
    Se corrige acá, al mostrarlo: es la última frontera antes del lector. */
@@ -119,6 +138,8 @@ export const VOSEO: Record<string, string> = {
   venís: 'vienes', decís: 'dices', pedí: 'pide', mirá: 'mira', fijate: 'fíjate', tené: 'ten',
   poné: 'pon', hacé: 'haz', elegí: 'elige', probá: 'prueba', escribí: 'escribe', buscá: 'busca',
   esperá: 'espera', revisá: 'revisa', usá: 'usa', dejá: 'deja', andá: 've', avisá: 'avisa', mandá: 'manda',
+  arriesgás: 'arriesgas', ganás: 'ganas', perdés: 'pierdes', entrás: 'entras', salís: 'sales',
+  comprás: 'compras', vendés: 'vendes', esperás: 'esperas', mirás: 'miras', necesitás: 'necesitas',
 }
 /* Nada de \b: las palabras terminan en vocal acentuada y \b no la reconoce como letra. */
 const RE_VOSEO = new RegExp(`(?<!\\p{L})(${Object.keys(VOSEO).join('|')})(?!\\p{L})`, 'giu')
@@ -146,6 +167,8 @@ export const TRADUCCIONES: { de: RegExp; a: string; nota: string }[] = [
   { de: /\bcorrida\b/gi, a: 'pasada', nota: 'término del taller' },
   { de: /\bscanner\b/gi, a: 'rastreo', nota: 'término del taller' },
   { de: /\brevenue anualizado\b/gi, a: 'ingresos anualizados', nota: 'inglés sin traducir' },
+  { de: /\b(el|El)\s+revenue\b/g, a: '$1 ingreso', nota: 'singular masculino: conserva verbo y adjetivo' },
+  { de: /\bdel\s+revenue\b/gi, a: 'del ingreso', nota: 'contracción en singular' },
   { de: /\brevenue\b/gi, a: 'ingresos', nota: 'inglés sin traducir' },
   { de: /\b(el|El)\s+TVL\b/g, a: 'los fondos bloqueados', nota: 'sigla con artículo: cambia el número' },
   { de: /\bTVL\b/g, a: 'fondos bloqueados', nota: 'sigla sin explicar' },
@@ -157,7 +180,7 @@ export const TRADUCCIONES: { de: RegExp; a: string; nota: string }[] = [
 
 export function llano(t?: string | null): string {
   if (!t) return ''
-  let crudo = sinReferencias(t)
+  let crudo = sinIdentificadores(sinReferencias(t))
   for (const r of TRADUCCIONES) crudo = crudo.replace(r.de, r.a)
   crudo = crudo.replace(/\s{2,}/g, ' ').trim()
   return mayusculaInicial(tuteo(crudo))
@@ -172,17 +195,6 @@ export function llano(t?: string | null): string {
    ========================================================================== */
 
 /** Identificadores del taller que a veces viajan dentro de un paréntesis. */
-const IDENTIFICADORES = /\b(?:dl_[a-z_]+|[a-z]+_sobre_[a-z]+|[a-z]+_usd|ANCHORED|PRE_REVENUE|NARRATIVE|GOVERNANCE|fapi\/[a-z0-9/]+|api\/v\d)\b/g
-
-/** Quita los identificadores y el paréntesis que los envolvía si queda vacío. */
-export const sinIdentificadores = (t: string) =>
-  t.replace(IDENTIFICADORES, '')
-    .replace(/\(\s*[,;·\s]*\)/g, '')
-    .replace(/\(\s*,\s*/g, '(')
-    .replace(/\s{2,}/g, ' ')
-    .replace(/\s+([,.;:])/g, '$1')
-    .trim()
-
 export interface Reparo { que: string; donde: string }
 
 /** Lo que nunca puede salir publicado, con el nombre del problema en claro. */
