@@ -42,10 +42,10 @@ export function usePredicciones(activo: boolean) {
   return { d, recargar: () => setTick((t) => t + 1) }
 }
 
-const LADO_LABEL: Record<Lado, string> = { gana: 'la gema va ganando', pierde: 'la gema va perdiendo', sin_medir: 'sin medir' }
+const LADO_LABEL: Record<Lado, string> = { gana: 'la gema va ganando', pierde: 'la gema va perdiendo', sin_medir: 'todavía sin resultado' }
 const MOTIVO: Record<string, string> = {
   sin_universo_guardado: 'no quedó guardado el universo de esa corrida', sin_dias_transcurridos: 'todavía no hay días transcurridos',
-  serie_incompleta: 'la serie de precios está incompleta', medicion_desactivada: 'la medición está desactivada', otro: 'sin medir',
+  serie_incompleta: 'la serie de precios está incompleta', medicion_desactivada: 'la medición está desactivada', otro: 'todavía sin resultado',
 }
 
 /* ---------- una celda del marcador ---------- */
@@ -56,9 +56,9 @@ function Celda({ k, lado, valor, motivo, principal = false }: { k: ReactNode; la
   return (
     <div className={`mk__celda ${lado ? `mk__celda--${lado}` : ''} ${principal ? 'mk__celda--gema' : ''}`}>
       <span className="mk__k mono">{k}</span>
-      {medible || principal ? <span className="mk__v num">{pct(valor ?? null, 1, true)}</span> : <span className="mk__v mk__v--nm">sin medir</span>}
+      {medible || principal ? <span className="mk__v num">{pct(valor ?? null, 1, true)}</span> : <span className="mk__v mk__v--nm">todavía sin resultado</span>}
       {lado && lado !== 'sin_medir' && <span className={`mk__lado mono mk__lado--${lado}`}>{LADO_LABEL[lado]}</span>}
-      {lado === 'sin_medir' && <span className="mk__motivo">{motivo || 'sin medir'}</span>}
+      {lado === 'sin_medir' && motivo && <span className="mk__motivo">{motivo}</span>}
     </div>
   )
 }
@@ -114,7 +114,7 @@ export function MarcadorAgregado({ visitante = false }: { visitante?: boolean })
   const m = st.datos
   const total = m.b1.gana + m.b1.pierde
   const veredicto = m.b1.gana > m.b1.pierde ? 'gana' : m.b1.pierde > m.b1.gana ? 'pierde' : total ? 'parejo' : 'sin_medir'
-  const frase = veredicto === 'gana' ? 'VETA va ganando' : veredicto === 'pierde' ? 'VETA va perdiendo' : veredicto === 'parejo' ? 'VETA va parejo' : 'Todavía sin medir'
+  const frase = veredicto === 'gana' ? 'VETA va ganando' : veredicto === 'pierde' ? 'VETA va perdiendo' : veredicto === 'parejo' ? 'VETA va parejo' : 'Todavía sin resultado'
   return (
     <section className={`mk mk--agregado mk--${veredicto}`} aria-label="Marcador agregado">
       <div className="mk__cab">
@@ -154,7 +154,7 @@ function Cuentas({ c }: { c: { gana: number; pierde: number; sin_medir: number }
     <span className="mk__c">
       <span className="mk__c--gana"><b className="num">{c.gana}</b> ganando</span>
       <span className="mk__c--pierde"><b className="num">{c.pierde}</b> perdiendo</span>
-      <span className="mk__c--nm"><b className="num">{c.sin_medir}</b> sin medir</span>
+      {c.sin_medir > 0 && <span className="mk__c--nm"><b className="num">{c.sin_medir}</b> todavía sin resultado</span>}
     </span>
   )
 }
@@ -219,7 +219,7 @@ export function MarcadorPersonal({ compacto = false }: { compacto?: boolean }) {
     <section className="mk mk--personal" aria-label="Tus predicciones">
       <div className="mk__cab"><span className="mk__titulo">Tus predicciones <span className="mk__vivo mono">contra VETA · por ahora</span></span></div>
       <div className="mk__agg">
-        <div className="mk__frase"><b className="num">{m.acertando} de {m.total - m.sin_medir}</b><span>acertando por ahora{m.sin_medir ? ` · ${m.sin_medir} sin medir` : ''}</span></div>
+        <div className="mk__frase"><b className="num">{m.acertando} de {m.total - m.sin_medir}</b><span>acertando por ahora{m.sin_medir ? ` · ${m.sin_medir} todavía sin resultado` : ''}</span></div>
         <div className="mk__frase mk__frase--veta"><b className="num">{m.veta.acertando} de {m.veta.total}</b><span>VETA, contra la canasta</span></div>
       </div>
       {!compacto && d.predicciones.length > 0 && (
@@ -228,7 +228,7 @@ export function MarcadorPersonal({ compacto = false }: { compacto?: boolean }) {
             <li key={p.gema_id}>
               <Link to={`/gemas/${p.gema_id}`} className="mk__sym">{p.simbolo}</Link>
               <span className="mono mk__dias">{p.prediccion === 'gana' ? 'le gana' : 'no le gana'} · {fecha(p.fecha)}</span>
-              <span className={`mk__lado mono mk__lado--${p.acierto_por_ahora === null ? 'sin_medir' : p.acierto_por_ahora ? 'gana' : 'pierde'}`}>{p.acierto_por_ahora === null ? 'sin medir' : p.acierto_por_ahora ? 'acertando' : 'fallando'}</span>
+              <span className={`mk__lado mono mk__lado--${p.acierto_por_ahora === null ? 'sin_medir' : p.acierto_por_ahora ? 'gana' : 'pierde'}`}>{p.acierto_por_ahora === null ? 'todavía sin resultado' : p.acierto_por_ahora ? 'acertando' : 'fallando'}</span>
             </li>
           ))}
         </ul>
