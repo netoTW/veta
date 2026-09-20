@@ -80,7 +80,7 @@ async function sincronizarUna(f: FilaSolicitud): Promise<FilaSolicitud> {
     if (p) await aplicarProgreso(f, p)
     else if (Date.now() - Date.parse(f.iniciada ?? f.creada) > SIN_REGISTRO_MS) {
       // el motor no tiene registro del pedido (se reinició, o nunca lo tomó): no se deja al usuario esperando
-      await aplicarProgreso(f, { solicitud_id: f.id, estado: 'fallido', etapa: f.etapa as Progreso['etapa'], avance: null, detalle: 'El pedido se perdió.', etapas_hechas: JSON.parse(f.etapas_hechas), iniciado: f.iniciada, actualizado: ahora(), terminado: ahora(), costo_real_usd: 0, resultado: null, fallo: { codigo: 'motor_no_disponible', texto: 'El sistema de análisis perdió el registro de este pedido. No se descontó: podés pedirlo de nuevo.' }, verificador: null })
+      await aplicarProgreso(f, { solicitud_id: f.id, estado: 'fallido', etapa: f.etapa as Progreso['etapa'], avance: null, detalle: 'El pedido se perdió.', etapas_hechas: JSON.parse(f.etapas_hechas), iniciado: f.iniciada, actualizado: ahora(), terminado: ahora(), costo_real_usd: 0, resultado: null, fallo: { codigo: 'motor_no_disponible', texto: 'El sistema de análisis perdió el registro de este pedido. No se descontó: puedes pedirlo de nuevo.' }, verificador: null })
     }
   } catch (e) { console.warn('[analizar] progreso', f.id, (e as Error).message) }
   return await bd.uno('SELECT * FROM solicitud WHERE id = ?', [f.id]) as FilaSolicitud

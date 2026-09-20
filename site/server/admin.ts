@@ -87,7 +87,7 @@ adminApp.post('/bandeja/:id/decision', async (c) => {
   const verEstado = (r.verificador as { estado?: string } | undefined)?.estado
   const bloqueado = BLOQUEADO(verEstado)
   if (accion === 'aprobar' && bloqueado && body.bloqueo_confirmado !== true) {
-    return c.json({ error: 'bloqueo_no_confirmado', detalle: `El Verificador dejó este informe en estado "${verEstado}". Para aprobarlo tenés que confirmar explícitamente que viste el bloqueo.` }, 409)
+    return c.json({ error: 'bloqueo_no_confirmado', detalle: `El Verificador dejó este informe en estado "${verEstado}". Para aprobarlo tienes que confirmar explícitamente que viste el bloqueo.` }, 409)
   }
   const admin = c.get('admin'); const fecha = ahora()
   const fila = {
@@ -173,7 +173,7 @@ adminApp.patch('/usuarios/:id/rol', async (c) => {
   const id = c.req.param('id')
   const { rol } = await c.req.json().catch(() => ({})) as { rol?: string }
   if (rol !== 'admin' && rol !== 'usuario') return c.json({ error: 'rol_invalido' }, 400)
-  if (id === c.get('admin').id && rol !== 'admin') return c.json({ error: 'no_a_vos_mismo', detalle: 'No podés quitarte el rol admin a vos mismo.' }, 400)
+  if (id === c.get('admin').id && rol !== 'admin') return c.json({ error: 'no_a_ti_mismo', detalle: 'No puedes quitarte el rol admin a ti mismo.' }, 400)
   await auth.api.setRole({ body: { userId: id, role: rol as 'admin' | 'user' }, headers: c.req.raw.headers })
   await log(c, 'usuario.rol', 'usuario', id, { rol })
   return c.json({ ok: true })
@@ -182,7 +182,7 @@ adminApp.patch('/usuarios/:id/rol', async (c) => {
 adminApp.patch('/usuarios/:id/estado', async (c) => {
   const id = c.req.param('id')
   const { estado, motivo } = await c.req.json().catch(() => ({})) as { estado?: string; motivo?: string }
-  if (id === c.get('admin').id) return c.json({ error: 'no_a_vos_mismo', detalle: 'No podés suspender tu propia cuenta.' }, 400)
+  if (id === c.get('admin').id) return c.json({ error: 'no_a_ti_mismo', detalle: 'No puedes suspender tu propia cuenta.' }, 400)
   if (estado === 'suspendido') {
     await auth.api.banUser({ body: { userId: id, banReason: motivo?.trim() || 'suspendido por admin' }, headers: c.req.raw.headers })
     await bd.ejecutar('UPDATE "user" SET estado = ? WHERE id = ?', ['suspendido', id])
@@ -192,6 +192,43 @@ adminApp.patch('/usuarios/:id/estado', async (c) => {
   } else return c.json({ error: 'estado_invalido' }, 400)
   await log(c, estado === 'suspendido' ? 'usuario.suspender' : 'usuario.reactivar', 'usuario', id, { motivo: motivo ?? null })
   return c.json({ ok: true })
+})
+
+/* ============================================================================
+   Borrar una cuenta. Existe para no tener que tocar la base a mano, que es
+   como se quedaron filas huérfanas la primera vez.
+
+   Se borra lo personal y se conserva el gasto: un análisis que costó dinero
+   sigue contando en Consumo aunque su dueño ya no exista, sólo que sin dueño.
+   ========================================================================== */
+adminApp.delete('/usuarios/:id', async (c) => {
+  const id = c.req.param('id')
+  const admin = c.get('admin')
+  if (id === admin.id) return c.json({ error: 'no_a_ti_mismo', detalle: 'No puedes borrar tu propia cuenta.' }, 400)
+  const u = await bd.uno<{ id: string; email: string; role: string | null }>('SELECT id, email, role FROM "user" WHERE id = ?', [id])
+  if (!u) return c.json({ error: 'no_encontrado' }, 404)
+  if (u.role === 'admin') {
+    const otros = await bd.uno<{ n: number }>(`SELECT COUNT(*) AS n FROM "user" WHERE role = 'admin' AND id <> ?`, [id])
+    if (!otros || Number(otros.n) === 0) return c.json({ error: 'ultimo_admin', detalle: 'Es el único admin que queda. Nombra otro antes de borrarlo.' }, 400)
+  }
+  const { confirmacion } = await c.req.json().catch(() => ({})) as { confirmacion?: string }
+  if ((confirmacion ?? '').trim().toLowerCase() !== u.email.toLowerCase()) {
+    return c.json({ error: 'confirmacion_invalida', detalle: 'Escribe el correo de la cuenta para confirmar.' }, 400)
+  }
+
+  // Lo que se conserva, sin dueño: el gasto. Lo que se va: todo lo personal.
+  await bd.ejecutar('UPDATE solicitud SET usuario_id = NULL, usuario_email = NULL WHERE usuario_id = ?', [id])
+  await bd.ejecutar("UPDATE uso_analisis SET usuario_id = 'cuenta_borrada' WHERE usuario_id = ?", [id])
+  for (const t of ['alerta', 'prediccion', 'voto', 'cupo', 'suscripcion']) {
+    await bd.ejecutar(`DELETE FROM ${t} WHERE usuario_id = ?`, [id]).catch(() => {})
+  }
+  await bd.ejecutar('DELETE FROM session WHERE "userId" = ?', [id]).catch(() => {})
+  await bd.ejecutar('DELETE FROM account WHERE "userId" = ?', [id]).catch(() => {})
+  await bd.ejecutar('DELETE FROM "user" WHERE id = ?', [id])
+
+  // El correo queda en el registro a propósito: sin él, el borrado no se puede auditar.
+  await log(c, 'usuario.borrar', 'usuario', id, { email: u.email, rol: u.role ?? 'usuario' })
+  return c.json({ ok: true, borrado: u.email })
 })
 
 adminApp.patch('/usuarios/:id/cupo', async (c) => {

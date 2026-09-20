@@ -51,11 +51,12 @@ export function estadoEconomicoLlano(estado: string, captura: boolean): string {
 
 /** Lectura de microestructura en una frase. */
 export function microLlano(lectura?: string | null): string {
-  switch ((lectura || '').toLowerCase()) {
+  switch ((lectura || '').toLowerCase().replace(/a$/, 'o')) {
     case 'spot_driven': case 'spot-driven': return 'El precio lo mueve la compra al contado, no el apalancamiento'
     case 'perp_driven': case 'perp-driven': return 'El precio lo mueve el apalancamiento en perpetuos'
-    case 'indeterminado': return 'No se pudo determinar qué mueve el precio'
-    default: return lectura ? sinReferencias(lectura) : 'Sin lectura de microestructura'
+    // Indeterminado es un hueco, y los huecos no se enseñan: cadena vacía y la línea se omite.
+    case 'indeterminado': return ''
+    default: return lectura ? sinReferencias(lectura) : ''
   }
 }
 
@@ -233,4 +234,67 @@ export const LECTURA_LABEL: Record<string, { t: string; tono: 'esm' | 'oro' | 'r
   captura_verificada: { t: 'El token cobra, verificado', tono: 'esm' }, captura_declarada: { t: 'Cobra, sin verificar', tono: 'oro' }, sin_captura: { t: 'No cobra', tono: 'rojo' },
   profunda: { t: 'Profunda', tono: 'esm' }, suficiente: { t: 'Suficiente', tono: 'oro' }, fina: { t: 'Fina', tono: 'rojo' },
   sin_dato: { t: 'Sin dato', tono: 'mudo' },
+}
+
+/* ============================================================================
+   Catálogo de los códigos del motor.
+
+   Todo código que llega del motor se traduce aquí o no se muestra. Antes
+   había traducciones sueltas y un caso por defecto que inventaba: para
+   `NEGOCIO_SIN_CAPTURA` llegó a decir "captura de valor verificada", que es
+   lo contrario de lo que decía el informe.
+
+   `interno: true` significa que el campo no puede aparecer en vista de
+   cliente en ninguna forma. Está para que se vea, no para traducirlo.
+   ========================================================================== */
+export interface CampoCatalogo { que: string; interno?: boolean; valores: Record<string, string> }
+
+export const CATALOGO_MOTOR: Record<string, CampoCatalogo> = {
+  tier: { que: 'Nivel de riesgo del informe', valores: TIER_LLANO },
+  estado_economico: {
+    que: 'De dónde sale el valor del token',
+    valores: {
+      ANCHORED: 'El protocolo factura y el token participa de esa caja',
+      NEGOCIO_SIN_CAPTURA: 'El protocolo factura, pero el token no participa de esa caja',
+      REFLEXIVE: 'El precio se sostiene sobre su propia dinámica, no sobre una caja',
+      PRE_REVENUE: 'El protocolo todavía no factura',
+      NARRATIVE: 'El precio vive de la narrativa, no de una caja',
+      GOVERNANCE: 'El token es sólo gobernanza: no participa de la caja',
+    },
+  },
+  'escenarios[].tipo': {
+    que: 'Qué escenario es',
+    valores: {
+      bull: 'Al alza', bull_reflexivo: 'Al alza, si vuelve a máximos',
+      base: 'Escenario base', bear: 'A la baja',
+    },
+  },
+  estado_seguimiento: {
+    que: 'Si lo seguimos día a día',
+    valores: { en_seguimiento: 'En seguimiento diario', sin_seguimiento: '' },
+  },
+  'advertencias[].severidad': {
+    que: 'Cuánto pesa una advertencia',
+    // Sólo la primera llega al cliente, y sin decir su nombre: es "Lo que podría salir mal".
+    valores: { COMPROMETE_TESIS: 'Lo que podría salir mal', LIMITA_LECTURA: '', CONTEXTO: '' },
+  },
+  'microestructura.lectura': {
+    que: 'Qué mueve el precio',
+    valores: {
+      spot_driven: 'El precio lo mueve la compra al contado, no el apalancamiento',
+      perp_driven: 'El precio lo mueve el apalancamiento en perpetuos',
+      indeterminado: '', indeterminada: '',
+    },
+  },
+  calidad_por_seccion: { que: 'Cuán completa quedó cada sección', interno: true, valores: {} },
+  'fuentes[].calidad': { que: 'Si la fuente respondió', interno: true, valores: {} },
+  'verificador.estado': { que: 'Resultado del control de calidad', interno: true, valores: {} },
+  'faltantes[].codigo': { que: 'Por qué no se puede analizar', interno: true, valores: {} },
+}
+
+/** Traduce un código con el catálogo. Cadena vacía = no se muestra. Nunca inventa. */
+export function delCatalogo(campo: string, codigo?: string | null): string {
+  const c = CATALOGO_MOTOR[campo]
+  if (!c || c.interno || !codigo) return ''
+  return c.valores[codigo] ?? c.valores[codigo.toUpperCase()] ?? c.valores[codigo.toLowerCase()] ?? ''
 }

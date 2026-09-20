@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { PlanBadge, Dato } from '../piezas'
 import { api, ErrorApi } from '../../lib/datos'
 import { useSesion } from '../../lib/sesion'
@@ -20,6 +20,9 @@ export function CuentaDetalle() {
   const { id = '' } = useParams()
   const { yo } = useSesion()
   const [d, setD] = useState<Detalle | null>(null)
+  const nav = useNavigate()
+  const [borrando, setBorrando] = useState(false)
+  const [confirmacion, setConfirmacion] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [msg, setMsg] = useState<string | null>(null)
   const [motivo, setMotivo] = useState('')
@@ -105,6 +108,34 @@ export function CuentaDetalle() {
                 </div>
           ) : <p className="p-nota">Es tu cuenta: no puedes suspenderla ni quitarte el rol.</p>}
         </section>
+
+        {!soyYo && (
+          <section className="p-card a-borrar">
+            <span className="mono a-sec__k">Borrar la cuenta</span>
+            {!borrando ? (
+              <>
+                <p className="p-nota">Suspender basta para cerrar el acceso. Borrar es para cuentas de prueba: quita la persona y deja el gasto.</p>
+                <div className="a-acciones"><button type="button" className="btn btn--ghost a-dec__rechazar" onClick={() => setBorrando(true)}>Borrar cuenta…</button></div>
+              </>
+            ) : (
+              <div className="a-acciones a-acciones--col">
+                <p className="a-borrar__aviso">Se borran su acceso, su plan, su cupo, sus alertas, sus predicciones y su voto. <b>No se borra lo que costó dinero</b>: sus análisis siguen contando en Consumo, ya sin dueño. Queda registrado quién lo hizo y cuándo.</p>
+                <label className="a-dec__motivo">
+                  <span className="mono">Escribe {u.email} para confirmar</span>
+                  <input type="text" value={confirmacion} onChange={(e) => setConfirmacion(e.target.value)} autoComplete="off" spellCheck={false} />
+                </label>
+                <div className="a-acciones">
+                  <button type="button" className="btn btn--ghost" onClick={() => { setBorrando(false); setConfirmacion('') }}>Cancelar</button>
+                  <button type="button" className="btn a-dec__rechazar" disabled={confirmacion.trim().toLowerCase() !== u.email.toLowerCase()}
+                    onClick={async () => {
+                      try { await api(`/api/admin/usuarios/${u.id}`, { metodo: 'DELETE', cuerpo: { confirmacion } }); nav('/admin/cuentas') }
+                      catch (e) { setMsg(e instanceof ErrorApi ? e.message : String(e)); setBorrando(false) }
+                    }}>Borrar definitivamente</button>
+                </div>
+              </div>
+            )}
+          </section>
+        )}
 
         <section className="p-card a-cuenta--ancha">
           <span className="mono a-sec__k">Consumo · {d.usos.length} análisis</span>
