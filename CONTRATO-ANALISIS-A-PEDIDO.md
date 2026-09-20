@@ -469,3 +469,76 @@ pedido, porque el mensaje que viaja al motor se reconstruye desde esa fila.
    `/analizable`, que ya es bastante. Si el motor pudiera calcular las cinco señales
    (qué mueve el precio, caídas, concentración, si el token cobra, salida) sin un análisis
    completo, la lectura gratis valdría para cualquier moneda y no sólo para las ya analizadas.
+
+---
+
+# 11. El informe de cliente en cinco secciones  ·  coordinación
+
+Decidido por Pablo el 2026-09-19: el motor exporta **cinco secciones fijas más un bloque
+Avanzado**. Esto reemplaza al `narrado` de §9.4, que queda absorbido aquí.
+
+| # | Sección | Qué responde |
+|---|---|---|
+| 1 | **Qué pasó** | El hecho concreto y datado que hace que esta moneda esté sobre la mesa |
+| 2 | **Nuestra lectura** | El veredicto en una línea, y en qué se apoya |
+| 3 | **Lo que el resto no ve** | El hallazgo propio: lo que sale de mirar donde nadie mira |
+| 4 | **Niveles** | Precio hoy, máximo, y los rangos de los escenarios con su plazo |
+| 5 | **Qué vigilar y qué invalida** | La señal a seguir y el número exacto que tumba la tesis |
+| — | **Avanzado** | Todo lo actual: varas, asimetría, riesgo de cola, microestructura, notas de método |
+
+## 11.1 Las tres reglas que gobiernan las cinco secciones
+
+1. **Escritas para el cliente, en español neutro con tuteo.** Sin vocabulario de taller. La
+   lista de lo que hoy se cuela está en `PATRONES-PROSA-MOTOR.md`, medida sobre 70 informes.
+2. **Lo que no aplica no viene.** Si una sección no tiene nada verdadero que decir para esta
+   moneda, **se omite el campo entero**. Nada de `n/d`, `null`, `"no se pudo"`, `"dato ausente"`
+   ni `"calidad parcial"`. La web oculta la sección y no deja hueco.
+3. **Las notas de método van a Avanzado.** *Student-t, bootstrap, skew, adapter, ventana
+   observada, VaR₉₅* y demás no son riesgos de la moneda: son cómo se midió. Hoy salen mezcladas
+   en las advertencias y acaban en «Lo que podría salir mal».
+
+## 11.2 Forma propuesta
+
+```json
+"informe_cliente": {
+  "que_paso":  { "titular": "…", "parrafos": ["…"], "cuando": "2026-09-11", "fuentes": [{"url":"…","fecha":"…"}] },
+  "lectura":   { "veredicto": "…una línea…", "parrafos": ["…"], "apoyos": [{"que":"…","cifra":"13.066.866 USD","periodo":"30 d","fuente_url":"…"}] },
+  "hallazgo":  { "titular": "…", "parrafos": ["…"], "por_que_no_se_ve": "…" },
+  "niveles":   { "precio_usd": 0.301029, "fecha": "2026-09-19",
+                 "maximo": { "valor_usd": 0.342971, "fecha": "2026-09-11" },
+                 "escenarios": [{ "nombre":"…", "min_x":1.14, "max_x":1.14, "dias":90, "condicion":"si…" }],
+                 "serie": [{ "t":"2026-08-04", "c":0.21, "v":1234567 }] },
+  "vigilar":   { "senal": "…", "cada": "semanal", "fuente_url": "…" },
+  "invalida":  { "condicion": "…", "cifra": 6243666, "unidad": "USD", "plazo": "próxima medición", "fuente_url": "…" },
+  "riesgos":   [ "…riesgo real, en palabras normales…" ]
+}
+```
+
+Todo campo es opcional salvo `lectura.veredicto`. **Ausente significa «no aplica».**
+
+## 11.3 Lo que hace falta para el gráfico de Niveles  ·  HUECO
+
+La pantalla de Niveles lleva un **gráfico de precio con el máximo histórico marcado y las zonas
+de volumen**. Hoy no se puede dibujar: el informe **no trae ninguna serie temporal**.
+
+Lo que sí trae, y con lo que la web ya puede construir una escala de niveles sin serie:
+
+| Dato | En STONK |
+|---|---|
+| `ficha_esencial.precio_y_fecha_referencia` | 0,301029 USD el 2026-09-19 |
+| `varas.reflexiva.maximo_valor` / `maximo_fecha` | 0,342971 USD el 2026-09-11 |
+| `varas.reflexiva.fraccion_del_maximo` | 88 % del máximo |
+| `escenarios[].rango_min` / `rango_max` / `horizonte_dias` | 1,14x – 1,14x en 90 días |
+| `analizabilidad.medidas.dias_precio` | 47 días |
+
+**Lo que falta:** `niveles.serie`, una fila por día con fecha, cierre y volumen. Con 90 días
+basta. Sin eso, la web dibuja la escala de niveles (precio, máximo y rangos) y **no** finge una
+línea de precio, porque una línea inventada es una cifra inventada.
+
+## 11.4 Un detalle de los escenarios
+
+`escenarios[]` no trae `nombre` ni `probabilidad`: trae `tipo` (`bull_reflexivo`), que es
+vocabulario interno, y rangos iguales en mínimo y máximo (`1.1393` – `1.1393`), que en pantalla
+se lee como un rango que no es rango. Para la sección Niveles hacen falta un **nombre legible**
+y, si existe, la **probabilidad**; y si el mínimo y el máximo coinciden, decirlo como un solo
+número y no como un intervalo.
