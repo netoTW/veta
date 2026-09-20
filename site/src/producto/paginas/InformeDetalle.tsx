@@ -204,15 +204,31 @@ export interface InformeCliente {
 }
 
 /* ---------- el gráfico de precio: serie real, máximo marcado y zonas de volumen ---------- */
+/** Más de tres veces el precio de hoy: se sale de la escala y se cuenta como dato. */
+const LEJOS_X = 3
+
+/** "1/21" + 2021-10-23 → "Cotiza a 1/21 de su máximo de 2021." */
+function tituloNiveles(fraccion?: string | null, fechaMax?: string | null): string | undefined {
+  if (!fraccion) return undefined
+  const f = llano(String(fraccion)).replace(/\s*del m[aá]ximo\s*$/i, '').trim()
+  const anio = fechaMax ? new Date(fechaMax).getUTCFullYear() : null
+  return `Cotiza a ${f} de su máximo${anio ? ` de ${anio}` : ''}.`
+}
+
 function GraficoPrecio({ n }: { n: NivelesCliente }) {
   const s = (n.serie ?? []).filter((x) => typeof x.c === 'number' && x.c > 0)
   if (s.length < 5) return null
   const W = 720, H = 220, PL = 8, PR = 8, PT = 14, PB = 22
   const cs = s.map((x) => x.c)
   const zonas = (n.zonas_volumen ?? []).filter((z) => typeof z.desde === 'number' && typeof z.hasta === 'number')
-  const max = n.maximo?.valor_usd
+  const maxAbs = n.maximo?.valor_usd
+  const hoyP = cs[cs.length - 1]
+  /* Un máximo muy por encima aplasta la serie contra el borde y no se lee nada. Cuando
+     pasa de tres veces el precio de hoy, sale de la escala y se cuenta como dato. */
+  const lejos = typeof maxAbs === 'number' && hoyP > 0 && maxAbs / hoyP > LEJOS_X
+  const max = lejos ? undefined : maxAbs
   const lo = Math.min(...cs, ...zonas.map((z) => z.desde))
-  const hi = Math.max(...cs, ...(typeof max === 'number' ? [max] : []), ...zonas.map((z) => z.hasta))
+  const hi = Math.max(...cs, ...(typeof max === 'number' ? [max] : []), ...zonas.filter((z) => !lejos || z.hasta <= hoyP * LEJOS_X).map((z) => z.hasta))
   const x = (i: number) => PL + (i / Math.max(1, s.length - 1)) * (W - PL - PR)
   const y = (v: number) => PT + (1 - (v - lo) / Math.max(1e-12, hi - lo)) * (H - PT - PB)
   const linea = s.map((p2, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(p2.c).toFixed(1)}`).join(' ')
@@ -229,7 +245,7 @@ function GraficoPrecio({ n }: { n: NivelesCliente }) {
             <stop offset="100%" stopColor="var(--esmeralda)" stopOpacity="0" />
           </linearGradient>
         </defs>
-        {zonas.map((z, i) => (
+        {zonas.filter((z) => z.desde <= hi && z.hasta >= lo).map((z, i) => (
           <g key={i}>
             <rect x={PL} y={y(z.hasta)} width={W - PL - PR} height={Math.max(2, y(z.desde) - y(z.hasta))} fill="var(--oro)" fillOpacity="0.07" />
             {typeof z.fraccion_del_volumen === 'number' && (
@@ -248,10 +264,15 @@ function GraficoPrecio({ n }: { n: NivelesCliente }) {
         <circle cx={x(s.length - 1)} cy={y(cs[cs.length - 1])} r="3.5" fill="var(--hueso)" />
       </svg>
       <figcaption className="p-graf__pie mono">
-        <span>{fecha(s[0].t)}</span>
-        <span>{s.length} días{conVol ? ' · las bandas son los precios donde se concentró el volumen' : ''}</span>
-        <span>{fecha(s[s.length - 1].t)}</span>
+        <span>{fecha(s[0].t)} — {fecha(s[s.length - 1].t)}</span>
+        <span>{s.length} días{conVol ? ' · las bandas marcan dónde se concentró el volumen' : ''}</span>
       </figcaption>
+      {lejos && typeof maxAbs === 'number' && (
+        <p className="p-graf__lejos">
+          <b className="mono">{precio(maxAbs)}</b>
+          <span>su máximo{n.maximo?.fecha ? ` de ${new Date(n.maximo.fecha).getUTCFullYear()}` : ''}, {mult(maxAbs / hoyP)} por encima de hoy. Queda fuera del gráfico para que se vean los {s.length} días.</span>
+        </p>
+      )}
     </figure>
   )
 }
@@ -283,32 +304,40 @@ function Niveles({ inf, nc }: { inf: Informe; nc?: NivelesCliente | null }) {
 
   const esc = (inf.escenarios ?? []).filter((e) => typeof e.rango_min === 'number' && typeof e.rango_max === 'number')
   const marcas: { v: number; et: string; clase: string }[] = []
-  if (max && max > 0) marcas.push({ v: max, et: `Máximo${rf?.maximo_fecha ? ` · ${fecha(rf.maximo_fecha)}` : ''}`, clase: 'is-max' })
+  const lejano: { v: number; que: string }[] = []
+  const cerca = (v: number) => v <= hoy * LEJOS_X && v >= hoy / LEJOS_X
+  if (max && max > 0) {
+    if (cerca(max)) marcas.push({ v: max, et: `Máximo${rf?.maximo_fecha ? ` · ${fecha(rf.maximo_fecha)}` : ''}`, clase: 'is-max' })
+    else lejano.push({ v: max, que: `su máximo${rf?.maximo_fecha ? ` de ${new Date(rf.maximo_fecha).getUTCFullYear()}` : ''}, ${mult(max / hoy)} por encima de hoy` })
+  }
   marcas.push({ v: hoy, et: `Hoy · ${fecha(f.precio_y_fecha_referencia.fecha)}`, clase: 'is-hoy' })
   for (const e of esc) {
     const et = delCatalogo('escenarios[].tipo', e.tipo) || 'Escenario'
     // Un escenario a la baja se dibuja en su suelo, no en su techo: su techo es el precio de hoy.
     const baja = e.rango_min < 1
     const x = baja ? e.rango_min : e.rango_max
-    marcas.push({ v: hoy * x, et: `${et} · ${mult(x)}${e.horizonte_dias ? ` · ${e.horizonte_dias} d` : ''}`, clase: baja ? 'is-baja' : 'is-alza' })
+    const v = hoy * x
+    if (cerca(v)) marcas.push({ v, et: `${et} · ${mult(x)}${e.horizonte_dias ? ` · ${e.horizonte_dias} d` : ''}`, clase: baja ? 'is-baja' : 'is-alza' })
+    else lejano.push({ v, que: `el techo del escenario ${baja ? 'a la baja' : 'al alza'}, ${mult(x)}` })
   }
-  /* Dos marcas en el mismo precio se pisan: se funden en una sola con las dos etiquetas. */
+  const vs0 = marcas.map((m) => m.v)
+  const lo = Math.min(...vs0), hi = Math.max(...vs0)
+  const pos = (v: number) => (hi === lo ? 50 : ((hi - v) / (hi - lo)) * 100)
+  /* Dos etiquetas se pisan cuando caen cerca EN PANTALLA, no cuando sus precios se parecen:
+     con un rango grande, valores muy distintos acaban en la misma línea. Se funden. */
   const fundidas: typeof marcas = []
-  for (const m of marcas.sort((a, b) => b.v - a.v)) {
+  for (const m of [...marcas].sort((a, b) => b.v - a.v)) {
     const prev = fundidas[fundidas.length - 1]
-    if (prev && Math.abs(prev.v - m.v) / Math.max(prev.v, m.v) < 0.012) { prev.et = `${prev.et} · ${m.et}`; continue }
+    if (prev && Math.abs(pos(prev.v) - pos(m.v)) < 9) { prev.et = `${prev.et} · ${m.et}`; continue }
     fundidas.push({ ...m })
   }
-  const vs = fundidas.map((m) => m.v)
-  const lo = Math.min(...vs), hi = Math.max(...vs)
-  const pos = (v: number) => (hi === lo ? 50 : ((hi - v) / (hi - lo)) * 100)
 
   const conSerie = (nc?.serie?.length ?? 0) >= 5
   return (
-    <SeccionCliente n="4" k="Niveles" titulo={rf?.fraccion_del_maximo ? `Cotiza a ${llano(String(rf.fraccion_del_maximo))}.` : undefined}>
+    <SeccionCliente n="4" k="Niveles" titulo={tituloNiveles(rf?.fraccion_del_maximo, rf?.maximo_fecha)}>
       {conSerie && nc ? <GraficoPrecio n={nc} /> : null}
       {(nc?.parrafos ?? []).map((t, i) => <p key={i} className="p-cli__p">{prosaDeCliente(t)}</p>)}
-      {!conSerie && <div className="p-niv" role="img" aria-label={fundidas.map((m) => `${m.et}: ${precio(m.v)}`).join('. ')}>
+      {!conSerie && <div className="p-niv" style={{ height: `${Math.max(130, fundidas.length * 64)}px` }} role="img" aria-label={fundidas.map((m) => `${m.et}: ${precio(m.v)}`).join('. ')}>
         {fundidas.map((m, i) => (
           <div key={i} className={`p-niv__fila ${m.clase}`} style={{ top: `${pos(m.v)}%` }}>
             <span className="p-niv__precio mono">{precio(m.v)}</span>
@@ -317,6 +346,24 @@ function Niveles({ inf, nc }: { inf: Informe; nc?: NivelesCliente | null }) {
           </div>
         ))}
       </div>}
+      {(() => {
+        /* El techo del escenario alcista suele ser el propio máximo: mismo número, dos
+           frases. Se juntan en una. */
+        const juntos: { v: number; ques: string[] }[] = []
+        for (const x of lejano.sort((a, b) => b.v - a.v)) {
+          const prev = juntos[juntos.length - 1]
+          if (prev && Math.abs(prev.v - x.v) / Math.max(prev.v, x.v) < 0.01) { prev.ques.push(x.que); continue }
+          juntos.push({ v: x.v, ques: [x.que] })
+        }
+        if (!juntos.length) return null
+        return (
+          <ul className="p-niv__lejos">
+            {juntos.map((x, i) => (
+              <li key={i}><b className="mono">{precio(x.v)}</b><span>{x.ques.join(', y ')}. Queda fuera de la escala para que se lea lo cercano.</span></li>
+            ))}
+          </ul>
+        )
+      })()}
       {esc.length > 0 && (
         <ul className="p-niv__esc">
           {esc.map((e, i) => {

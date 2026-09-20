@@ -690,7 +690,7 @@
 .p-cli__inval { border-left: 2px solid var(--rojo); }
 
 /* ---------- la escala de niveles ---------- */
-.p-niv { position: relative; height: 260px; border: 1px solid var(--hairline-2); background: var(--roca-2); margin-top: 4px; }
+.p-niv { position: relative; border: 1px solid var(--hairline-2); background: var(--roca-2); margin-top: 4px; }
 .p-niv__fila { position: absolute; left: 0; right: 16px; display: flex; align-items: center; gap: 12px; transform: translateY(-50%); }
 .p-niv__precio { width: 104px; flex: none; text-align: right; font-size: 0.72rem; color: var(--ceniza-2); font-variant-numeric: tabular-nums; }
 .p-niv__linea { flex: 1; height: 1px; background: var(--hairline); }
@@ -748,3 +748,9 @@
 .p-avz__prosa { display: flex; flex-direction: column; gap: 12px; padding-block: 4px 18px; }
 .p-avz__prosa p { margin: 0; color: var(--ceniza); font-size: 0.92rem; line-height: 1.6; max-width: 72ch; }
 .p-avz__prosa b { display: block; color: var(--oro); font-size: 0.58rem; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 4px; font-weight: 500; }
+/* lo que queda fuera de la escala, contado como dato */
+.p-graf__lejos, .p-niv__lejos { margin: 10px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 7px; }
+.p-graf__lejos { flex-direction: row; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.p-graf__lejos b, .p-niv__lejos b { color: var(--oro-luz); font-size: 0.86rem; font-variant-numeric: tabular-nums; }
+.p-graf__lejos span, .p-niv__lejos span { color: var(--ceniza); font-size: 0.88rem; line-height: 1.5; }
+.p-niv__lejos li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
