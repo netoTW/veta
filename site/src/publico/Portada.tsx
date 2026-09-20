@@ -77,7 +77,9 @@ export function Portada() {
                   {gema.tier && <span className={`mono pz__gema-tier is-${gema.tier.toLowerCase()}`}>riesgo {gema.tier.toLowerCase()}</span>}
                   {gema.fecha_publicacion && <span className="mono pz__gema-fecha">{fecha(gema.fecha_publicacion)}</span>}
                 </header>
-                <p className="pz__gema-titular">{estadoEconomicoLlano(gema.estado_economico ?? '', !!gema.captura_verificada)}.</p>
+                {!!estadoEconomicoLlano(gema.estado_economico ?? '', !!gema.captura_verificada) && (
+                  <p className="pz__gema-titular">{estadoEconomicoLlano(gema.estado_economico ?? '', !!gema.captura_verificada)}.</p>
+                )}
                 <ul className="pz__gema-velado" aria-hidden="true">
                   <li /><li /><li /><li />
                 </ul>

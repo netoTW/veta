@@ -38,10 +38,14 @@ export const TIER_LLANO: Record<string, string> = {
 export function estadoEconomicoLlano(estado: string, captura: boolean): string {
   switch ((estado || '').toUpperCase()) {
     case 'ANCHORED': return captura ? 'El protocolo factura y el token participa de esa caja' : 'El protocolo factura, pero no se pudo verificar que el token participe'
+    case 'NEGOCIO_SIN_CAPTURA': return 'El protocolo factura, pero el token no participa de esa caja'
+    case 'REFLEXIVE': return 'El precio se sostiene sobre su propia dinámica, no sobre una caja'
     case 'PRE_REVENUE': return 'El protocolo todavía no factura'
     case 'NARRATIVE': return 'El precio vive de la narrativa, no de una caja'
     case 'GOVERNANCE': return 'El token es sólo gobernanza: no participa de la caja'
-    default: return captura ? 'Captura de valor verificada' : 'Captura de valor no verificada'
+    // Un código que no conocemos no se traduce a la ligera: afirmar lo contrario de lo que
+    // dice el informe es peor que no decir nada. Quien llama omite la línea si vuelve vacía.
+    default: return ''
   }
 }
 
