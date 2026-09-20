@@ -24,6 +24,39 @@ interface GemaPublica {
   fecha_publicacion?: string | null; estado_economico?: string | null; captura_verificada?: boolean | null
 }
 
+/* Las cuatro piezas del producto, cada una con su captura real. Las imágenes vienen en
+   dos tamaños: 900 para pantallas normales y 1800 para las de mucha densidad. */
+const PIEZAS: { n: string; k: string; t: string; d: string; plan: string; img: string; alt: string; pie: string }[] = [
+  {
+    n: '1', k: 'Gemas', t: 'Una gema cada semana, elegida entre mil',
+    d: 'Revisamos mil monedas y nos quedamos con las pocas que dan una señal real. De ésas sale la gema: la que, con nuestro método, tiene el mejor potencial. Se publica con el informe entero, su tesis, sus escenarios y la cifra exacta que la invalidaría.',
+    plan: 'Los socios Pro la ven seis horas antes que nadie',
+    img: 'gemas', alt: 'Lista de gemas publicadas, cada una con su tier y su estado.',
+    pie: 'Las gemas publicadas, con su tier y su estado',
+  },
+  {
+    n: '2', k: 'Votación', t: 'Los socios Pro eligen qué se analiza a fondo',
+    d: 'De las monedas que dieron señal, cuatro o cinco entran a votación. Un voto por semana, con su nombre, y no se cambia. El análisis que salga se publica para todos.',
+    plan: 'Ver la lista y votar es del plan Pro',
+    img: 'votacion', alt: 'La votación de la semana: el embudo de mil monedas a cinco candidatas, el tiempo que queda y las piedras de cada una.',
+    pie: 'La votación de la semana, con el embudo y las candidatas',
+  },
+  {
+    n: '3', k: 'Analiza tu moneda', t: 'Y si la tuya no está, la analizamos',
+    d: 'No sólo miramos las nuestras. Escribe un ticker y ves la lectura al instante, gratis y sin cuenta: qué mueve el precio, cuánto cae en un día malo, quién lo tiene, si el token cobra y si se puede salir. Si quieres el informe completo de esa moneda, lo pides y lo hacemos.',
+    plan: 'La lectura es gratis siempre · el informe completo va con el plan',
+    img: 'analizar', alt: 'La lectura instantánea de una moneda, con sus cinco señales.',
+    pie: 'La lectura instantánea, gratis y sin cuenta',
+  },
+  {
+    n: '4', k: 'Seguimiento', t: 'Lo publicado no se abandona',
+    d: 'Cada día se vuelve a medir la cifra que invalidaría cada tesis, contra la fuente que el informe declara, y se compara contra un punto de referencia congelado el día que se publicó. Si una tesis se cae, lo decimos nosotros primero.',
+    plan: 'Los avisos de invalidación son del plan Pro',
+    img: 'seguimiento', alt: 'El seguimiento diario de lo publicado, medido contra el punto de referencia.',
+    pie: 'El seguimiento diario contra el punto de referencia',
+  },
+]
+
 const PASOS = [
   { n: '01', t: 'Datos con fuente', d: 'Cada cifra queda guardada junto al momento en que se leyó.' },
   { n: '02', t: 'Dos varas', d: 'Se compara contra las de su tamaño y las de su mismo negocio.' },
@@ -62,6 +95,37 @@ export function Portada() {
             <p className="eyebrow mono" data-mat="esmeralda"><span className="eyebrow__mark" aria-hidden="true" />Pruébalo aquí mismo</p>
             <h2 id="pz-probar" className="display pz__t">Escribe un ticker y mira lo que sale.</h2>
             <Probar />
+          </div>
+        </section>
+
+        <section className="pz pz--producto" aria-labelledby="pz-producto">
+          <div className="pz__col">
+            <p className="eyebrow mono" data-mat="oro"><span className="eyebrow__mark" aria-hidden="true" />El producto</p>
+            <h2 id="pz-producto" className="display pz__t">No esperamos a que preguntes por una moneda.</h2>
+            <p className="pz__lead">Cada semana revisamos mil monedas, publicamos las que pasan el método entero y seguimos cada tesis todos los días.</p>
+          </div>
+          {PIEZAS.map((x) => (
+            <article key={x.img} className="pz__col pieza">
+              <p className="pieza__k mono">{x.n} · {x.k}</p>
+              <h3 className="display pieza__t">{x.t}</h3>
+              <p className="pieza__d">{x.d}</p>
+              <p className="pieza__plan mono">{x.plan}</p>
+              <figure className="pieza__fig">
+                <img
+                  src={`/img/producto/${x.img}-900.webp`}
+                  srcSet={`/img/producto/${x.img}-900.webp 900w, /img/producto/${x.img}-1800.webp 1800w`}
+                  sizes="(max-width: 980px) calc(100vw - 40px), 900px"
+                  width={900} height={562} alt={x.alt} loading="lazy" decoding="async"
+                />
+                <figcaption className="mono">{x.pie}</figcaption>
+              </figure>
+            </article>
+          ))}
+          <div className="pz__col">
+            <div className="pz__acciones">
+              <Link to="/gemas" className="btn">Ver las gemas publicadas</Link>
+              <Link to="/analizar" className="btn btn--ghost">Analiza tu moneda</Link>
+            </div>
           </div>
         </section>
 

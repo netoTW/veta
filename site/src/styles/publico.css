@@ -184,3 +184,14 @@
 .lg__otras { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 34px; padding-top: 18px; border-top: 1px solid var(--hairline-2); font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; }
 .lg__otras a { color: var(--ceniza-2); text-decoration: none; }
 .lg__otras a:hover { color: var(--oro-luz); }
+
+/* ---------- el producto, en la portada ---------- */
+.pz--producto .pz__col + .pieza { margin-top: 46px; }
+.pieza { display: flex; flex-direction: column; align-items: start; gap: 9px; }
+.pieza__k { color: var(--oro); font-size: 0.6rem; letter-spacing: 0.16em; text-transform: uppercase; margin: 0; }
+.pieza__t { margin: 0; font-size: clamp(1.2rem, 3vw, 1.6rem); line-height: 1.2; color: var(--hueso); font-weight: 400; letter-spacing: -0.01em; text-wrap: balance; max-width: 26ch; }
+.pieza__d { margin: 0; max-width: 64ch; color: var(--ceniza); font-size: 0.99rem; line-height: 1.65; text-wrap: pretty; }
+.pieza__plan { margin: 2px 0 0; padding-left: 13px; border-left: 1px solid var(--esmeralda); color: var(--esmeralda-luz); font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase; }
+.pieza__fig { margin: 14px 0 0; width: 100%; border: 1px solid var(--hairline-2); background: var(--roca-0); overflow: hidden; }
+.pieza__fig img { display: block; width: 100%; height: auto; }
+.pieza__fig figcaption { padding: 9px 14px; border-top: 1px solid var(--hairline-2); color: var(--ceniza-2); font-size: 0.58rem; letter-spacing: 0.12em; text-transform: uppercase; }
