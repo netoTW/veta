@@ -13,7 +13,7 @@ import { fecha, fechaHora, mult, num, pct, precio, usd, conUnidad, TIPO_ESCENARI
 import type { Advertencia, Escenario, Informe, Invalidacion, VaraRevenue } from '../../lib/contrato'
 import { EmptyState } from '../../ui/EmptyState'
 import { Cifras, Prosa, RiesgoLlano } from '../cifras'
-import { estadoEconomicoLlano, tieneCriterioInterno, limpiarProsa } from '../../lib/lenguaje'
+import { estadoEconomicoLlano, tieneCriterioInterno, llano, delCatalogo, prosaDeCliente } from '../../lib/lenguaje'
 
 /* ============================================================================
    Informe — el detalle de una gema (o de un análisis sin tesis).
@@ -55,10 +55,8 @@ function InvalidacionEstructurada({ inv }: { inv: Invalidacion }) {
         <span className="p-inval__umbral num">{conUnidad(inv.umbral, inv.unidad)}</span>
         {inv.ventana_dias ? <span className="p-inval__ventana">· ventana {dias(inv.ventana_dias)}</span> : null}
       </p>
-      <p className="p-inval__texto">{inv.texto}</p>
-      <span className="p-inval__meta">
-        <span>fuente {inv.fuente || '—'}</span>
-      </span>
+      <p className="p-inval__texto">{prosaDeCliente(inv.texto)}</p>
+
     </div>
   )
 }
@@ -70,14 +68,13 @@ function NivelEsencial({ children }: { children: React.ReactNode }) {
 }
 
 /* ---------- secciones ---------- */
-function Seccion({ id, titulo, calidad, esencial, advertencias, children }: {
-  id: string; titulo: string; calidad?: string; esencial?: string; advertencias?: Advertencia[]; children?: React.ReactNode
+function Seccion({ id, titulo, esencial, advertencias, children }: {
+  id: string; titulo: string; esencial?: string; advertencias?: Advertencia[]; children?: React.ReactNode
 }) {
   return (
     <section className="p-seccion" id={id} aria-labelledby={`${id}-h`}>
       <div className="p-seccion__head">
         <h2 className="p-seccion__titulo" id={`${id}-h`}>{titulo}</h2>
-        {calidad && <span className={`mono p-seccion__calidad is-${calidad}`}>calidad {calidad}</span>}
       </div>
       {esencial && <p className="p-esencial">{esencial}</p>}
       {advertencias && advertencias.length > 0 && <Advertencias items={advertencias} titulo="Advertencias de la sección" compacta />}
@@ -91,7 +88,7 @@ function VaraRevenueBloque({ v, esAnalisis }: { v: VaraRevenue & { no_disponible
   if (!v.comparables) {
     return (
       <div className="p-vara">
-        <div className="p-vara__h"><h3>Por revenue</h3><span className="mono">valuación relativa</span></div>
+        <div className="p-vara__h"><h3>Por ingresos</h3><span className="mono">valuación relativa</span></div>
         <Ausente motivo={tieneCriterioInterno(v.no_disponible_motivo) ? 'No hay protocolos equivalentes con los que comparar esta moneda.' : (v.no_disponible_motivo ?? 'No hay con qué comparar esta moneda.')} />
         {esAnalisis && <p className="p-nota">Sin comparables no publicamos una magnitud: preferimos no decirlo a decirlo sin respaldo.</p>}
       </div>
@@ -99,7 +96,7 @@ function VaraRevenueBloque({ v, esAnalisis }: { v: VaraRevenue & { no_disponible
   }
   return (
     <div className="p-vara">
-      <div className="p-vara__h"><h3>Por revenue</h3><span className="mono">{v.metrica}</span></div>
+      <div className="p-vara__h"><h3>Por ingresos</h3><span className="mono">{prosaDeCliente(v.metrica)}</span></div>
       <div className="p-datos">
         <Dato k="esta moneda" v={num(v.multiplo_moneda, 3)} tono="oro" />
         <Dato k="mediana de pares" v={num(v.mediana, 3)} sub={<>p25 {num(v.p25, 3)} · p75 {num(v.p75, 3)}</>} />
@@ -156,7 +153,7 @@ function EscenarioFila({ e }: { e: Escenario }) {
         {nivel === 'avanzado' && (
           <>
             <div><span className="mono">Evidencia citada</span>{e.evidencia_citada}</div>
-            <div><span className="mono">De dónde sale la magnitud</span>{e.magnitud_origen}</div>
+            <div><span className="mono">De dónde sale la magnitud</span>{prosaDeCliente(e.magnitud_origen)}</div>
             <div><span className="mono">Confianza del horizonte</span>{e.confianza_horizonte}</div>
           </>
         )}
@@ -178,16 +175,170 @@ function useMovil() {
   return m
 }
 
+/* ============================================================================
+   El informe de cliente en cinco secciones (contrato §11).
+
+   Las secciones 1 y 3 las escribe el motor y todavía no llegan: mientras no
+   estén, no se muestran. Lo que no aplica no aparece, y no se deja hueco.
+   ========================================================================== */
+export interface PuntoSerie { t: string; c: number; v?: number | null }
+export interface NivelesCliente {
+  precio_usd?: number; fecha?: string
+  maximo?: { valor_usd?: number; fecha?: string }
+  serie?: PuntoSerie[]
+  zonas_volumen?: { desde: number; hasta: number; fraccion_del_volumen?: number; dias_con_volumen?: number }[]
+  escenarios?: { nombre?: string; min_x?: number; max_x?: number; un_solo_nivel?: boolean; dias?: number; condicion?: string }[]
+  parrafos?: string[]
+}
+export interface InformeCliente {
+  que_paso?: { titular?: string; parrafos?: string[]; cuando?: string }
+  lectura?: { veredicto?: string; parrafos?: string[] }
+  hallazgo?: { titular?: string; parrafos?: string[]; por_que_no_se_ve?: string }
+  niveles?: NivelesCliente
+  vigilar?: { senal?: string; parrafos?: string[] }
+  invalida?: { condicion?: string }
+  riesgos?: string[]
+}
+
+/* ---------- el gráfico de precio: serie real, máximo marcado y zonas de volumen ---------- */
+function GraficoPrecio({ n }: { n: NivelesCliente }) {
+  const s = (n.serie ?? []).filter((x) => typeof x.c === 'number' && x.c > 0)
+  if (s.length < 5) return null
+  const W = 720, H = 220, PL = 8, PR = 8, PT = 14, PB = 22
+  const cs = s.map((x) => x.c)
+  const zonas = (n.zonas_volumen ?? []).filter((z) => typeof z.desde === 'number' && typeof z.hasta === 'number')
+  const max = n.maximo?.valor_usd
+  const lo = Math.min(...cs, ...zonas.map((z) => z.desde))
+  const hi = Math.max(...cs, ...(typeof max === 'number' ? [max] : []), ...zonas.map((z) => z.hasta))
+  const x = (i: number) => PL + (i / Math.max(1, s.length - 1)) * (W - PL - PR)
+  const y = (v: number) => PT + (1 - (v - lo) / Math.max(1e-12, hi - lo)) * (H - PT - PB)
+  const linea = s.map((p2, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(p2.c).toFixed(1)}`).join(' ')
+  const area = `${linea} L${x(s.length - 1).toFixed(1)},${(H - PB).toFixed(1)} L${x(0).toFixed(1)},${(H - PB).toFixed(1)} Z`
+  const conVol = s.some((p2) => typeof p2.v === 'number')
+
+  return (
+    <figure className="p-graf">
+      <svg viewBox={`0 0 ${W} ${H}`} className="p-graf__svg" role="img"
+        aria-label={`Precio de los últimos ${s.length} días. Máximo ${max ? precio(max) : 'sin dato'}. ${zonas.length} zonas donde se concentró el volumen.`}>
+        <defs>
+          <linearGradient id="gfill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="var(--esmeralda)" stopOpacity="0.22" />
+            <stop offset="100%" stopColor="var(--esmeralda)" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        {zonas.map((z, i) => (
+          <g key={i}>
+            <rect x={PL} y={y(z.hasta)} width={W - PL - PR} height={Math.max(2, y(z.desde) - y(z.hasta))} fill="var(--oro)" fillOpacity="0.07" />
+            {typeof z.fraccion_del_volumen === 'number' && (
+              <text x={W - PR - 4} y={y(z.hasta) + 11} textAnchor="end" className="p-graf__zt">{pct(z.fraccion_del_volumen, 0)} del volumen</text>
+            )}
+          </g>
+        ))}
+        <path d={area} fill="url(#gfill)" />
+        <path d={linea} fill="none" stroke="var(--esmeralda-luz)" strokeWidth="1.6" strokeLinejoin="round" />
+        {typeof max === 'number' && (
+          <g>
+            <line x1={PL} x2={W - PR} y1={y(max)} y2={y(max)} stroke="var(--oro)" strokeWidth="1" strokeDasharray="3 3" />
+            <text x={PL + 4} y={y(max) - 5} className="p-graf__mt">Máximo {precio(max)}{n.maximo?.fecha ? ` · ${fecha(n.maximo.fecha)}` : ''}</text>
+          </g>
+        )}
+        <circle cx={x(s.length - 1)} cy={y(cs[cs.length - 1])} r="3.5" fill="var(--hueso)" />
+      </svg>
+      <figcaption className="p-graf__pie mono">
+        <span>{fecha(s[0].t)}</span>
+        <span>{s.length} días{conVol ? ' · las bandas son los precios donde se concentró el volumen' : ''}</span>
+        <span>{fecha(s[s.length - 1].t)}</span>
+      </figcaption>
+    </figure>
+  )
+}
+
+function SeccionCliente({ n, k, titulo, children }: { n: string; k: string; titulo?: string; children: React.ReactNode }) {
+  return (
+    <section className="shell p-cli" aria-labelledby={`cli-${n}`}>
+      <p className="p-cli__k mono"><span aria-hidden="true">{n}</span> · {k}</p>
+      {titulo && <h2 id={`cli-${n}`} className="display p-cli__t">{titulo}</h2>}
+      {!titulo && <span id={`cli-${n}`} className="vh">{k}</span>}
+      {children}
+    </section>
+  )
+}
+
+/* ---------- 4 · Niveles ----------
+   Una escala de precios, no una línea: el informe no trae serie temporal, y
+   dibujar una línea sin datos sería inventar cifras (hueco §11.3). */
+function Niveles({ inf, nc }: { inf: Informe; nc?: NivelesCliente | null }) {
+  const f = inf.ficha_esencial
+  const hoy = f.precio_y_fecha_referencia?.precio_usd
+  const rf = inf.varas?.reflexiva as { maximo_valor?: number | null; maximo_fecha?: string | null; fraccion_del_maximo?: string | null } | undefined
+  const max = typeof rf?.maximo_valor === 'number' ? rf.maximo_valor : null
+  if (typeof hoy !== 'number') return null
+
+  const esc = (inf.escenarios ?? []).filter((e) => typeof e.rango_min === 'number' && typeof e.rango_max === 'number')
+  const marcas: { v: number; et: string; clase: string }[] = []
+  if (max && max > 0) marcas.push({ v: max, et: `Máximo${rf?.maximo_fecha ? ` · ${fecha(rf.maximo_fecha)}` : ''}`, clase: 'is-max' })
+  marcas.push({ v: hoy, et: `Hoy · ${fecha(f.precio_y_fecha_referencia.fecha)}`, clase: 'is-hoy' })
+  for (const e of esc) {
+    const et = delCatalogo('escenarios[].tipo', e.tipo) || 'Escenario'
+    // Un escenario a la baja se dibuja en su suelo, no en su techo: su techo es el precio de hoy.
+    const baja = e.rango_min < 1
+    const x = baja ? e.rango_min : e.rango_max
+    marcas.push({ v: hoy * x, et: `${et} · ${mult(x)}${e.horizonte_dias ? ` · ${e.horizonte_dias} d` : ''}`, clase: baja ? 'is-baja' : 'is-alza' })
+  }
+  /* Dos marcas en el mismo precio se pisan: se funden en una sola con las dos etiquetas. */
+  const fundidas: typeof marcas = []
+  for (const m of marcas.sort((a, b) => b.v - a.v)) {
+    const prev = fundidas[fundidas.length - 1]
+    if (prev && Math.abs(prev.v - m.v) / Math.max(prev.v, m.v) < 0.012) { prev.et = `${prev.et} · ${m.et}`; continue }
+    fundidas.push({ ...m })
+  }
+  const vs = fundidas.map((m) => m.v)
+  const lo = Math.min(...vs), hi = Math.max(...vs)
+  const pos = (v: number) => (hi === lo ? 50 : ((hi - v) / (hi - lo)) * 100)
+
+  const conSerie = (nc?.serie?.length ?? 0) >= 5
+  return (
+    <SeccionCliente n="4" k="Niveles" titulo={rf?.fraccion_del_maximo ? `Cotiza a ${llano(String(rf.fraccion_del_maximo))}.` : undefined}>
+      {conSerie && nc ? <GraficoPrecio n={nc} /> : null}
+      {(nc?.parrafos ?? []).map((t, i) => <p key={i} className="p-cli__p">{prosaDeCliente(t)}</p>)}
+      {!conSerie && <div className="p-niv" role="img" aria-label={fundidas.map((m) => `${m.et}: ${precio(m.v)}`).join('. ')}>
+        {fundidas.map((m, i) => (
+          <div key={i} className={`p-niv__fila ${m.clase}`} style={{ top: `${pos(m.v)}%` }}>
+            <span className="p-niv__precio mono">{precio(m.v)}</span>
+            <span className="p-niv__linea" aria-hidden="true" />
+            <span className="p-niv__et mono">{m.et}</span>
+          </div>
+        ))}
+      </div>}
+      {esc.length > 0 && (
+        <ul className="p-niv__esc">
+          {esc.map((e, i) => {
+            const nombre = delCatalogo('escenarios[].tipo', e.tipo)
+            const igual = e.rango_min === e.rango_max
+            return (
+              <li key={i} className={e.rango_max >= 1 ? 'is-alza' : 'is-baja'}>
+                <span className="p-niv__mult mono">{igual ? mult(e.rango_max) : `${mult(e.rango_min)} – ${mult(e.rango_max)}`}</span>
+                {e.horizonte_dias ? <span className="p-niv__plazo mono">{e.horizonte_dias} días</span> : <span />}
+                <span className="p-niv__cond">{nombre ? <b>{nombre}. </b> : null}{prosaDeCliente(e.catalizador ?? '')}</span>
+              </li>
+            )
+          })}
+        </ul>
+      )}
+    </SeccionCliente>
+  )
+}
+
 export function Cuerpo({ inf, esAnalisis }: { inf: Informe; esAnalisis: boolean }) {
   const vis = useVisuales(inf.id)
   const v = vis.estado === 'ok' ? vis.datos : null
   const movil = useMovil()
   const f = inf.ficha_esencial
   const n = inf.niveles
-  const cal = inf.calidad_por_seccion
   const ranges = inf.escenarios.map((e) => ({ tipo: e.tipo, min: e.rango_min, max: e.rango_max }))
   const rv = inf.varas.revenue as VaraRevenue & { no_disponible_motivo?: string }
   const rf = inf.varas.reflexiva
+  const ic = (inf as unknown as { informe_cliente?: InformeCliente }).informe_cliente ?? null
 
   return (
     <>
@@ -200,21 +351,21 @@ export function Cuerpo({ inf, esAnalisis }: { inf: Informe; esAnalisis: boolean 
               <TierBadge tier={inf.tier} size={22} />
               <span className="mono" style={{ color: 'var(--ceniza-2)' }}>{estadoEconomicoLlano(inf.estado_economico, inf.captura_verificada)}</span>
             </div>
-            <Prosa inf={inf} campo="ficha_esencial.tesis_una_linea" texto={f.tesis_una_linea} className="p-det__tesis" />
           </div>
           <div className="p-det__precio">
             <Dato k="precio de referencia" v={precio(f.precio_y_fecha_referencia.precio_usd)} sub={<>{fecha(f.precio_y_fecha_referencia.fecha)} · {esAnalisis ? 'analizada' : 'publicada'} {fecha(inf.fecha_publicacion)}</>} />
           </div>
         </div>
 
-        <Cifras inf={inf} />
         {!esAnalisis && <><MarcadorDeGema gemaId={inf.id} horizonteDias={inf.escenarios.find((e) => e.tipo === 'bull')?.horizonte_dias ?? inf.escenarios.find((e) => e.tipo === 'bull_reflexivo')?.horizonte_dias} /><PrediccionGema gemaId={inf.id} simbolo={inf.simbolo} /></>}
 
         <div className="p-ficha">
-          <div className="p-ficha__b">
-            <span className="mono">Catalizadores · {f.catalizadores.length}</span>
-            {f.catalizadores.length ? <ul>{f.catalizadores.map((c, i) => <li key={i}>{c}</li>)}</ul> : 'ninguno identificado'}
-          </div>
+          {f.catalizadores.length > 0 && (
+            <div className="p-ficha__b">
+              <span className="mono">Catalizadores · {f.catalizadores.length}</span>
+              <ul>{f.catalizadores.map((c, i) => <li key={i}>{prosaDeCliente(c)}</li>)}</ul>
+            </div>
+          )}
           <div className="p-ficha__b p-ficha__b--inv">
             <span className="mono">Qué la invalidaría</span>
             {inf.invalidacion?.evaluable ? <InvalidacionEstructurada inv={inf.invalidacion} /> : f.que_la_invalidaria}
@@ -230,9 +381,56 @@ export function Cuerpo({ inf, esAnalisis }: { inf: Informe; esAnalisis: boolean 
           </div>
         </div>
 
-        <Advertencias items={f.advertencias} />
       </div>
 
+      {/* ---- 1 · Qué pasó. La escribe el motor; mientras no llegue, no se muestra. ---- */}
+      {ic?.que_paso?.titular && (
+        <SeccionCliente n="1" k="Qué pasó" titulo={llano(ic.que_paso.titular)}>
+          {(ic.que_paso.parrafos ?? []).map((t, i) => <p key={i} className="p-cli__p">{prosaDeCliente(t)}</p>)}
+        </SeccionCliente>
+      )}
+
+      {/* ---- 2 · Nuestra lectura ---- */}
+      <SeccionCliente n="2" k="Nuestra lectura" titulo={ic?.lectura?.veredicto ? llano(ic.lectura.veredicto) : undefined}>
+        {ic?.lectura?.parrafos?.length
+          ? ic.lectura.parrafos.map((t, i) => <p key={i} className="p-cli__p p-cli__p--grande">{prosaDeCliente(t)}</p>)
+          : <Prosa inf={inf} campo="ficha_esencial.tesis_una_linea" texto={f.tesis_una_linea} className="p-cli__p p-cli__p--grande" />}
+        <Cifras inf={inf} />
+      </SeccionCliente>
+
+      {/* ---- 3 · Lo que el resto no ve. Idem. ---- */}
+      {ic?.hallazgo?.titular && (
+        <SeccionCliente n="3" k="Lo que el resto no ve" titulo={llano(ic.hallazgo.titular)}>
+          <div className="p-cli__hallazgo">
+            {(ic.hallazgo.parrafos ?? []).map((t, i) => <p key={i}>{prosaDeCliente(t)}</p>)}
+          </div>
+          {ic.hallazgo.por_que_no_se_ve && <p className="p-cli__p">{prosaDeCliente(ic.hallazgo.por_que_no_se_ve)}</p>}
+        </SeccionCliente>
+      )}
+
+      {/* ---- 4 · Niveles ---- */}
+      <Niveles inf={inf} nc={ic?.niveles ?? null} />
+
+      {/* ---- 5 · Qué vigilar y qué invalida ---- */}
+      <SeccionCliente n="5" k="Qué vigilar y qué invalida">
+        <div className="p-cli__vigilar">
+          {ic?.vigilar?.senal && (
+            <div><span className="mono p-cli__et">Qué vigilar</span><p>{prosaDeCliente(ic.vigilar.senal)}</p></div>
+          )}
+          <div className="p-cli__inval">
+            <span className="mono p-cli__et">Qué invalida la lectura</span>
+            {inf.invalidacion?.evaluable
+              ? <InvalidacionEstructurada inv={inf.invalidacion} />
+              : <p>{prosaDeCliente(ic?.invalida?.condicion || f.que_la_invalidaria || '')}</p>}
+          </div>
+        </div>
+        <Advertencias items={f.advertencias} />
+      </SeccionCliente>
+
+      <div className="shell">
+        <details className="p-avz">
+          <summary>Avanzado<span className="mono p-avz__pista">las dos varas, asimetría, riesgo de cola, microestructura y método</span></summary>
+          <div className="p-avz__cuerpo">
       <div className="shell"><SelectorNivel /></div>
 
       <div className="shell">
@@ -246,7 +444,7 @@ export function Cuerpo({ inf, esAnalisis }: { inf: Informe; esAnalisis: boolean 
         )}
 
         {/* ------------ las dos varas ------------ */}
-        <Seccion id="varas" titulo="Las dos varas" calidad={cal['3_estructura_mercado']} esencial={limpiarProsa(n.varas.esencial.texto)} advertencias={n.varas.esencial.advertencias}>
+        <Seccion id="varas" titulo="Las dos varas" esencial={prosaDeCliente(n.varas.esencial.texto)} advertencias={n.varas.esencial.advertencias}>
           {v && v.precio.serie.length > 1 && <PrecioMaximos v={v} fraccion={rf?.fraccion_del_maximo} movil={movil} />}
           <div className="p-varas" style={{ marginTop: 18 }}>
             <VaraRevenueBloque v={rv} esAnalisis={esAnalisis} />
@@ -276,7 +474,7 @@ export function Cuerpo({ inf, esAnalisis }: { inf: Informe; esAnalisis: boolean 
         </Seccion>
 
         {/* ------------ escenarios ------------ */}
-        <Seccion id="escenarios" titulo="Escenarios" esencial={limpiarProsa(n.escenarios.esencial.texto)} advertencias={n.escenarios.esencial.advertencias}>
+        <Seccion id="escenarios" titulo="Escenarios" esencial={prosaDeCliente(n.escenarios.esencial.texto)} advertencias={n.escenarios.esencial.advertencias}>
           {n.escenarios.disponible ? (
             <>
               <div style={{ marginTop: 18 }}><Escala rangos={ranges} /></div>
@@ -292,12 +490,12 @@ export function Cuerpo({ inf, esAnalisis }: { inf: Informe; esAnalisis: boolean 
         </Seccion>
 
         {/* ------------ asimetría ------------ */}
-        <Seccion id="asimetria" titulo="Asimetría" esencial={limpiarProsa(n.asimetria.esencial.texto)} advertencias={n.asimetria.esencial.advertencias}>
+        <Seccion id="asimetria" titulo="Asimetría" esencial={prosaDeCliente(n.asimetria.esencial.texto)} advertencias={n.asimetria.esencial.advertencias}>
           {n.asimetria.disponible ? (
             <>
               <div className="p-datos" style={{ marginTop: 18 }}>
-                <Dato k="riesgo" v={pct(inf.asimetria.riesgo)} tono="neg" sub={inf.asimetria.riesgo_origen} />
-                <Dato k="recompensa" v={pct(inf.asimetria.recompensa)} tono="pos" sub={inf.asimetria.recompensa_origen} />
+                <Dato k="riesgo" v={pct(inf.asimetria.riesgo)} tono="neg" sub={prosaDeCliente(inf.asimetria.riesgo_origen)} />
+                <Dato k="recompensa" v={pct(inf.asimetria.recompensa)} tono="pos" sub={prosaDeCliente(inf.asimetria.recompensa_origen)} />
                 <Dato k="premio por unidad de riesgo" v={num(inf.asimetria.ratio, 2)} tono="oro" sub={<>a {dias(inf.asimetria.horizonte)} · vara {inf.asimetria.vara_origen}</>} />
               </div>
               <Avanzado>
@@ -311,7 +509,7 @@ export function Cuerpo({ inf, esAnalisis }: { inf: Informe; esAnalisis: boolean 
         </Seccion>
 
         {/* ------------ riesgo de cola ------------ */}
-        <Seccion id="riesgo" titulo="Riesgo de cola" calidad={cal['4_riesgo_cola']} esencial={limpiarProsa(n.riesgo.esencial.texto)} advertencias={n.riesgo.esencial.advertencias}>
+        <Seccion id="riesgo" titulo="Riesgo de cola" esencial={prosaDeCliente(n.riesgo.esencial.texto)} advertencias={n.riesgo.esencial.advertencias}>
           <Avanzado>
             <div className="p-varas">
               <div className="p-vara">
@@ -335,7 +533,7 @@ export function Cuerpo({ inf, esAnalisis }: { inf: Informe; esAnalisis: boolean 
               <div className="p-varas__regla">{inf.riesgo.empirico_vs_parametrico}</div>
             </div>
             <dl className="p-kv">
-              <dt>método</dt><dd>{inf.riesgo.metodo}</dd>
+              <dt>método</dt><dd>{prosaDeCliente(inf.riesgo.metodo)}</dd>
               <dt>ν</dt><dd className="num">{num(inf.riesgo.nu, 2)}</dd>
               <dt>serie</dt><dd className="num">{num(inf.riesgo.dias_serie)} días · confianza {inf.riesgo.confianza}</dd>
               {inf.riesgo.limites_declarados.map((l, i) => <div key={i} style={{ display: 'contents' }}><dt>límite declarado</dt><dd>{l}</dd></div>)}
@@ -345,7 +543,7 @@ export function Cuerpo({ inf, esAnalisis }: { inf: Informe; esAnalisis: boolean 
         </Seccion>
 
         {/* ------------ microestructura ------------ */}
-        <Seccion id="micro" titulo="Microestructura" esencial={limpiarProsa(n.microestructura.esencial.texto)} advertencias={n.microestructura.esencial.advertencias}>
+        <Seccion id="micro" titulo="Microestructura" esencial={prosaDeCliente(n.microestructura.esencial.texto)} advertencias={n.microestructura.esencial.advertencias}>
           {v && (v.liquidacion_proyectada.disponible ? <Heatmap liq={v.liquidacion_proyectada} movil={movil} /> : <HeatmapAusente liq={v.liquidacion_proyectada} />)}
           {n.microestructura.disponible ? (
             <Avanzado>
@@ -374,7 +572,7 @@ export function Cuerpo({ inf, esAnalisis }: { inf: Informe; esAnalisis: boolean 
         </Seccion>
 
         {/* ------------ on-chain ------------ */}
-        <Seccion id="onchain" titulo="On-chain" calidad={cal['6_onchain']} esencial={limpiarProsa(n.onchain.esencial.texto)} advertencias={n.onchain.esencial.advertencias}>
+        <Seccion id="onchain" titulo="On-chain" esencial={prosaDeCliente(n.onchain.esencial.texto)} advertencias={n.onchain.esencial.advertencias}>
           {v && <Concentracion v={v} top10Neto={inf.onchain?.concentracion_top10_neta ?? null} />}
           <Avanzado>
             <div className="p-datos">
@@ -399,14 +597,14 @@ export function Cuerpo({ inf, esAnalisis }: { inf: Informe; esAnalisis: boolean 
         </Seccion>
 
         {/* ------------ fundamentales ------------ */}
-        <Seccion id="fundamentales" titulo="Fundamentales" calidad={cal['5_fundamentales']} esencial={limpiarProsa(n.fundamentales.esencial.texto)} advertencias={n.fundamentales.esencial.advertencias}>
+        <Seccion id="fundamentales" titulo="Fundamentales" esencial={prosaDeCliente(n.fundamentales.esencial.texto)} advertencias={n.fundamentales.esencial.advertencias}>
           {v && <><RevenueDiario v={v} total30d={inf.fundamentales?.revenue_protocolo_30d} movil={movil} /><TvlComparado v={v} /></>}
           <div className="p-datos" style={{ marginTop: 18 }}>
             <Dato k="puntaje" v={`${inf.fundamentales.puntaje_total} / 40`} tono="oro" />
-            <Dato k="revenue anualizado" v={usd(inf.fundamentales.revenue_protocolo)} sub={<>30d {usd(inf.fundamentales.revenue_protocolo_30d)}</>} />
+            <Dato k="ingresos anualizados" v={usd(inf.fundamentales.revenue_protocolo)} sub={<>30d {usd(inf.fundamentales.revenue_protocolo_30d)}</>} />
             <Dato k="a holders" v={usd(inf.fundamentales.revenue_a_holders)} />
-            <Dato k="TVL" v={usd(inf.fundamentales.tvl)} />
-            <Dato k="revenue / mcap" v={num(inf.fundamentales.revenue_sobre_mcap, 3)} />
+            <Dato k="fondos bloqueados" v={usd(inf.fundamentales.tvl)} />
+            <Dato k="ingresos sobre capitalización" v={num(inf.fundamentales.revenue_sobre_mcap, 3)} />
           </div>
           <Avanzado>
             <div className="p-rubrica">
@@ -454,6 +652,9 @@ export function Cuerpo({ inf, esAnalisis }: { inf: Informe; esAnalisis: boolean 
           )}
         </Avanzado>
         <FuentesAlPie fuentes={inf.fuentes} />
+      </div>
+          </div>
+        </details>
       </div>
     </>
   )

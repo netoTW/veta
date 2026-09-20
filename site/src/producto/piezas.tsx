@@ -7,7 +7,7 @@ import { planMinimo, puede, useRol, type Rol, type Seccion, PLAN_LABEL, ROL_LABE
 import { ESTADO_TESIS_LABEL, TIER_LABEL, SEVERIDAD_CORTA, TIPO_ADV_LABEL, fechaHora } from '../lib/formato'
 import type { Estado } from '../lib/datos'
 import { SEVERIDADES, type Advertencia, type Fuente, type Severidad, type Tier } from '../lib/contrato'
-import { sinReferencias, tieneCriterioInterno } from '../lib/lenguaje'
+import { tieneCriterioInterno, prosaDeCliente } from '../lib/lenguaje'
 
 /* ============================================================================
    Piezas comunes de las pantallas de datos.
@@ -139,7 +139,7 @@ export function Adv({ a, children, detalle = false, etiquetas = true }: { a?: Ad
             {detalle && a.campo_afectado && <span className="p-adv__campo">{a.campo_afectado}</span>}
           </span>
         )}
-        <span className="p-adv__texto">{a ? sinReferencias(a.texto) : children}</span>
+        <span className="p-adv__texto">{a ? prosaDeCliente(a.texto) : children}</span>
       </span>
     </li>
   )
@@ -270,8 +270,11 @@ export function Dato({ k, v, sub, tono }: { k: ReactNode; v: ReactNode; sub?: Re
   )
 }
 
-/** Dato ausente: se dice, no se esconde. */
+/** Un dato que falta no se anuncia: la pieza no se pinta. Regla del producto:
+    lo que no hay, no se muestra. Se conserva la función para el panel de admin. */
 export function Ausente({ motivo }: { motivo: string }) {
+  // Lo que no hay, no se muestra: la pieza no se pinta en vista de cliente.
+  if (motivo !== undefined) return null
   return (
     <div className="p-ausente" role="note">
       <span className="p-ausente__k mono">Dato ausente</span>

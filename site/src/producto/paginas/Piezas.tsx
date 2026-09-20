@@ -126,7 +126,7 @@ export function Piezas() {
         </article>
       </Pieza>
       <Pieza id="separadores" titulo="separadores · cabecera de sección y de grupo">
-        <div className="p-seccion__head"><h2 className="p-seccion__titulo">Las dos varas</h2><span className="mono p-seccion__calidad is-parcial">calidad parcial</span></div>
+        <div className="p-seccion__head"><h2 className="p-seccion__titulo">Las dos varas</h2></div>
         <div className="p-grupo__head" style={{ marginTop: 18 }}><span className="p-estado p-estado--vigilando mono"><span className="p-estado__dot" aria-hidden="true" />Vigilando</span><span className="num">6</span><span className="p-grupo__rule" aria-hidden="true" /></div>
       </Pieza>
     </div>

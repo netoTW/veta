@@ -105,11 +105,11 @@ export function RevenueDiario({ v, total30d, movil = false }: { v: Visuales; tot
   return (
     <div className="ch ch-rev">
       <div className="ch__cab">
-        <span className="ch__k mono">Revenue diario del protocolo · {s.length} días</span>
+        <span className="ch__k mono">Ingresos diarios del protocolo · {s.length} días</span>
         {typeof total30d === 'number' && <span className="ch__titular"><b className="num">{usd(total30d)}</b> en 30 días</span>}
       </div>
       <div className="ch__grafico" onMouseLeave={() => setHover(null)}>
-        <svg viewBox={`0 0 ${W} ${H}`} className="ch__svg" role="img" aria-label="Revenue diario">
+        <svg viewBox={`0 0 ${W} ${H}`} className="ch__svg" role="img" aria-label="Ingresos diarios del protocolo">
           {[0.5, 1].map((k) => <g key={k}><line x1={ML} x2={W - MR} y1={y(max * k)} y2={y(max * k)} className="ch__grid" /><text x={ML - 8} y={y(max * k) + 4} textAnchor="end" className="ch__tick">{usd(max * k).replace(' USD', '')}</text></g>)}
           {s.map((p, i) => <rect key={i} x={ML + i * bw + 0.5} y={y(p.v)} width={Math.max(bw - 1, 1)} height={H - MB - y(p.v)} className={`ch__barra ${hover === i ? 'is-on' : ''}`} onMouseEnter={() => setHover(i)} />)}
           {meses.filter((_, i) => !movil || i % 2 === 0).map((m) => <text key={m.i} x={ML + m.i * bw} y={H - 10} className="ch__tick">{movil ? MESES[new Date(s[m.i].t).getUTCMonth()] : mesAno(s[m.i].t)}</text>)}
@@ -131,7 +131,7 @@ export function TvlComparado({ v }: { v: Visuales }) {
   return (
     <div className="ch ch-tvl">
       <div className="ch__cab">
-        <span className="ch__k mono">TVL · hoy contra hace 30 días</span>
+        <span className="ch__k mono">Fondos bloqueados · hoy contra hace 30 días</span>
         {typeof v.tvl.cambio_30d === 'number' && <span className={`ch__titular ${sube ? '' : 'is-neg'}`}><b className="num">{pct(v.tvl.cambio_30d, 1, true)}</b> en 30 días</span>}
       </div>
       <div className="ch-tvl__barras">

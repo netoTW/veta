@@ -51,6 +51,8 @@ const MOTIVO: Record<string, string> = {
 /* ---------- una celda del marcador ---------- */
 function Celda({ k, lado, valor, motivo, principal = false }: { k: ReactNode; lado?: Lado; valor?: number | null; motivo?: string; principal?: boolean }) {
   const medible = lado !== 'sin_medir' && typeof valor === 'number'
+  // Lo que no se puede medir no se enseña: la celda desaparece en vez de anunciar el hueco.
+  if (!medible && !principal) return null
   return (
     <div className={`mk__celda ${lado ? `mk__celda--${lado}` : ''} ${principal ? 'mk__celda--gema' : ''}`}>
       <span className="mk__k mono">{k}</span>

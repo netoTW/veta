@@ -25,6 +25,8 @@ export function traducirFactor(t: string): string {
   if (/^spot-driven: dato ausente/.test(t)) return 'No hay dato para saber si el precio lo mueve el contado o el apalancamiento: cuenta en contra'
   if (/perp-driven indeterminado/.test(t)) return 'No se pudo determinar si el precio lo mueve el apalancamiento'
   if ((m = t.match(/^incumple (\d+) condiciones? de BAJO/))) return `${m[1]} condiciones de riesgo bajo sin cumplir`
+  if ((m = t.match(/^VaR95 1d = ([\d.]+) \((>=|<=|>|<) ([\d.]+)\)/))) return `En un día malo de cada veinte cae ${pct(+m[1])}; el límite es ${pct(+m[3])}`
+  if ((m = t.match(/^CVaR95 7d = ([\d.]+) \((>=|<=|>|<) ([\d.]+)\)/))) return `En una mala semana de cada veinte cae ${pct(+m[1])}; el límite es ${pct(+m[3])}`
   return sinReferencias(t)
 }
 
@@ -88,7 +90,9 @@ export const FAMILIAS_INTERNAS: { clave: string; que: string; patrones: string[]
   { clave: 'metodo', que: 'Notas de método estadístico o de fuente', patrones: [
     'student-?t', 'bootstrap', '\\bskew\\b', '\\badapter\\b', '\\bEWMA\\b', '\\bMLE\\b',
     'colas gruesas', 'var\u2089\u2085', 'cvar\u2089\u2085', '\\bVaR\\b', '\\bCVaR\\b',
-    'ventana observada', 'observaciones\\)', 'de bloques sobre'] },
+    'ventana observada', 'observaciones\\)', 'de bloques sobre',
+    'peor semana observada', 'reescalado por ra[ií]z', 'la comparaci\u00f3n contra', 'la mediana depende',
+    'd\u00edas de historia, y la mediana'] },
   { clave: 'no_aplica', que: 'Marcadores de dato que no aplica', patrones: [
     '\\bn/d\\b', '\\bN/D\\b', '\\bnd\\b(?= )', 'sin valor', 'calidad parcial',
     'no se pudo evaluar', 'no se pudo determinar', 'no est\u00e1 comprobado', 'no alcanzan los datos'] },
@@ -298,3 +302,8 @@ export function delCatalogo(campo: string, codigo?: string | null): string {
   if (!c || c.interno || !codigo) return ''
   return c.valores[codigo] ?? c.valores[codigo.toUpperCase()] ?? c.valores[codigo.toLowerCase()] ?? ''
 }
+
+/** El único filtro para la prosa que llega del motor y se muestra a un cliente.
+    Traduce, quita identificadores, pasa a tuteo y descarta las frases de taller.
+    Antes esto estaba repartido en cinco archivos y cada uno se dejaba algo. */
+export const prosaDeCliente = (t?: string | null): string => limpiarProsa(llano(t ?? ''))

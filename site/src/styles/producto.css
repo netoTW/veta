@@ -670,3 +670,69 @@
 .mk__pred__meta { color: var(--ceniza-2); font-size: 0.6rem; text-transform: none; letter-spacing: 0.05em; }
 .mk__pred--puerta .btn { align-self: flex-start; }
 @media (max-width: 720px) { .mk__grid { grid-template-columns: 1fr; } .mk__def { grid-template-columns: 1fr; } }
+
+/* ============================================================================
+   El informe en cinco secciones (contrato §11).
+   Arriba el veredicto y los hallazgos; el detalle técnico, dentro de Avanzado.
+   ========================================================================== */
+.p-cli { padding-block: 34px 10px; border-top: 1px solid var(--hairline-2); display: flex; flex-direction: column; gap: 12px; }
+.p-cli__k { margin: 0; color: var(--oro); font-size: 0.6rem; letter-spacing: 0.18em; text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
+.p-cli__k span { color: var(--oro-sombra); }
+.p-cli__t { margin: 0; font-size: clamp(1.4rem, 3.8vw, 2.05rem); line-height: 1.14; letter-spacing: -0.018em; color: var(--hueso); font-weight: 300; text-wrap: balance; max-width: 26ch; }
+.p-cli__p { margin: 0; max-width: 66ch; color: var(--ceniza); font-size: 1rem; line-height: 1.65; text-wrap: pretty; }
+.p-cli__p--grande { color: var(--hueso); font-size: 1.1rem; line-height: 1.55; }
+.p-cli__hallazgo { border-left: 2px solid var(--oro); background: var(--roca-2); padding: 16px 20px; display: flex; flex-direction: column; gap: 10px; }
+.p-cli__hallazgo p { margin: 0; color: var(--ceniza); font-size: 0.98rem; line-height: 1.6; max-width: 64ch; }
+.p-cli__vigilar { display: flex; flex-direction: column; gap: 1px; background: var(--hairline-2); border: 1px solid var(--hairline-2); }
+.p-cli__vigilar > div { background: var(--roca-2); padding: 16px 18px; }
+.p-cli__et { display: block; margin-bottom: 6px; color: var(--ceniza-2); font-size: 0.56rem; letter-spacing: 0.12em; text-transform: uppercase; }
+.p-cli__vigilar p { margin: 0; color: var(--hueso); font-size: 0.98rem; line-height: 1.55; }
+.p-cli__inval { border-left: 2px solid var(--rojo); }
+
+/* ---------- la escala de niveles ---------- */
+.p-niv { position: relative; height: 260px; border: 1px solid var(--hairline-2); background: var(--roca-2); margin-top: 4px; }
+.p-niv__fila { position: absolute; left: 0; right: 16px; display: flex; align-items: center; gap: 12px; transform: translateY(-50%); }
+.p-niv__precio { width: 104px; flex: none; text-align: right; font-size: 0.72rem; color: var(--ceniza-2); font-variant-numeric: tabular-nums; }
+.p-niv__linea { flex: 1; height: 1px; background: var(--hairline); }
+.p-niv__et { font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase; white-space: nowrap; color: var(--ceniza-2); }
+.p-niv__fila.is-max .p-niv__linea { background: linear-gradient(to right, var(--oro), rgba(201,162,75,0.12)); }
+.p-niv__fila.is-max .p-niv__et, .p-niv__fila.is-max .p-niv__precio { color: var(--oro-luz); }
+.p-niv__fila.is-hoy .p-niv__linea { background: linear-gradient(to right, var(--hueso), rgba(236,230,216,0.12)); height: 2px; }
+.p-niv__fila.is-hoy .p-niv__et, .p-niv__fila.is-hoy .p-niv__precio { color: var(--hueso); }
+.p-niv__fila.is-alza .p-niv__linea { background: linear-gradient(to right, var(--esmeralda), rgba(31,164,111,0.10)); }
+.p-niv__fila.is-alza .p-niv__et, .p-niv__fila.is-alza .p-niv__precio { color: var(--esmeralda-luz); }
+.p-niv__fila.is-baja .p-niv__linea { background: linear-gradient(to right, var(--rojo), rgba(181,71,62,0.10)); }
+.p-niv__fila.is-baja .p-niv__et, .p-niv__fila.is-baja .p-niv__precio { color: var(--rojo-luz); }
+
+.p-niv__esc { list-style: none; margin: 16px 0 0; padding: 0; display: flex; flex-direction: column; gap: 1px; background: var(--hairline-2); border: 1px solid var(--hairline-2); }
+.p-niv__esc li { background: var(--roca-2); padding: 14px 18px; display: grid; grid-template-columns: 110px 1fr; gap: 3px 16px; }
+.p-niv__mult { font-size: 0.98rem; color: var(--hueso); font-variant-numeric: tabular-nums; }
+.p-niv__esc li.is-alza .p-niv__mult { color: var(--esmeralda-luz); }
+.p-niv__esc li.is-baja .p-niv__mult { color: var(--rojo-luz); }
+.p-niv__plazo { grid-column: 1; font-size: 0.56rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ceniza-2); }
+.p-niv__cond { grid-column: 2; grid-row: 1 / span 2; color: var(--ceniza); font-size: 0.92rem; line-height: 1.55; }
+.p-niv__cond b { color: var(--hueso); font-weight: 500; }
+
+/* ---------- Avanzado ---------- */
+.p-avz { margin-top: 34px; border: 1px solid var(--hairline-2); background: var(--roca-2); }
+.p-avz > summary { cursor: pointer; padding: 16px 20px; list-style: none; display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 10px; color: var(--hueso); font-family: var(--font-display); font-size: 1.05rem; }
+.p-avz > summary::-webkit-details-marker { display: none; }
+.p-avz__pista { color: var(--ceniza-2); font-size: 0.58rem; letter-spacing: 0.12em; text-transform: uppercase; }
+.p-avz > summary:focus-visible { outline: 2px solid var(--oro); outline-offset: 2px; }
+.p-avz[open] > summary { border-bottom: 1px solid var(--hairline-2); }
+.p-avz__cuerpo { padding-block: 8px 20px; }
+.p-avz__cuerpo .shell { padding-inline: 20px; max-width: none; }
+
+@media (max-width: 640px) {
+  .p-niv { height: 300px; }
+  .p-niv__precio { width: 78px; }
+  .p-niv__esc li { grid-template-columns: 1fr; }
+  .p-niv__cond { grid-column: 1; grid-row: auto; }
+}
+
+/* ---------- el gráfico de precio de la sección Niveles ---------- */
+.p-graf { margin: 6px 0 14px; padding: 0; border: 1px solid var(--hairline-2); background: var(--roca-2); }
+.p-graf__svg { display: block; width: 100%; height: auto; }
+.p-graf__zt { fill: var(--oro-luz); font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.08em; opacity: 0.85; }
+.p-graf__mt { fill: var(--oro-luz); font-family: var(--font-mono); font-size: 9.5px; letter-spacing: 0.08em; }
+.p-graf__pie { display: flex; flex-wrap: wrap; gap: 6px 16px; justify-content: space-between; padding: 9px 12px; border-top: 1px solid var(--hairline-2); color: var(--ceniza-2); font-size: 0.58rem; letter-spacing: 0.08em; text-transform: uppercase; }

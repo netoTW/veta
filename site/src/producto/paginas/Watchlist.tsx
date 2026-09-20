@@ -3,7 +3,7 @@ import { Cargando, Puerta } from '../piezas'
 import { useWatchlist } from '../../lib/datos'
 import { useRol, puede } from '../../lib/acceso'
 import { fecha, num } from '../../lib/formato'
-import { sinReferencias } from '../../lib/lenguaje'
+import { prosaDeCliente } from '../../lib/lenguaje'
 import { Link } from 'react-router-dom'
 import type { Watch } from '../../lib/contrato'
 
@@ -28,7 +28,7 @@ function gatilloLlano(w: Watch): string {
   switch (w.observable_tipo) {
     case 'token_listado': return `Que ${w.simbolo} aparezca cotizando con un identificador de mercado.`
     case 'revenue_holders_30d': return `Que el revenue a holders de 30 días pase de ${w.valor_al_anotar ?? 0} a positivo.`
-    default: return w.observable_tipo ? `Gatillo: ${sinReferencias(w.observable_tipo)}` : 'Sin gatillo estructurado.'
+    default: return w.observable_tipo ? `Gatillo: ${prosaDeCliente(w.observable_tipo)}` : 'Sin gatillo estructurado.'
   }
 }
 
@@ -63,12 +63,12 @@ function Fila({ w, pl }: { w: Watch; pl: ReturnType<typeof plantillas> }) {
       <div>
         <span className="p-watch__k">{escenarioPropio ? 'Escenario que la activaría' : 'Por qué está aquí'}</span>
         {escenarioPropio
-          ? <p className="p-watch__txt">{sinReferencias(w.escenario_que_la_activaria)}</p>
+          ? <p className="p-watch__txt">{prosaDeCliente(w.escenario_que_la_activaria)}</p>
           : <p className="p-watch__hueco">Sin escenario propio todavía: sólo el gatillo.</p>}
       </div>
       <div>
         <span className="p-watch__k">Gatillo</span>
-        <p className="p-watch__gatillo">{observablePropio ? sinReferencias(w.observable) : gatilloLlano(w)}</p>
+        <p className="p-watch__gatillo">{observablePropio ? prosaDeCliente(w.observable) : gatilloLlano(w)}</p>
         <p className="p-watch__fuente">
           {w.fuente_a_vigilar}
           {slug && <> · {slug}</>}
@@ -79,7 +79,7 @@ function Fila({ w, pl }: { w: Watch; pl: ReturnType<typeof plantillas> }) {
         {cerrada ? (
           <>
             <span className="p-watch__k">Motivo de cierre</span>
-            <p className="p-watch__txt p-watch__txt--mudo">{sinReferencias(w.motivo_cierre)}</p>
+            <p className="p-watch__txt p-watch__txt--mudo">{prosaDeCliente(w.motivo_cierre)}</p>
           </>
         ) : (
           <>

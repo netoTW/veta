@@ -24,7 +24,7 @@ interface Pieza { clave: string; titulo: string; para: string; texto: string; re
 const sano = (t?: string | null) => sinIdentificadores(limpiarProsa(llano(t ?? '')))
 
 /** Una frase suelta del informe, ya limpia, o cadena vacía si no quedó nada. */
-const bloque = (inf: Informe, k: string) => sano((inf.niveles as Record<string, { esencial?: { texto?: string } }> | undefined)?.[k]?.esencial?.texto)
+const bloque = (inf: Informe, k: string) => sano((inf.niveles as unknown as Record<string, { esencial?: { texto?: string } }> | undefined)?.[k]?.esencial?.texto)
 
 function componer(inf: Informe): Pieza[] {
   const f = (inf as unknown as { ficha_esencial?: Record<string, unknown> }).ficha_esencial ?? {}

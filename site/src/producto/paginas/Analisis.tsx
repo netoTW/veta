@@ -4,7 +4,7 @@ import { Cargando, TierBadge, Advertencias } from '../piezas'
 import { Cifras } from '../cifras'
 import { useAnalisis } from '../../lib/datos'
 import { fecha } from '../../lib/formato'
-import { estadoEconomicoLlano, sinReferencias, esAnalizable, limpiarProsa } from '../../lib/lenguaje'
+import { estadoEconomicoLlano, esAnalizable, prosaDeCliente } from '../../lib/lenguaje'
 import type { Informe } from '../../lib/contrato'
 import { EmptyState } from '../../ui/EmptyState'
 
@@ -22,7 +22,7 @@ function lecturaDe(a: Informe) {
   const n = a.niveles
   const cap = (t: string) => (t ? t.charAt(0).toUpperCase() + t.slice(1) : '')
   return [n.fundamentales?.esencial?.texto, n.varas?.esencial?.texto, n.riesgo?.esencial?.texto, n.onchain?.esencial?.texto, n.microestructura?.esencial?.texto]
-    .map((t) => limpiarProsa(t)).filter(Boolean).map((t) => cap(sinReferencias(t))).map((t) => (t.endsWith('.') ? t : t + '.'))
+    .map((t) => prosaDeCliente(t)).filter(Boolean).map((t) => cap(prosaDeCliente(t))).map((t) => (t.endsWith('.') ? t : t + '.'))
 }
 
 /** Semana ISO (lunes) a la que pertenece una fecha. */

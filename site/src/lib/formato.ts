@@ -89,7 +89,8 @@ export const MOTIVO_BENCHMARK_LABEL: Record<string, string> = {
   serie_incompleta: 'serie incompleta', medicion_desactivada: 'medición desactivada', otro: 'otro motivo',
 }
 export const CAMPO_LABEL: Record<string, string> = {
-  tvl_usd: 'TVL', revenue_protocolo_30d: 'revenue del protocolo (30 d)', revenue_sobre_mcap: 'revenue sobre mcap',
+  tvl_usd: 'fondos bloqueados', revenue_protocolo_30d: 'ingresos del protocolo (30 días)',
+  revenue_sobre_mcap: 'ingresos sobre capitalización', revenue_a_holders: 'ingresos que llegan al token',
   mcap_usd: 'capitalización', precio_usd: 'precio', volumen_24h_usd: 'volumen 24 h',
 }
 

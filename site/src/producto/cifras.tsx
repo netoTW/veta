@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import type { Informe } from '../lib/contrato'
 import { dias, fecha, mult, pct, precio, usd } from '../lib/formato'
-import { estadoEconomicoLlano, sinReferencias, traducirFactor, TIER_LLANO, limpiarProsa } from '../lib/lenguaje'
+import { estadoEconomicoLlano, traducirFactor, TIER_LLANO, prosaDeCliente } from '../lib/lenguaje'
 import { contradiccionesDelRegistro } from '../lib/contradicciones'
 
 /* ============================================================================
@@ -28,7 +28,7 @@ export function cifrasDe(inf: Informe): Cifra[] {
   const fu = inf.fundamentales
 
   if (typeof a.ratio === 'number' && typeof a.riesgo === 'number' && typeof a.recompensa === 'number') {
-    out.push({ k: 'asimetría · premio por unidad de riesgo', v: <>{mult(a.ratio)}</>, sub: <>arriesgás {pct(a.riesgo, 0)} para ganar {pct(a.recompensa, 0)}{a.horizonte ? <> en {dias(a.horizonte)}</> : null}</>, tono: 'esm' })
+    out.push({ k: 'asimetría · premio por unidad de riesgo', v: <>{mult(a.ratio)}</>, sub: <>arriesgas {pct(a.riesgo, 0)} para ganar {pct(a.recompensa, 0)}{a.horizonte ? <> en {dias(a.horizonte)}</> : null}</>, tono: 'esm' })
   }
   if (bull) {
     out.push({
@@ -43,9 +43,9 @@ export function cifrasDe(inf: Informe): Cifra[] {
   }
   if (fu && typeof fu.revenue_protocolo_30d === 'number') {
     out.push({
-      k: `revenue del protocolo · 30 d${inf.captura_verificada ? ' · verificado' : ''}`,
+      k: `ingresos del protocolo · 30 días${inf.captura_verificada ? ' · verificado' : ''}`,
       v: <>{usd(fu.revenue_protocolo_30d)}</>,
-      sub: <>{typeof fu.revenue_a_holders === 'number' ? <>{usd(fu.revenue_a_holders)} a holders · </> : null}{typeof fu.revenue_sobre_mcap === 'number' ? <>{pct(fu.revenue_sobre_mcap, 1)} revenue/mcap</> : null}</>,
+      sub: <>{typeof fu.revenue_a_holders === 'number' ? <>{usd(fu.revenue_a_holders)} llegan al token · </> : null}{typeof fu.revenue_sobre_mcap === 'number' ? <>{pct(fu.revenue_sobre_mcap, 1)} sobre capitalización</> : null}</>,
       tono: 'oro',
     })
   }
@@ -90,7 +90,7 @@ export function tesisCompuesta(inf: Informe): string {
   const varas = n.varas?.esencial?.texto || ''
   const esc = (n.escenarios?.esencial?.texto || '').split(';')[0]
   const cap = (t: string) => (t ? t.charAt(0).toUpperCase() + t.slice(1) : '')
-  return [fund, cap(varas), cap(esc)].map((t) => limpiarProsa(sinReferencias(t))).filter(Boolean).map((t) => (t.endsWith('.') ? t : t + '.')).join(' ')
+  return [fund, cap(varas), cap(esc)].map((t) => prosaDeCliente(t)).filter(Boolean).map((t) => (t.endsWith('.') ? t : t + '.')).join(' ')
 }
 
 /** ¿La prosa escrita sirve para el cliente? No, si contradice a los números o habla del proceso. */
@@ -98,6 +98,6 @@ export const prosaSirve = (inf: Informe, campo: string) => contradiccionesDelReg
 
 /** La tesis (o el motivo), siempre con la misma tipografía, venga de donde venga. */
 export function Prosa({ inf, campo, texto, className }: { inf: Informe; campo: string; texto: string; className?: string }) {
-  const t = prosaSirve(inf, campo) ? limpiarProsa(sinReferencias(texto)) : ''
+  const t = prosaSirve(inf, campo) ? prosaDeCliente(texto) : ''
   return <p className={className}>{t || tesisCompuesta(inf)}</p>
 }
