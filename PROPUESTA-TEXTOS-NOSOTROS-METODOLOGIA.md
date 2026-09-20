@@ -42,11 +42,6 @@ moneda, ni según el día, ni según el ánimo con que se mire.
 - **Los agentes investigan y narran.** Buscan, leen, contrastan y escriben.
 - **Ningún análisis se publica sin revisión humana.** Esa es la última puerta, siempre.
 
-### Qué no vas a encontrar aquí
-
-Ni fotos de equipo, ni biografías, ni testimonios. Lo que puedes revisar es el método, cifra
-por cifra, cada una con su fuente y su fecha.
-
 **Acciones:** Cómo trabajamos · Analiza tu moneda
 
 ---
@@ -122,9 +117,6 @@ importara. Se dice lo que hay. Lo que no hay, no se muestra.
 > antes de publicarlo conviene que lo mire alguien del oficio en Chile.
 
 ## Términos del servicio
-
-**Quién opera VETA.** VETA es operado por una persona natural con domicilio en Chile. Todavía
-no hay sociedad constituida. Para cualquier asunto, el correo es contacto@vetalab.io.
 
 **Qué es este servicio.** VETA entrega información y análisis sobre criptoactivos: datos con su
 fuente, comparaciones, escenarios y seguimiento de lo publicado.
