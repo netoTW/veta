@@ -78,7 +78,9 @@ export function Precios() {
                   {k === 'base' && <span className="planes__sello mono">El más elegido</span>}
                   <b className="display planes__nombre">{plan(k)?.nombre ?? '—'}</b>
                   <span className="planes__precio mono">{precio(k)}</span>
-                  {k !== 'gratis' && <span className="planes__mes mono">al mes</span>}
+                  {/* Gratis no lleva "al mes", pero la fila tiene que existir igual o su
+                      precio queda más abajo que el de los otros dos. */}
+                  <span className="planes__mes mono" aria-hidden={k === 'gratis'}>{k === 'gratis' ? '\u00a0' : 'al mes'}</span>
                 </div>
               ))}
             </div>

@@ -55,6 +55,14 @@ const exige = (seccion: Seccion) => async (c: { get: (k: 'rol') => Rol; json: (o
   await next()
 }
 
+/* Las respuestas de la API dependen de quién pregunta. Ninguna caché intermedia debe
+   guardarlas, aunque hoy ninguna lo haga: vale más decirlo que confiar en que no pase. */
+app.use('/api/*', async (c, next) => {
+  await next()
+  c.header('Cache-Control', 'private, no-store')
+  c.header('Vary', 'Cookie')
+})
+
 app.get('/api/yo', (c) => {
   const s = c.get('sesion')
   return c.json({

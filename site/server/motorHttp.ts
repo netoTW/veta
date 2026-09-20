@@ -49,7 +49,11 @@ export const motor: Motor = {
     const r = await llamar<Resolucion & { error?: string }>('/resolver', { method: 'POST', body: JSON.stringify({ consulta }) }).catch(() => ({ status: 0, cuerpo: null }))
     if (r.status === 200 && r.cuerpo && Array.isArray(r.cuerpo.candidatas)) return r.cuerpo
     if (r.status === 404 && r.cuerpo?.error === 'sin_cobertura') return { consulta, interpretada_como: 'ticker', candidatas: [] }
-    return resolverEnUniverso(consulta, await this.universo())
+    const u = await this.universo()
+    // Sin respuesta del motor y sin universo en memoria no se sabe nada de la moneda.
+    // Devolver cero candidatas diría "no existe", que es mentira: el sistema no respondió.
+    if (r.status === 0 && u.length === 0) throw new Error('motor no disponible: no hay con qué resolver')
+    return resolverEnUniverso(consulta, u)
   },
   /** GET /analizable. Con contrato y cadena distingue homónimas; sin ellos, por símbolo. */
   async analizable(simbolo, ref?: RefMoneda): Promise<Analizabilidad | null> {

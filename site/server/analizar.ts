@@ -238,7 +238,9 @@ analizarApp.get('/solicitudes/:id', async (c) => {
   let f = await bd.uno('SELECT * FROM solicitud WHERE id = ?', [c.req.param('id')]) as FilaSolicitud | undefined
   if (!f) return c.json({ error: 'no_encontrado' }, 404)
   const mia = !!s && f.usuario_id === s.user.id
-  if (!mia && rol !== 'admin' && f.nivel === 'profundo') return c.json({ error: 'sin_acceso' }, 403)
+  // Un 403 en lo ajeno y un 404 en lo inexistente deja sondear qué identificadores existen.
+  // Desde fuera, las dos cosas son lo mismo: no hay nada que ver aquí.
+  if (!mia && rol !== 'admin' && f.nivel === 'profundo') return c.json({ error: 'no_encontrado' }, 404)
   f = await sincronizarUna(f)
   return c.json({ solicitud: await vistaSolicitud(f, true), cupo: cupoSerializable(await cupoDeSesion(s, rol)) })
 })

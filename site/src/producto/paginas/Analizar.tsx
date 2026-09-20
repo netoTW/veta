@@ -177,7 +177,7 @@ export function Analizar() {
             </ul>
             </>
           )}
-          {universo.estado === 'ok' && !lectura && !resol && !noAnalizable && <p className="an-busca__nota mono">{universo.datos.monedas.length} monedas con cobertura hoy{universo.datos.motor === 'simulador' ? ' · respuestas simuladas por ahora' : ''}</p>}
+          {universo.estado === 'ok' && universo.datos.monedas.length > 0 && !lectura && !resol && !noAnalizable && <p className="an-busca__nota mono">{universo.datos.monedas.length} monedas con cobertura hoy{universo.datos.motor === 'simulador' ? ' · respuestas simuladas por ahora' : ''}</p>}
         </form>
 
         {buscando && <div className="p-cargando"><Loader size={72} label="Leyendo" /></div>}

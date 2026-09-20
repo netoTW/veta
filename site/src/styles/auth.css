@@ -90,8 +90,10 @@
 .auth__campo input:focus { border-color: var(--oro); box-shadow: 0 0 0 3px rgba(201,162,75,0.12); }
 .auth--error .auth__campo input:focus { border-color: var(--rojo-luz); box-shadow: 0 0 0 3px rgba(217,105,95,0.14); }
 .auth__clave { position: relative; display: block; }
-.auth__clave input { padding-right: 68px; }
-.auth__ver { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: 0; color: var(--ceniza); font-size: 0.6rem; letter-spacing: 0.1em; cursor: pointer; padding: 6px 8px; }
+/* El hueco reservado tiene que caber la palabra más larga, "ocultar", o el texto
+   escrito se mete por debajo del botón. */
+.auth__clave input { padding-right: 84px; }
+.auth__ver { position: absolute; right: 8px; min-width: 60px; text-align: right; top: 50%; transform: translateY(-50%); background: none; border: 0; color: var(--ceniza); font-size: 0.6rem; letter-spacing: 0.1em; cursor: pointer; padding: 6px 8px; }
 .auth__ver:hover { color: var(--hueso); }
 .auth__ayuda { font-size: 0.76rem; color: var(--ceniza-2); line-height: 1.45; }
 .auth__btn { justify-content: center; margin-top: 4px; padding-block: 14px; }
