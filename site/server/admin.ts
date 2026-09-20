@@ -201,7 +201,9 @@ adminApp.patch('/usuarios/:id/estado', async (c) => {
    Se borra lo personal y se conserva el gasto: un análisis que costó dinero
    sigue contando en Consumo aunque su dueño ya no exista, sólo que sin dueño.
    ========================================================================== */
-adminApp.delete('/usuarios/:id', async (c) => {
+/* POST y no DELETE: el proxy de Vercel descarta el cuerpo de un DELETE, así que la
+   confirmación no llegaba nunca y el borrado era imposible desde el navegador. */
+adminApp.post('/usuarios/:id/borrar', async (c) => {
   const id = c.req.param('id')
   const admin = c.get('admin')
   if (id === admin.id) return c.json({ error: 'no_a_ti_mismo', detalle: 'No puedes borrar tu propia cuenta.' }, 400)

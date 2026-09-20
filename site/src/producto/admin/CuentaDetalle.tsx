@@ -128,7 +128,7 @@ export function CuentaDetalle() {
                   <button type="button" className="btn btn--ghost" onClick={() => { setBorrando(false); setConfirmacion('') }}>Cancelar</button>
                   <button type="button" className="btn a-dec__rechazar" disabled={confirmacion.trim().toLowerCase() !== u.email.toLowerCase()}
                     onClick={async () => {
-                      try { await api(`/api/admin/usuarios/${u.id}`, { metodo: 'DELETE', cuerpo: { confirmacion } }); nav('/admin/cuentas') }
+                      try { await api(`/api/admin/usuarios/${u.id}/borrar`, { cuerpo: { confirmacion } }); nav('/admin/cuentas') }
                       catch (e) { setMsg(e instanceof ErrorApi ? e.message : String(e)); setBorrando(false) }
                     }}>Borrar definitivamente</button>
                 </div>
