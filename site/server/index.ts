@@ -25,6 +25,7 @@ import { cupoDe } from './cupo.ts'
 import { analizarApp, consumoAdmin } from './analizar.ts'
 import { operacionAdmin } from './operacion.ts'
 import { pagosApp, cobroAutomatico, enlacesCheckout } from './pagos.ts'
+import { noticiasPara, noticiasAdmin } from './noticias.ts'
 import { sembrar } from './semilla.ts'
 
 type Vars = { sesion: Sesion | null; rol: Rol; rolReal: Rol; verComo: Rol | null }
@@ -189,6 +190,8 @@ app.get('/api/contenido/visuales/:id', async (c) => {
   const v = await contenido.visualesPara(c.req.param('id'), c.get('rol'))
   return v ? c.json(v) : c.json({ error: 'no_encontrado' }, 404)
 })
+/* Noticias: el recorte lo decide el servidor, no el cliente. */
+app.get('/api/contenido/noticias', async (c) => c.json(await noticiasPara(c.get('rol'))))
 app.get('/api/contenido/seguimiento', exige('seguimiento'), async (c) => c.json(await contenido.seguimientoPara(c.get('rol'))))
 app.get('/api/contenido/benchmark', exige('seguimiento'), (c) => c.json(contenido.benchmark()))
 app.get('/api/contenido/watchlist', exige('watchlist'), (c) => c.json(contenido.watchlistToda()))
@@ -204,6 +207,8 @@ app.get('/api/contenido/exportar/:que', exige('exportar'), async (c) => {
 async function alertasDe(usuarioId: string) {
   return bd.todos('SELECT id, tipo, gema_id, fecha, leida, detalle FROM alerta WHERE usuario_id = ? ORDER BY fecha DESC LIMIT 100', [usuarioId])
 }
+
+app.route('/api/admin/noticias', noticiasAdmin)
 
 /* ---------- cobro (Whop) ---------- */
 app.route('/api/pagos', pagosApp)

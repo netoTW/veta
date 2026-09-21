@@ -19,6 +19,7 @@ import { AvisoAnalisis, CupoBarra } from './analizar/aviso'
 
 const LINKS = [
   { to: '/gemas', label: 'Gemas' },
+  { to: '/noticias', label: 'Noticias' },
   { to: '/seguimiento', label: 'Seguimiento' },
   { to: '/analisis', label: 'Análisis' },
   { to: '/watchlist', label: 'Watchlist' },

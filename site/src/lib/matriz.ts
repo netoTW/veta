@@ -22,6 +22,7 @@ export type Seccion =
   | 'alertas'
   | 'watchlist'
   | 'analisis'
+  | 'noticias'
   | 'ledger.resumen'
   | 'ledger.detalle'
   | 'ledger.bloqueados'
@@ -40,6 +41,8 @@ const MATRIZ: Record<Seccion, Rol[]> = {
   'alertas':              ['pro', 'admin'],
   'watchlist':            ['base', 'pro', 'admin'],
   'analisis':             ['visitante', 'base', 'pro', 'admin'],
+  /* El titular y la primera línea son de todos; la lectura entera, del plan Base. */
+  'noticias':             ['base', 'pro', 'admin'],
   'ledger.resumen':       ['visitante', 'base', 'pro', 'admin'],
   'ledger.detalle':       ['base', 'pro', 'admin'],
   'ledger.bloqueados':    ['admin'],

@@ -754,3 +754,56 @@
 .p-graf__lejos b, .p-niv__lejos b { color: var(--oro-luz); font-size: 0.86rem; font-variant-numeric: tabular-nums; }
 .p-graf__lejos span, .p-niv__lejos span { color: var(--ceniza); font-size: 0.88rem; line-height: 1.5; }
 .p-niv__lejos li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+
+/* ============================================================================
+   Noticias y agenda. Tres bloques en columna de lectura: lo de hoy, lo que
+   viene y cómo se movió el mercado. Sin tarjetas con sombra: el ritmo lo
+   marcan las líneas finas, como en el resto del producto.
+   ========================================================================== */
+.n-seccion { padding-block: 30px 0; }
+.n-seccion__k { margin: 0 0 16px; font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--oro); font-weight: 400; }
+
+.n-lista { display: flex; flex-direction: column; gap: 0; }
+.n-pieza { padding-block: 26px; border-top: 1px solid var(--hairline-2); max-width: 70ch; }
+.n-pieza:first-child { border-top: 0; padding-top: 0; }
+.n-pieza--fuera { opacity: 0.55; }
+.n-pieza__meta { margin: 0 0 8px; font-size: 0.58rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ceniza-2); }
+.n-pieza__fuera-marca { color: var(--rojo-luz); }
+.n-pieza__titular { margin: 0 0 14px; font-size: clamp(1.25rem, 3.2vw, 1.7rem); line-height: 1.16; letter-spacing: -0.015em; color: var(--hueso); font-weight: 300; text-wrap: balance; }
+.n-pieza__texto { margin: 0; color: var(--ceniza); font-size: 1rem; line-height: 1.65; text-wrap: pretty; }
+.n-pieza__bloque { margin-top: 16px; padding-left: 14px; border-left: 1px solid var(--hairline-2); }
+.n-pieza__bloque--cierre { border-left-color: var(--oro-sombra); }
+.n-pieza__k { display: block; margin-bottom: 5px; font-size: 0.56rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ceniza-2); }
+.n-pieza__corte { margin: 14px 0 0; font-size: 0.6rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--oro-luz); }
+.n-pieza__admin { margin-top: 16px; }
+
+.n-fuentes { list-style: none; margin: 18px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px 18px; }
+.n-fuentes li { display: flex; align-items: baseline; gap: 7px; }
+.n-fuentes a { color: var(--ceniza); text-decoration: none; border-bottom: 1px solid var(--hairline); font-size: 0.88rem; }
+.n-fuentes a:hover { color: var(--hueso); border-bottom-color: var(--oro); }
+.n-fuentes span { font-size: 0.56rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ceniza-2); }
+
+.n-agenda { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.n-agenda__ev { display: grid; grid-template-columns: minmax(96px, 128px) 1fr; gap: 4px 20px; padding-block: 16px; border-top: 1px solid var(--hairline-2); }
+.n-agenda__ev:first-child { border-top: 0; padding-top: 0; }
+.n-agenda__cuando { display: flex; flex-direction: column; gap: 2px; }
+.n-agenda__cuando b { color: var(--hueso); font-size: 0.82rem; letter-spacing: 0.04em; }
+.n-agenda__hora { font-size: 0.56rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ceniza-2); }
+.n-agenda__titulo { margin: 0; color: var(--hueso); font-size: 0.98rem; }
+.n-agenda__sym { color: var(--oro-luz); font-size: 0.7rem; }
+.n-agenda__esc { margin: 5px 0 0; color: var(--ceniza); font-size: 0.92rem; line-height: 1.55; max-width: 62ch; }
+.n-agenda__esc--corte { font-size: 0.6rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--oro-luz); }
+.n-agenda__fuente { display: inline-block; margin-top: 6px; font-size: 0.54rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ceniza-2); text-decoration: none; border-bottom: 1px solid var(--hairline-2); }
+.n-agenda__fuente:hover { color: var(--hueso); }
+
+.n-mov__resumen { margin: 0; color: var(--ceniza); font-size: 0.98rem; }
+.n-mov__resumen b { color: var(--hueso); }
+.n-mov__umbral { color: var(--ceniza-2); font-size: 0.72rem; }
+.n-mov__corte { margin: 12px 0 0; font-size: 0.6rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--oro-luz); }
+.n-mov__lista { list-style: none; margin: 14px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px 16px; }
+.n-mov__lista li { display: flex; align-items: baseline; gap: 7px; }
+.n-mov__lista b { color: var(--hueso); font-size: 0.84rem; }
+
+@media (max-width: 600px) {
+  .n-agenda__ev { grid-template-columns: 1fr; gap: 6px; }
+}

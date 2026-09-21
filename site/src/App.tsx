@@ -20,6 +20,7 @@ const Seguimiento = lazy(() => import('./producto/paginas/Seguimiento').then((m)
 const Analisis = lazy(() => import('./producto/paginas/Analisis').then((m) => ({ default: m.Analisis })))
 const Piezas = lazy(() => import('./producto/paginas/Piezas').then((m) => ({ default: m.Piezas })))
 const Watchlist = lazy(() => import('./producto/paginas/Watchlist').then((m) => ({ default: m.Watchlist })))
+const Noticias = lazy(() => import('./producto/paginas/Noticias').then((m) => ({ default: m.Noticias })))
 const Analizar = lazy(() => import('./producto/paginas/Analizar').then((m) => ({ default: m.Analizar })))
 const AnalizarSolicitud = lazy(() => import('./producto/paginas/Analizar').then((m) => ({ default: m.AnalizarSolicitud })))
 const Votacion = lazy(() => import('./producto/paginas/Votacion').then((m) => ({ default: m.Votacion })))
@@ -100,6 +101,7 @@ export default function App() {
             <Route path="/analisis" element={<Analisis />} />
             <Route path="/analisis/:id" element={<AnalisisDetalle />} />
             <Route path="/watchlist" element={<Watchlist />} />
+            <Route path="/noticias" element={<Noticias />} />
             <Route path="/analizar" element={<Analizar />} />
             <Route path="/analizar/s/:id" element={<AnalizarSolicitud />} />
             <Route path="/votacion" element={<Votacion />} />
