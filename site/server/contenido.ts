@@ -123,15 +123,28 @@ export async function estadoPublicacion(r: Registro): Promise<EstadoPublicacion>
   return { estado: 'pedir_mas', ultima }
 }
 
+/**
+ * Lo que no se enseña nunca, mande quien mande la publicación.
+ *
+ * Vive aparte porque hacen falta en DOS sitios: en `visiblePara` y en la lista de
+ * anticipadas. Estaban sólo en el primero, y por eso CELO salió a la vez como
+ * análisis y como gema anticipada en cuanto la aprobación dejó de depender de la
+ * versión. Un guardia repetido a mano es un guardia que se olvida en una copia.
+ */
+function ocultoSiempre(r: Registro): boolean {
+  // El motor marca lo que sólo puede ver la mesa: vale en listas, detalle,
+  // seguimiento y visuales a la vez.
+  if ((r as { solo_admin?: boolean }).solo_admin) return true
+  // Un informe que cambió de tipo deja una versión final marcada: la vieja no se
+  // lista, o la misma moneda aparece en gemas y en análisis.
+  if ((r as { reclasificado_a?: string }).reclasificado_a) return true
+  return false
+}
+
 /** Visible para un rol: aprobado en su versión actual y, para base, pasada la ventana de anticipo del pro. */
 async function visiblePara(r: Registro, rol: Rol): Promise<boolean> {
   if (rol === 'admin') return true
-  // El motor marca lo que sólo puede ver la mesa. Se comprueba antes que nada, para que
-  // valga en las listas, en el detalle, en el seguimiento y en los visuales a la vez.
-  if ((r as { solo_admin?: boolean }).solo_admin) return false
-  // Un informe que cambió de tipo deja una versión final marcada: la vieja no se lista,
-  // porque si no la misma moneda aparece en gemas y en análisis.
-  if ((r as { reclasificado_a?: string }).reclasificado_a) return false
+  if (ocultoSiempre(r)) return false
   const p = await estadoPublicacion(r)
   if (p.estado !== 'aprobado' || !p.publicado_en) return false
   if (r.tipo === 'gema' && !puede(rol, 'gemas.anticipado')) {
@@ -146,6 +159,7 @@ export async function anticipadasPara(rol: Rol) {
   if (rol === 'admin' || puede(rol, 'gemas.anticipado')) return []
   const out: { id: string; simbolo: unknown; nombre: unknown; tier: unknown; disponible_desde: string }[] = []
   for (const g of gemasTodas()) {
+    if (ocultoSiempre(g)) continue
     const p = await estadoPublicacion(g)
     if (p.estado !== 'aprobado' || !p.publicado_en) continue
     const desde = new Date(p.publicado_en).getTime() + ENV.HORAS_ANTICIPO * 3600_000
