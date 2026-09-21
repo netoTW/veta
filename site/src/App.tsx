@@ -36,6 +36,7 @@ const BandejaDetalle = lazy(() => import('./producto/admin/BandejaDetalle').then
 const Cuentas = lazy(() => import('./producto/admin/Cuentas').then((m) => ({ default: m.Cuentas })))
 const CuentaDetalle = lazy(() => import('./producto/admin/CuentaDetalle').then((m) => ({ default: m.CuentaDetalle })))
 const Operacion = lazy(() => import('./producto/admin/Operacion').then((m) => ({ default: m.Operacion })))
+const Enlaces = lazy(() => import('./producto/admin/Enlaces').then((m) => ({ default: m.Enlaces })))
 const Consumo = lazy(() => import('./producto/admin/Consumo').then((m) => ({ default: m.Consumo })))
 const VotacionAdmin = lazy(() => import('./producto/admin/Votacion').then((m) => ({ default: m.VotacionAdmin })))
 /* La guía de estilo sale de la portada: queda en /sistema, sin enlace en la navegación. */
@@ -110,6 +111,7 @@ export default function App() {
             <Route path="/admin/bandeja" element={<SoloAdmin><Bandeja /></SoloAdmin>} />
             <Route path="/admin/bandeja/:id" element={<SoloAdmin><BandejaDetalle /></SoloAdmin>} />
             <Route path="/admin/cuentas" element={<SoloAdmin><Cuentas /></SoloAdmin>} />
+            <Route path="/admin/enlaces" element={<SoloAdmin><Enlaces /></SoloAdmin>} />
             <Route path="/admin/cuentas/:id" element={<SoloAdmin><CuentaDetalle /></SoloAdmin>} />
             <Route path="/admin/operacion" element={<SoloAdmin><Operacion /></SoloAdmin>} />
             <Route path="/admin/consumo" element={<SoloAdmin><Consumo /></SoloAdmin>} />

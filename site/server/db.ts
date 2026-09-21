@@ -125,6 +125,21 @@ CREATE TABLE IF NOT EXISTS acciones_admin (
   detalle TEXT,
   fecha TEXT NOT NULL
 );
+-- Enlaces cortos de redes: vetalab.io/ig y compañía. Viven aquí y no en el
+-- código para poder añadir o cambiar uno desde admin sin desplegar.
+CREATE TABLE IF NOT EXISTS enlace_corto (
+  slug TEXT PRIMARY KEY,
+  destino TEXT NOT NULL DEFAULT '/',
+  utm_source TEXT,
+  utm_medium TEXT,
+  utm_campaign TEXT,
+  activo INTEGER NOT NULL DEFAULT 1,
+  notas TEXT,
+  visitas INTEGER NOT NULL DEFAULT 0,
+  ultima_visita TEXT,
+  creado TEXT NOT NULL,
+  actualizado TEXT NOT NULL
+);
 -- Cobro con Whop. Una fila por aviso recibido, con el id del mensaje como llave:
 -- un reenvío choca contra la llave y no vuelve a aplicar nada (idempotencia).
 CREATE TABLE IF NOT EXISTS pago_evento (

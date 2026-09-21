@@ -26,6 +26,7 @@ import { analizarApp, consumoAdmin } from './analizar.ts'
 import { operacionAdmin, vigilarPublicados } from './operacion.ts'
 import { pagosApp, cobroAutomatico, enlacesCheckout } from './pagos.ts'
 import { noticiasPara, noticiasAdmin } from './noticias.ts'
+import { enlacesApp, enlacesAdmin, sembrarEnlaces } from './enlaces.ts'
 import { sembrar } from './semilla.ts'
 
 type Vars = { sesion: Sesion | null; rol: Rol; rolReal: Rol; verComo: Rol | null }
@@ -209,6 +210,11 @@ async function alertasDe(usuarioId: string) {
 }
 
 app.route('/api/admin/noticias', noticiasAdmin)
+app.route('/api/admin/enlaces', enlacesAdmin)
+
+/* Enlaces cortos de redes. El alojamiento reescribe /ig hacia aquí; el destino
+   y sus UTM salen de la base, así que se cambian sin desplegar. */
+app.route('/api/ir', enlacesApp)
 
 /* ---------- cobro (Whop) ---------- */
 app.route('/api/pagos', pagosApp)
@@ -266,6 +272,7 @@ process.on('uncaughtException', (e) => { console.error('[veta] excepción no cap
 
 await migrar()
 await sembrar()
+await sembrarEnlaces()
 console.log(`[alertas] ${await sincronizarAlertas()} nuevas`)
 /* Un despliegue es un arranque: se cuenta lo publicado y se compara con lo de
    antes. Si bajó, queda el aviso en Operación en vez de un sitio vacío callado. */

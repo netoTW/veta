@@ -478,3 +478,23 @@
    alarmar. Oro, no rojo: no hay nada roto, hay algo que mirar. */
 .a-pub-revisar { display: inline-flex; align-items: center; gap: 6px; margin-top: 6px; padding: 3px 8px; border: 1px solid var(--oro-sombra); background: rgba(201,162,75,0.07); color: var(--oro-luz); font-size: 0.56rem; letter-spacing: 0.1em; text-transform: uppercase; }
 .a-pub-revisar__v { color: var(--ceniza-2); }
+
+/* Enlaces cortos de redes. Una fila por enlace: qué es, a dónde va y cuánto se usa. */
+.a-enl__form { margin-bottom: 20px; }
+.a-enl__campos { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin: 14px 0 16px; }
+.a-enl__campos label { display: flex; flex-direction: column; gap: 5px; }
+.a-enl__campos span { font-size: 0.56rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ceniza-2); }
+.a-enl__campos input { background: var(--roca-0); border: 1px solid var(--hairline); color: var(--hueso); padding: 9px 11px; font-size: 0.9rem; }
+.a-enl__campos input:focus-visible { outline: none; border-color: var(--oro); }
+.a-enl__ancho { grid-column: 1 / -1; }
+
+.a-enl__lista { display: flex; flex-direction: column; }
+.a-enl { display: grid; grid-template-columns: minmax(180px, 1.2fr) minmax(200px, 1.6fr) minmax(140px, 0.8fr) auto; gap: 8px 18px; align-items: center; padding-block: 16px; border-top: 1px solid var(--hairline-2); }
+.a-enl--off { opacity: 0.5; }
+.a-enl__id b { color: var(--hueso); font-size: 0.9rem; }
+.a-enl__notas { display: block; margin-top: 3px; font-size: 0.8rem; color: var(--ceniza-2); }
+.a-enl__destino { font-size: 0.72rem; color: var(--ceniza); overflow-wrap: anywhere; }
+.a-enl__uso { font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ceniza-2); }
+.a-enl__ult { color: var(--ceniza-2); }
+.a-enl__acciones { display: flex; gap: 8px; }
+@media (max-width: 760px) { .a-enl { grid-template-columns: 1fr; } }
