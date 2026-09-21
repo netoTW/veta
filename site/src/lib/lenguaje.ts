@@ -112,7 +112,19 @@ export function limpiarProsa(t?: string | null): string {
   const trozos = t.split(/(?<=\.)\s+|\s+·\s+/)
   const buenos = trozos.filter((x) => x.trim() && !tieneCriterioInterno(x))
   const out = buenos.join(' ').replace(/\s{2,}/g, ' ').trim()
-  return /[a-záéíóúñ]/i.test(out) ? out : ''
+  return /[a-záéíóúñ]/i.test(out) ? sinMarcaRepetida(out) : ''
+}
+
+/* El motor cuelga "(sin fecha)" al final de cada catalizador sin datar, también
+   cuando la frase ya lo decía: "…(confirmado como plan, sin fecha). (sin fecha)".
+   Leerlo dos veces parece un error de quien escribe, así que se quita el de
+   fuera y se deja el que está dentro de la frase. El arreglo de verdad es del
+   motor y está anotado en el contrato. */
+function sinMarcaRepetida(t: string): string {
+  const sobra = /\s*\(sin fecha\)\s*\.?\s*$/i
+  if (!sobra.test(t)) return t
+  const sinLaDeFuera = t.replace(sobra, '').trim()
+  return /sin fecha/i.test(sinLaDeFuera) ? (sinLaDeFuera.endsWith('.') ? sinLaDeFuera : `${sinLaDeFuera}.`) : t
 }
 
 /** Mientras el motor no exporte su propio chequeo, una moneda es analizable si hay algo que
