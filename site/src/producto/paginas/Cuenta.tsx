@@ -22,11 +22,24 @@ interface MiCuenta {
   sesiones: number
 }
 
+/* Lo que dice cada plan aquí tiene que ser lo mismo que dice Precios y lo mismo
+   que aplica el servidor. El cupo no se escribe a mano —cambia por variable de
+   entorno— sino que se pide con el resto del catálogo. */
 const PLANES = [
-  { k: 'gratis', rol: 'visitante' as const, t: 'Gratis', d: ['Titular y tier de cada gema', 'Análisis de monedas sin tesis', 'Ledger resumido', 'Análisis determinista instantáneo'] },
-  { k: 'base', rol: 'base' as const, t: 'Base', d: ['Todo el informe: tesis, dos varas, escenarios, riesgo', 'Los dos niveles de lectura', 'Seguimiento diario', 'Watchlist y radar', 'Ledger detallado', '1–2 análisis profundos al mes'] },
-  { k: 'pro', rol: 'pro' as const, t: 'Pro', d: ['Todo lo del base', 'Acceso anticipado a gemas nuevas', 'Alertas de invalidación y gatillos', 'Exportación CSV/JSON', 'Proponer monedas para analizar', 'Cupo mayor de análisis'] },
+  { k: 'gratis', rol: 'visitante' as const, t: 'Gratis', d: ['Titular y tier de cada gema', 'Análisis de monedas sin tesis', 'Titular de cada noticia', 'Lectura instantánea de cualquier moneda'] },
+  { k: 'base', rol: 'base' as const, t: 'Base', d: ['Todo el informe: tesis, dos varas, escenarios, riesgo', 'Los dos niveles de lectura', 'Seguimiento diario', 'Watchlist y radar', 'Noticias y agenda con su lectura', 'CUPO análisis profundos al mes'] },
+  { k: 'pro', rol: 'pro' as const, t: 'Pro', d: ['Todo lo del base', 'Acceso anticipado a gemas nuevas', 'Alertas de invalidación y gatillos', 'Exportar en JSON', 'Voto de la moneda de la semana', 'CUPO análisis profundos al mes'] },
 ]
+
+/** "CUPO análisis" -> "2 análisis", con el número que dice el servidor. */
+function usarCupos() {
+  const [cupos, setCupos] = useState<Record<string, number>>({})
+  useEffect(() => {
+    api<{ planes: { clave: string; analisis_mes: number }[] }>('/api/planes')
+      .then((c) => setCupos(Object.fromEntries(c.planes.map((x) => [x.clave, x.analisis_mes]))), () => {})
+  }, [])
+  return cupos
+}
 
 export function Cuenta() {
   const { yo, cargando, salir } = useSesion()
@@ -151,6 +164,8 @@ function MisAnalisis() {
 }
 
 function Planes({ actual }: { actual: string }) {
+  const cupos = usarCupos()
+  const conCupo = (t: string, plan: string) => t.replace('CUPO', String(cupos[plan] ?? '—'))
   return (
     <section className="a-planes" aria-label="Planes">
       <div className="p-seccion__head"><h2 className="p-seccion__titulo">Los tres planes</h2><span className="mono p-seccion__calidad">sin proveedor de pago todavía · se activa a mano</span></div>
@@ -159,12 +174,12 @@ function Planes({ actual }: { actual: string }) {
           <article key={p.k} className={`p-card a-plan ${actual === p.k ? 'is-actual' : ''}`}>
             <PlanBadge rol={p.rol} />
             <h3 className="a-plan__t">{p.t}</h3>
-            <ul className="a-plan__l">{p.d.map((x) => <li key={x}>{x}</li>)}</ul>
-            {actual === p.k ? <span className="mono a-plan__actual">tu plan</span> : <a className="btn btn--ghost" href={`mailto:hola@veta.local?subject=Plan ${p.t}`}>Pedir el plan {p.t}</a>}
+            <ul className="a-plan__l">{p.d.map((x) => <li key={x}>{conCupo(x, p.k)}</li>)}</ul>
+            {actual === p.k ? <span className="mono a-plan__actual">tu plan</span> : <Link className="btn btn--ghost" to="/precios">Ver el plan {p.t}</Link>}
           </article>
         ))}
       </div>
-      <p className="p-nota" style={{ marginTop: 12 }}>Los precios son suposiciones hasta que haya usuarios reales; el cobro llega con el proveedor de pago. Mientras tanto, escríbenos y activamos el plan.</p>
+      <p className="p-nota" style={{ marginTop: 12 }}>El plan queda activo en cuanto se confirma el pago, y se cancela cuando quieras desde tu panel de Whop.</p>
     </section>
   )
 }

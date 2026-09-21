@@ -23,10 +23,11 @@ const FILAS: { que: string; v: [string, string, string] }[] = [
   { que: 'El informe completo: tesis, escenarios y riesgo', v: ['—', 'sí', 'sí'] },
   { que: 'Análisis profundos al mes', v: ['cupo', 'cupo', 'cupo'] },
   { que: 'Seguimiento diario y watchlist', v: ['—', 'sí', 'sí'] },
+  { que: 'Noticias del día y agenda, con su lectura', v: ['—', 'sí', 'sí'] },
   { que: 'Avisos cuando una tesis se invalida', v: ['—', '—', 'sí'] },
   { que: 'Acceso anticipado a las gemas nuevas', v: ['—', '—', 'sí'] },
   { que: 'Voto de la moneda de la semana', v: ['—', '—', 'sí'] },
-  { que: 'Exportar en CSV y JSON', v: ['—', '—', 'sí'] },
+  { que: 'Exportar en JSON', v: ['—', '—', 'sí'] },
 ]
 
 const PREGUNTAS: { p: string; r: string }[] = [
