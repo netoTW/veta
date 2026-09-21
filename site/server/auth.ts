@@ -87,7 +87,7 @@ export const auth = betterAuth({
       defaultRole: 'usuario',
       adminRoles: ['admin'],
       impersonationSessionDuration: 60 * 60, // 1 hora
-      bannedUserMessage: 'Esta cuenta está suspendida. Escribinos si creés que es un error.',
+      bannedUserMessage: 'Esta cuenta está suspendida. Escríbenos si crees que es un error.',
     }),
   ],
 })

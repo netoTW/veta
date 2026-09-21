@@ -11,7 +11,7 @@ import { Hono } from 'hono'
 import { appendFileSync, mkdirSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { auth, sesionDe, type Sesion } from './auth.ts'
-import { bd, ahora, asignarPlan, registrarAccion } from './db.ts'
+import { bd, ahora, asignarPlan, olvidarPlan, registrarAccion } from './db.ts'
 import { cupoDe } from './cupo.ts'
 import { ENV } from './entorno.ts'
 import { rolDe, PLANES } from '../src/lib/matriz.ts'
@@ -211,6 +211,7 @@ adminApp.patch('/usuarios/:id/plan', async (c) => {
   if (!antes) return c.json({ error: 'no_encontrado' }, 404)
   await bd.ejecutar('UPDATE "user" SET plan = ?, "updatedAt" = ? WHERE id = ?', [plan, ahora(), id])
   await asignarPlan(id, plan as 'gratis' | 'base' | 'pro')
+  olvidarPlan(id)
   await log(c, 'usuario.plan', 'usuario', id, { de: antes.plan ?? 'gratis', a: plan })
   return c.json({ ok: true })
 })

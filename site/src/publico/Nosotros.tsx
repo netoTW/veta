@@ -51,7 +51,7 @@ export function Nosotros() {
           <section className="pub__bloque" aria-labelledby="ns-produce">
             <h2 id="ns-produce" className="display pub__h2">Qué produce el sistema</h2>
             <ul className="ns-quien">
-              <li><b>Una gema cada semana</b><span>Elegida entre mil monedas revisadas y publicada con el informe entero.</span></li>
+              <li><b>Una gema cada semana</b><span>Así llamamos a la oportunidad de la semana: la mejor de las mil monedas que revisamos, publicada con el informe entero.</span></li>
               <li><b>Análisis de cualquier moneda</b><span>A pedido, con la lectura instantánea gratis para todos.</span></li>
               <li><b>Seguimiento diario</b><span>De cada tesis publicada, contra la cifra que la invalidaría.</span></li>
               <li><b>Una votación semanal</b><span>Los socios Pro eligen qué se analiza a fondo.</span></li>

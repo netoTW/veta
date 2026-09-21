@@ -28,3 +28,6 @@ recursos/matcaps/
 # --- sistema ---
 .DS_Store
 *.log
+
+# Archivo de calibración: copias grandes, no van al repositorio
+archivo/

@@ -16,7 +16,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { ENV, RAIZ_SITE } from './entorno.ts'
 import { auth, migrar, sesionDe, type Sesion } from './auth.ts'
-import { bd } from './db.ts'
+import { bd, planVigente } from './db.ts'
 import { rolDe, puede, type Rol, type Seccion } from '../src/lib/matriz.ts'
 import * as contenido from './contenido.ts'
 import { adminApp, sincronizarAlertas } from './admin.ts'
@@ -24,6 +24,7 @@ import { votacionApp, votacionAdmin } from './votacion.ts'
 import { cupoDe } from './cupo.ts'
 import { analizarApp, consumoAdmin } from './analizar.ts'
 import { operacionAdmin } from './operacion.ts'
+import { pagosApp, cobroAutomatico, enlacesCheckout } from './pagos.ts'
 import { sembrar } from './semilla.ts'
 
 type Vars = { sesion: Sesion | null; rol: Rol; rolReal: Rol; verComo: Rol | null }
@@ -40,6 +41,13 @@ app.onError((e, c) => {
 
 app.use('/api/*', async (c, next) => {
   const sesion = await sesionDe(c.req.raw.headers).catch((e) => { console.error('[sesion]', e); return null })
+  /* El plan manda desde la base, no desde la copia que guarda la cookie: quien
+     acaba de pagar no puede esperar cinco minutos —ni cerrar sesión— para entrar
+     a lo que pagó. `planVigente` recuerda diez segundos y el cobro lo invalida. */
+  if (sesion) {
+    const v = await planVigente(sesion.user.id)
+    if (v) { sesion.user.plan = v.plan; sesion.user.banned = v.suspendido }
+  }
   const rolReal = rolDe(sesion?.user)
   // "Ver como" existe SÓLO en desarrollo y SÓLO para admin: la cabecera la manda el selector de dev.
   let verComo: Rol | null = null
@@ -89,7 +97,10 @@ app.get('/api/cuenta', async (c) => {
    del cliente: cuando cambien, cambia una variable y no hay que volver a construir. */
 app.get('/api/planes', (c) => c.json({
   contacto: ENV.CONTACTO || null,
-  cobro_automatico: false,
+  cobro_automatico: cobroAutomatico(),
+  /* Los enlaces de pago llevan el correo de la sesión: quien ya tiene cuenta no
+     lo vuelve a escribir, y el aviso de Whop vuelve con el correo correcto. */
+  checkout: enlacesCheckout(c.get('sesion')?.user.email ?? null),
   planes: [
     { clave: 'gratis', nombre: 'Gratis', precio_usd: ENV.PRECIO.gratis, analisis_mes: ENV.CUPO.gratis },
     { clave: 'base', nombre: 'Base', precio_usd: ENV.PRECIO.base, analisis_mes: ENV.CUPO.base },
@@ -173,6 +184,9 @@ async function alertasDe(usuarioId: string) {
   return bd.todos('SELECT id, tipo, gema_id, fecha, leida, detalle FROM alerta WHERE usuario_id = ? ORDER BY fecha DESC LIMIT 100', [usuarioId])
 }
 
+/* ---------- cobro (Whop) ---------- */
+app.route('/api/pagos', pagosApp)
+
 /* ---------- analiza tu moneda ---------- */
 app.route('/api/analizar', analizarApp)
 app.route('/api/admin/consumo', consumoAdmin)
@@ -191,7 +205,7 @@ app.notFound((c) => (c.req.path.startsWith('/api/') ? c.json({ error: 'no_encont
 const DIST = resolve(RAIZ_SITE, 'dist')
 function spa(c: Context) {
   const f = resolve(DIST, 'index.html')
-  return existsSync(f) ? c.html(readFileSync(f, 'utf8')) : c.text('Sin build: corré `npm run build`', 404)
+  return existsSync(f) ? c.html(readFileSync(f, 'utf8')) : c.text('Sin build: corre `npm run build`', 404)
 }
 if (ENV.SERVIR_DIST) {
   app.use('/*', serveStatic({ root: './dist' }))

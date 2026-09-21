@@ -3,16 +3,17 @@ import { Link } from 'react-router-dom'
 import { Nav } from '../components/Nav'
 import { Footer } from '../components/Footer'
 import { api } from '../lib/datos'
+import { useSesion } from '../lib/sesion'
 
 /* ============================================================================
    Planes. Precios y cupos vienen del servidor, no del código del cliente:
    van a moverse cuando se mida el costo real de un análisis.
-   Mientras no haya cobro automático, el botón abre un correo. No hay carrito
-   fingido: eso se nota y resta.
+   El botón abre el pago cuando el cobro automático está encendido; si no,
+   abre un correo. No hay carrito fingido: eso se nota y resta.
    ========================================================================== */
 
 interface Plan { clave: string; nombre: string; precio_usd: number; analisis_mes: number }
-interface Catalogo { contacto: string | null; cobro_automatico: boolean; planes: Plan[] }
+interface Catalogo { contacto: string | null; cobro_automatico: boolean; checkout?: Record<string, string>; planes: Plan[] }
 
 /** Una fila por prestación. `v` dice qué pone cada plan; 'cupo' lo rellena el servidor. */
 const FILAS: { que: string; v: [string, string, string] }[] = [
@@ -28,6 +29,7 @@ const FILAS: { que: string; v: [string, string, string] }[] = [
 ]
 
 const PREGUNTAS: { p: string; r: string }[] = [
+  { p: '¿Qué es una gema?', r: 'La oportunidad de la semana. Revisamos mil monedas, nos quedamos con las pocas que dan una señal real y publicamos la mejor con el informe entero: su tesis, sus escenarios y la cifra que la invalidaría.' },
   { p: '¿Qué es un análisis profundo?', r: 'El informe entero de una moneda que tú eliges: la tesis en una línea, el número que la invalidaría, los escenarios con su plazo y el riesgo. Tarda unos minutos y te avisamos cuando está.' },
   { p: '¿Y si un análisis no termina?', r: 'No se descuenta. El cupo sólo se consume cuando el informe termina y pasa nuestro control de calidad.' },
   { p: '¿El cupo se acumula de un mes a otro?', r: 'No. Se reinicia cada ciclo. Lo que no usas, no se guarda.' },
@@ -36,7 +38,11 @@ const PREGUNTAS: { p: string; r: string }[] = [
 
 export function Precios() {
   const [cat, setCat] = useState<Catalogo | null>(null)
-  useEffect(() => { api<Catalogo>('/api/planes').then(setCat, () => setCat(null)) }, [])
+  const { yo } = useSesion()
+  // Se vuelve a pedir al entrar o salir de la sesión: el enlace de pago lleva
+  // el correo de quien está dentro, y cambiar de cuenta cambia el enlace.
+  const quien = yo?.usuario?.id ?? ''
+  useEffect(() => { api<Catalogo>('/api/planes').then(setCat, () => setCat(null)) }, [quien])
 
   const plan = (k: string) => cat?.planes.find((p) => p.clave === k) ?? null
   const orden = ['gratis', 'base', 'pro']
@@ -58,6 +64,15 @@ export function Precios() {
     return `mailto:${c}?subject=${asunto}&body=${cuerpo}`
   }
 
+  /* Con cobro automático el botón va al pago; si no, al correo de siempre. */
+  const pago = (k: string) => cat?.checkout?.[k] ?? null
+  const destino = (k: string) => pago(k) ?? correo(k)
+  const etiqueta = (k: string) => {
+    const nombre = k === 'pro' ? 'Pro' : 'Base'
+    if (pago(k)) return `Empezar con ${nombre}`
+    return cat?.contacto ? `Quiero el plan ${nombre}` : `Crear cuenta y pedir ${nombre}`
+  }
+
   return (
     <>
       <Nav />
@@ -67,7 +82,7 @@ export function Precios() {
           <header className="pub__cab">
             <p className="eyebrow mono" data-mat="oro"><span className="eyebrow__mark" aria-hidden="true" />Planes</p>
             <h1 className="display pub__titulo">Tres formas de tenernos <em>trabajando</em> para ti.</h1>
-            <p className="lead pub__lead">La lectura instantánea de cualquier moneda es gratis siempre, sin cuenta. Los planes abren el informe entero y ponen a nuestro equipo a analizar las monedas que tú elijas.</p>
+            <p className="lead pub__lead">La lectura instantánea de cualquier moneda es gratis siempre, sin cuenta. Los planes abren el informe entero de cada gema —la oportunidad de la semana, elegida entre mil monedas— y ponen a nuestro equipo a analizar las que tú elijas.</p>
           </header>
 
           <section className="planes" aria-label="Planes y precios">
@@ -107,11 +122,12 @@ export function Precios() {
 
             <div className="planes__acciones">
               <Link to="/analizar" className="btn btn--ghost">Probar la lectura gratis</Link>
-              <a href={correo('base')} className="btn">{cat?.contacto ? 'Quiero el plan Base' : 'Crear cuenta y pedir Base'}</a>
-              <a href={correo('pro')} className="btn btn--esmeralda">{cat?.contacto ? 'Quiero el plan Pro' : 'Crear cuenta y pedir Pro'}</a>
+              <a href={destino('base')} className="btn">{etiqueta('base')}</a>
+              <a href={destino('pro')} className="btn btn--esmeralda">{etiqueta('pro')}</a>
             </div>
-            {cat && !cat.cobro_automatico && (
-              <p className="planes__nota mono">{cat.contacto
+            {cat && (cat.cobro_automatico
+              ? <p className="planes__nota mono">El plan queda activo al terminar el pago. Si aún no tienes cuenta, la creamos con el correo con el que pagues.</p>
+              : <p className="planes__nota mono">{cat.contacto
                 ? 'El plan lo activamos a mano, el mismo día. Escríbenos y lo dejamos andando.'
                 : 'Crea tu cuenta gratis y desde ahí pides el plan. Lo activamos a mano, el mismo día.'}</p>
             )}
@@ -120,7 +136,9 @@ export function Precios() {
           <section className="pub__faq" aria-labelledby="faq-t">
             <h2 id="faq-t" className="display">Lo que todos preguntan</h2>
             <dl>
-              {PREGUNTAS.map((x) => (
+              {PREGUNTAS.map((x) => (x.p === '¿Cómo se cancela?' && cat?.cobro_automatico
+                ? { p: x.p, r: 'Desde tu panel de Whop, cuando quieras. Sigues con el plan hasta el final del ciclo pagado y después vuelves a Gratis. Sin permanencia y sin llamadas.' }
+                : x)).map((x) => (
                 <div key={x.p}>
                   <dt>{x.p}</dt>
                   <dd>{x.r}</dd>

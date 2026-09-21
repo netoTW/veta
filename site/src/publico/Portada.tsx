@@ -29,7 +29,7 @@ interface GemaPublica {
 const PIEZAS: { n: string; k: string; t: string; d: string; plan: string; img: string; alt: string; pie: string }[] = [
   {
     n: '1', k: 'Gemas', t: 'Una gema cada semana, elegida entre mil',
-    d: 'Revisamos mil monedas y nos quedamos con las pocas que dan una señal real. De ésas sale la gema: la que, con nuestro método, tiene el mejor potencial. Se publica con el informe entero, su tesis, sus escenarios y la cifra exacta que la invalidaría.',
+    d: 'Revisamos mil monedas y nos quedamos con las pocas que dan una señal real. A la mejor de ésas la llamamos gema: la oportunidad de la semana según nuestro método. Se publica con el informe entero, su tesis, sus escenarios y la cifra exacta que la invalidaría.',
     plan: 'Los socios Pro la ven seis horas antes que nadie',
     img: 'gemas', alt: 'Lista de gemas publicadas, cada una con su tier y su estado.',
     pie: 'Las gemas publicadas, con su tier y su estado',

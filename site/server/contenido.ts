@@ -20,7 +20,7 @@ type Registro = Record<string, unknown> & { id: string; tipo: string; version_re
 const cache = new Map<string, { mtime: number; datos: unknown }>()
 function leer<T>(nombre: string): T {
   const f = resolve(ENV.DATOS, `${nombre}.json`)
-  if (!existsSync(f)) throw new Error(`Falta ${f}: corré \`node scripts/datos.mjs\``)
+  if (!existsSync(f)) throw new Error(`Falta ${f}: corre \`node scripts/datos.mjs\``)
   const m = statSync(f).mtimeMs
   const c = cache.get(nombre)
   if (c && c.mtime === m) return c.datos as T

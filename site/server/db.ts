@@ -125,6 +125,32 @@ CREATE TABLE IF NOT EXISTS acciones_admin (
   detalle TEXT,
   fecha TEXT NOT NULL
 );
+-- Cobro con Whop. Una fila por aviso recibido, con el id del mensaje como llave:
+-- un reenvío choca contra la llave y no vuelve a aplicar nada (idempotencia).
+CREATE TABLE IF NOT EXISTS pago_evento (
+  id TEXT PRIMARY KEY,
+  tipo TEXT NOT NULL,
+  membresia_id TEXT,
+  usuario_id TEXT,
+  plan TEXT,
+  emitido TEXT,
+  recibido TEXT NOT NULL,
+  resultado TEXT NOT NULL,
+  detalle TEXT
+);
+CREATE INDEX IF NOT EXISTS pago_evento_membresia ON pago_evento (membresia_id, recibido);
+-- Qué membresía de Whop es de qué cuenta de VETA. Con esto una baja se atiende
+-- aunque el aviso no traiga correo, y no dependemos del correo para reconocer.
+CREATE TABLE IF NOT EXISTS pago_membresia (
+  membresia_id TEXT PRIMARY KEY,
+  usuario_id TEXT NOT NULL,
+  plan TEXT NOT NULL,
+  estado TEXT NOT NULL,
+  plan_whop TEXT,
+  renovacion TEXT,
+  ultimo_evento TEXT,
+  actualizada TEXT NOT NULL
+);
 `)
 // bases SQLite anteriores: la columna llegó después
 await bd.columna('solicitud', 'enviada', 'INTEGER NOT NULL DEFAULT 1')
@@ -149,6 +175,65 @@ export async function asignarPlan(usuarioId: string, plan: 'gratis' | 'base' | '
               VALUES (?, ?, ?, 0, 0, ?)
               ON CONFLICT(usuario_id, periodo) DO UPDATE SET analisis_incluidos = excluded.analisis_incluidos, fecha_reinicio = excluded.fecha_reinicio`,
     [usuarioId, hoy.toISOString().slice(0, 10), incluidos, renov.toISOString()])
+}
+
+/**
+ * Igual que asignarPlan, pero para un plan que manda un proveedor de pago.
+ *
+ * Dos diferencias que importan: la renovación es la que informa el proveedor (no
+ * "hoy más un mes"), y queda anotado de quién viene. El periodo del cupo se
+ * calcula igual que en cupo.ts — el inicio del ciclo es la renovación menos un
+ * mes — porque si las dos cuentas no coinciden, el cupo que se escribe aquí no
+ * es el que se lee después.
+ */
+export async function asignarPlanExterno(
+  usuarioId: string,
+  plan: 'gratis' | 'base' | 'pro',
+  o: { proveedor: string; id_externo?: string | null; renovacion?: string | null; estado?: 'activa' | 'vencida' | 'cancelada' },
+) {
+  const hoy = new Date()
+  let renov = o.renovacion ? new Date(o.renovacion) : new Date(NaN)
+  if (Number.isNaN(renov.getTime()) || renov.getTime() <= hoy.getTime()) {
+    renov = new Date(hoy); renov.setMonth(renov.getMonth() + 1)
+  }
+  const estado = o.estado ?? 'activa'
+  await bd.ejecutar(`INSERT INTO suscripcion (usuario_id, plan, estado, fecha_renovacion, proveedor_pago, id_externo, actualizada_en)
+              VALUES (?, ?, ?, ?, ?, ?, ?)
+              ON CONFLICT(usuario_id) DO UPDATE SET plan = excluded.plan, estado = excluded.estado,
+                fecha_renovacion = excluded.fecha_renovacion, proveedor_pago = excluded.proveedor_pago,
+                id_externo = excluded.id_externo, actualizada_en = excluded.actualizada_en`,
+    [usuarioId, plan, estado, renov.toISOString(), o.proveedor, o.id_externo ?? null, ahora()])
+  // mismo cálculo que cupo.ts: el periodo es el inicio del ciclo, no el mes calendario
+  const inicio = new Date(renov); inicio.setMonth(inicio.getMonth() - 1)
+  const incluidos = ENV.CUPO[plan] ?? 0
+  await bd.ejecutar(`INSERT INTO cupo (usuario_id, periodo, analisis_incluidos, analisis_usados, solicitudes_scanner_usadas, fecha_reinicio)
+              VALUES (?, ?, ?, 0, 0, ?)
+              ON CONFLICT(usuario_id, periodo) DO UPDATE SET analisis_incluidos = excluded.analisis_incluidos, fecha_reinicio = excluded.fecha_reinicio`,
+    [usuarioId, inicio.toISOString().slice(0, 10), incluidos, renov.toISOString()])
+}
+
+/* ---------- plan vigente, sin pagar un viaje a la base en cada petición ----------
+
+   La cookie de sesión guarda una copia del plan durante cinco minutos, y quien
+   acaba de pagar no puede esperar cinco minutos para entrar a lo que pagó. Pero
+   preguntarle a la base en cada petición cuesta un viaje de ida y vuelta.
+
+   El arreglo es una memoria de diez segundos que el cambio de plan borra: cuando
+   Whop avisa —o cuando admin cambia un plan a mano— se olvida esa cuenta y la
+   siguiente petición lee el valor nuevo. Sin espera y sin viaje por request. */
+const PLANES_VISTOS = new Map<string, { plan: string; suspendido: boolean; hasta: number }>()
+const MEMORIA_MS = 10_000
+
+export function olvidarPlan(usuarioId: string) { PLANES_VISTOS.delete(usuarioId) }
+
+export async function planVigente(usuarioId: string): Promise<{ plan: string; suspendido: boolean } | null> {
+  const visto = PLANES_VISTOS.get(usuarioId)
+  if (visto && visto.hasta > Date.now()) return { plan: visto.plan, suspendido: visto.suspendido }
+  const u = await bd.uno<{ plan: string | null; banned: unknown }>('SELECT plan, banned FROM "user" WHERE id = ?', [usuarioId]).catch(() => undefined)
+  if (!u) return null
+  const valor = { plan: u.plan ?? 'gratis', suspendido: !!u.banned }
+  PLANES_VISTOS.set(usuarioId, { ...valor, hasta: Date.now() + MEMORIA_MS })
+  return valor
 }
 
 export async function registrarAccion(a: { admin_id: string; admin_email: string; accion: string; objetivo_tipo: string; objetivo_id?: string | null; detalle?: unknown }) {

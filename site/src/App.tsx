@@ -38,6 +38,7 @@ const Portada = lazy(() => import('./publico/Portada').then((m) => ({ default: m
 const Metodologia = lazy(() => import('./publico/Metodologia').then((m) => ({ default: m.Metodologia })))
 const Precios = lazy(() => import('./publico/Precios').then((m) => ({ default: m.Precios })))
 const Nosotros = lazy(() => import('./publico/Nosotros').then((m) => ({ default: m.Nosotros })))
+const Gracias = lazy(() => import('./publico/Gracias').then((m) => ({ default: m.Gracias })))
 const Terminos = lazy(() => import('./publico/Legales').then((m) => ({ default: m.Terminos })))
 const Privacidad = lazy(() => import('./publico/Legales').then((m) => ({ default: m.Privacidad })))
 const Contacto = lazy(() => import('./publico/Legales').then((m) => ({ default: m.Contacto })))
@@ -69,6 +70,7 @@ export default function App() {
           <Route path="/metodologia" element={<Suspense fallback={null}><Metodologia /></Suspense>} />
           <Route path="/precios" element={<Suspense fallback={null}><Precios /></Suspense>} />
           <Route path="/nosotros" element={<Suspense fallback={null}><Nosotros /></Suspense>} />
+          <Route path="/gracias" element={<Suspense fallback={null}><Gracias /></Suspense>} />
           <Route path="/terminos" element={<Suspense fallback={null}><Terminos /></Suspense>} />
           <Route path="/privacidad" element={<Suspense fallback={null}><Privacidad /></Suspense>} />
           <Route path="/contacto" element={<Suspense fallback={null}><Contacto /></Suspense>} />

@@ -86,6 +86,19 @@ export const ENV = {
   /** Clave de Resend. Sólo en el .env del servidor; nunca en el repositorio. */
   RESEND_API_KEY: (process.env.VETA_RESEND_API_KEY ?? '').trim(),
   CORREO_SALIENTE: resolve(RAIZ_SITE, 'server/correo-saliente'),
+  /* Cobro con Whop. Todo sale del .env del servidor: ni la clave ni el secreto
+     entran al repositorio, y los identificadores de plan cambian sin tocar código.
+     Mientras WHOP.PLAN_BASE y WHOP.PLAN_PRO estén vacíos, /precios sigue con el
+     botón de correo: el cobro automático se enciende cuando hay con qué cobrar. */
+  WHOP: {
+    API_KEY: (process.env.VETA_WHOP_API_KEY ?? '').trim(),
+    /** Secreto del webhook (ws_…). Sin él no se procesa ningún aviso: firmado o nada. */
+    SECRETO: (process.env.VETA_WHOP_WEBHOOK_SECRETO ?? '').trim(),
+    PLAN_BASE: (process.env.VETA_WHOP_PLAN_BASE ?? '').trim(),
+    PLAN_PRO: (process.env.VETA_WHOP_PLAN_PRO ?? '').trim(),
+    /** Dónde vuelve el usuario después de pagar. */
+    RETORNO: (process.env.VETA_WHOP_RETORNO ?? '').trim(),
+  },
   ADMIN_EMAIL: process.env.VETA_ADMIN_EMAIL ?? '',
   ADMIN_PASSWORD: process.env.VETA_ADMIN_PASSWORD ?? '',
   DEMO_PASSWORD: process.env.VETA_DEMO_PASSWORD ?? '',
