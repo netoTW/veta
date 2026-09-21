@@ -385,6 +385,67 @@ percent-encoded en la URI.
 
 ---
 
+## 7bis. Cobro con Whop
+
+Dos rutas, en `site/server/pagos.ts`:
+
+| Ruta | Qué hace |
+|---|---|
+| `GET /api/pagos/checkout/:plan` | Devuelve el enlace de pago del plan, con el correo de la sesión precargado. |
+| `POST /api/pagos/whop` | Recibe el aviso firmado de Whop y sube o baja el plan. |
+
+**La URL del webhook es `https://api.vetalab.io/api/pagos/whop`**, directa al VPS.
+No pasa por Vercel a propósito: la firma se calcula sobre el cuerpo crudo y no
+conviene meter un proxy en medio.
+
+**Los dos planes** (confirmados leyendo cada página de checkout, no adivinados):
+
+| Plan | Identificador de Whop | Precio |
+|---|---|---|
+| Base | `plan_YeHwOrJGLxA4J` | 30 US$/mes |
+| Pro | `plan_JmztLGWjafGJQ` | 50 US$/mes |
+
+**El interruptor.** `cobro_automatico` es verdadero sólo si `VETA_WHOP_PLAN_BASE`
+y `VETA_WHOP_PLAN_PRO` tienen valor. Mientras estén vacías, `/precios` sigue con
+el botón de correo. Se encienden **junto con** `VETA_WHOP_WEBHOOK_SECRETO`: un
+botón de pago sin secreto del webhook cobra sin poder activar el plan.
+
+**Tres garantías del webhook:**
+
+- *Firma obligatoria.* Standard Webhooks: HMAC-SHA256 sobre
+  `{webhook-id}.{webhook-timestamp}.{cuerpo crudo}`, en base64, con ventana de
+  cinco minutos. Sin secreto configurado la ruta contesta 503 y no mira nada.
+- *Idempotencia.* El id del mensaje es la llave primaria de `pago_evento`. Un
+  reenvío choca contra la llave, no aplica nada y contesta 200.
+- *Orden.* Se compara la fecha del evento con la del último aplicado a esa
+  membresía en `pago_membresia`: un aviso viejo no apaga un plan ya repagado.
+
+**Qué evento hace qué.** Suben: `payment.succeeded`, `membership.activated`,
+`membership.went_valid`, `membership.resumed`. Bajan a Gratis: `payment.failed`,
+`membership.deactivated`, `membership.went_invalid`, `membership.cancelled`,
+`membership.expired`. El resto se anota y se ignora.
+
+**El cupo** se reinicia en la fecha que informa Whop. `asignarPlanExterno`
+(en `db.ts`) calcula el periodo igual que `cupo.ts` —renovación menos un mes—
+porque si las dos cuentas no coinciden, el cupo que se escribe no es el que se
+lee después.
+
+**La copia de cinco minutos de la sesión** dejó de mandar sobre el plan:
+`planVigente` (en `db.ts`) recuerda diez segundos y el cobro la invalida con
+`olvidarPlan`. Quien acaba de pagar entra a lo que pagó sin cerrar sesión, y no
+se paga un viaje a la base en cada petición.
+
+**Registro.** Todo cambio de plan entra en `acciones_admin` como `whop@pagos`,
+con el identificador de la membresía y el plan de Whop en el detalle.
+
+**Tablas nuevas:** `pago_evento` (un aviso recibido por fila) y `pago_membresia`
+(qué membresía de Whop es de qué cuenta).
+
+**Pendiente:** la clave de API que hay en el `.env` la rechaza Whop
+(«Your API Key is invalid») en v2, v5 y GraphQL. Sólo se usa como respaldo
+cuando un aviso llega sin correo o sin plan; hay que reemplazarla por una App
+API Key válida del panel de Whop.
+
 ## 8. Huecos del contrato abiertos
 
 Lista completa en `HUECOS-CONTRATO.md`. Lo que sigue abierto, con qué falta de cada uno:
