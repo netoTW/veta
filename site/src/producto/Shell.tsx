@@ -98,9 +98,25 @@ export function Shell({ children }: { children: ReactNode }) {
             {LINKS.map((l) => (
               <NavLink key={l.to} to={l.to} className={({ isActive }) => (isActive ? 'is-active' : '')}>{l.label}</NavLink>
             ))}
-            {esAdminReal && LINKS_ADMIN.map((l) => (
-              <NavLink key={l.to} to={l.to} className={({ isActive }) => `p-top__admin ${isActive ? 'is-active' : ''}`}>{l.label}</NavLink>
-            ))}
+            {/* Las siete de admin, agrupadas: sueltas eran catorce enlaces en una
+                tira, la cabecera se partía en varias líneas y el menú pisaba el
+                logo. Se cierra al elegir, que si no se queda abierto encima. */}
+            {esAdminReal && (
+              <details
+                className={`p-admin-menu ${loc.pathname.startsWith('/admin') ? 'is-activa' : ''}`}
+                onClick={(e) => {
+                  const t = e.target as HTMLElement
+                  if (t.closest('a')) (e.currentTarget as HTMLDetailsElement).open = false
+                }}
+              >
+                <summary className="mono">Admin</summary>
+                <div className="p-admin-menu__lista">
+                  {LINKS_ADMIN.map((l) => (
+                    <NavLink key={l.to} to={l.to} className={({ isActive }) => (isActive ? 'is-active' : '')}>{l.label}</NavLink>
+                  ))}
+                </div>
+              </details>
+            )}
           </nav>
           <div className="p-top__right">
             <AvisoAnalisis />
