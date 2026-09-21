@@ -363,8 +363,15 @@
 .p-grupo__desc { color: var(--ceniza-2); }
 @media (max-width: 700px) { .p-grupo__desc { display: none; } }
 .p-grupo__rule { flex: 1; height: 1px; background: linear-gradient(90deg, rgba(236,230,216,0.16), var(--hairline-2) 45%, transparent); }
-.p-gemas { display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 16px; }
-@media (max-width: 420px) { .p-gemas { grid-template-columns: 1fr; } }
+/* `minmax(420px, …)` obliga a cada columna a medir 420 px aunque la pantalla
+   tenga 390: por eso las tarjetas se salían por el lado en el móvil. Con
+   `min(420px, 100%)` la columna nunca pide más de lo que hay. Y `min-width: 0`
+   porque un hijo de rejilla, por omisión, no encoge por debajo de su contenido
+   por mucho que la columna lo haga. */
+.p-gemas { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(420px, 100%), 1fr)); gap: 16px; }
+.p-gema, .p-gema__grid, .p-gema__bloque { min-width: 0; }
+.p-gema__bloque { overflow-wrap: anywhere; }
+@media (max-width: 520px) { .p-gema__grid { grid-template-columns: 1fr; } }
 .p-gema { display: flex; flex-direction: column; gap: 14px; color: inherit; }
 .p-gema:focus-visible { outline-color: var(--oro); }
 .p-gema__tesis { color: var(--hueso); font-size: 0.95rem; line-height: 1.5; text-wrap: pretty; }

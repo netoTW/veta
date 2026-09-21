@@ -498,3 +498,8 @@
 .a-enl__ult { color: var(--ceniza-2); }
 .a-enl__acciones { display: flex; gap: 8px; }
 @media (max-width: 760px) { .a-enl { grid-template-columns: 1fr; } }
+
+/* La tabla de corridas es ancha por naturaleza. Su contenedor tiene que
+   desplazarse él, no empujar la página entera hacia el lado. */
+.a-vot__scroll { overflow-x: auto; max-width: 100%; }
+.a-vot__scroll > table { min-width: max-content; }
