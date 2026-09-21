@@ -105,25 +105,32 @@ export function Precios() {
           </header>
 
           <section className="planes" aria-label="Planes y precios">
-            <div className="planes__cab">
-              <span />
-              {orden.map((k) => (
-                <div key={k} className={`planes__col ${k === 'base' ? 'is-destacada' : ''}`}>
-                  {k === 'base' && <span className="planes__sello mono">El más elegido</span>}
-                  <b className="display planes__nombre">{plan(k)?.nombre ?? '—'}</b>
-                  <span className="planes__precio mono">{precio(k)}</span>
-                  {/* Gratis no lleva "al mes", pero la fila tiene que existir igual o su
-                      precio queda más abajo que el de los otros dos. */}
-                  <span className="planes__mes mono" aria-hidden={k === 'gratis'}>{k === 'gratis' ? '\u00a0' : 'al mes'}</span>
-                </div>
-              ))}
-            </div>
-
+            {/* Cabecera y valores son la MISMA tabla. Cuando eran dos rejillas
+                distintas, cada una repartía sus columnas por su cuenta y el
+                precio de un plan caía sobre la columna del de al lado. Así los
+                alinea el navegador por definición, y en móvil la cabecera se
+                desplaza junto a los valores en vez de quedarse quieta. */}
             <div className="tabla-scroll">
               <table className="planes__tabla">
                 <caption className="vh">Qué incluye cada plan</caption>
+                <colgroup>
+                  <col className="planes__c-que" />
+                  {orden.map((k) => <col key={k} className={`planes__c-plan ${k === 'base' ? 'is-destacada' : ''}`} />)}
+                </colgroup>
                 <thead>
-                  <tr><th scope="col">Prestación</th>{orden.map((k) => <th key={k} scope="col">{plan(k)?.nombre ?? k}</th>)}</tr>
+                  <tr>
+                    <td className="planes__esquina"><span className="vh">Prestación</span></td>
+                    {orden.map((k) => (
+                      <th key={k} scope="col" className={`planes__th ${k === 'base' ? 'is-destacada' : ''}`}>
+                        {k === 'base' && <span className="planes__sello mono">El más elegido</span>}
+                        <b className="display planes__nombre">{plan(k)?.nombre ?? '—'}</b>
+                        <span className="planes__precio mono">{precio(k)}</span>
+                        {/* Gratis no lleva "al mes", pero la fila tiene que existir igual o su
+                            precio queda más abajo que el de los otros dos. */}
+                        <span className="planes__mes mono" aria-hidden={k === 'gratis'}>{k === 'gratis' ? '\u00a0' : 'al mes'}</span>
+                      </th>
+                    ))}
+                  </tr>
                 </thead>
                 <tbody>
                   {FILAS.map((f) => (

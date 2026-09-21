@@ -44,21 +44,29 @@
 
 /* ---------- planes ---------- */
 .planes { margin-block: 8px 12px; }
-.planes__cab { display: grid; grid-template-columns: minmax(200px, 1.6fr) repeat(3, minmax(96px, 1fr)); gap: 0 10px; align-items: end; padding-bottom: 16px; }
-/* Rejilla de tres filas iguales en las tres columnas: nombre, precio y periodicidad.
-   Con flex, la columna sin "al mes" desalineaba su precio 17 px respecto a las otras. */
-.planes__col { display: grid; grid-template-rows: auto auto auto; gap: 2px; padding: 14px 12px 12px; border: 1px solid transparent; position: relative; align-content: end; }
-.planes__col.is-destacada { border-color: var(--hairline); background: var(--roca-2); }
-.planes__sello { position: absolute; top: -9px; left: 12px; background: var(--esmeralda-sombra); color: var(--hueso); font-size: 0.52rem; letter-spacing: 0.14em; text-transform: uppercase; padding: 2px 7px; }
-.planes__nombre { font-size: 1.05rem; color: var(--hueso); font-weight: 400; letter-spacing: 0.01em; }
-.planes__precio { font-size: 1.2rem; color: var(--oro-luz); font-variant-numeric: tabular-nums; letter-spacing: 0.02em; }
-.planes__mes { min-height: 1em; font-size: 0.56rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ceniza-2); }
 
+/* Una sola tabla: el precio de cada plan y su columna de valores comparten
+   columna de verdad, no dos rejillas que se parecen. `table-layout: fixed`
+   reparte exactamente lo que dice el colgroup y deja de negociar anchos. */
 .tabla-scroll { overflow-x: auto; }
-.planes__tabla { width: 100%; border-collapse: collapse; min-width: 560px; font-size: 0.88rem; }
-.planes__tabla thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
-.planes__tabla tbody th { text-align: left; font-weight: 400; color: var(--ceniza); padding: 12px 14px 12px 0; border-top: 1px solid var(--hairline-2); }
-.planes__tabla td { text-align: center; padding: 12px 10px; border-top: 1px solid var(--hairline-2); width: 96px; }
+.planes__tabla { width: 100%; border-collapse: collapse; table-layout: fixed; min-width: 560px; font-size: 0.88rem; }
+.planes__c-que { width: auto; }
+.planes__c-plan { width: 132px; }
+/* El destacado baja por toda la columna, no sólo por el título. */
+.planes__c-plan.is-destacada { background: var(--roca-2); }
+
+.planes__esquina { border: 0; padding: 0; }
+.planes__th { vertical-align: bottom; text-align: center; font-weight: 400; padding: 22px 10px 14px; position: relative; }
+.planes__th.is-destacada { border: 1px solid var(--hairline); border-bottom: 0; }
+.planes__sello { position: absolute; top: 4px; left: 50%; transform: translateX(-50%); white-space: nowrap; background: var(--esmeralda-sombra); color: var(--hueso); font-size: 0.52rem; letter-spacing: 0.14em; text-transform: uppercase; padding: 2px 7px; }
+.planes__nombre { display: block; font-size: 1.05rem; color: var(--hueso); font-weight: 400; letter-spacing: 0.01em; }
+.planes__precio { display: block; margin-top: 2px; font-size: 1.2rem; color: var(--oro-luz); font-variant-numeric: tabular-nums; letter-spacing: 0.02em; }
+/* Gratis no dice "al mes", pero la línea existe igual: si no, su precio
+   queda más abajo que el de los otros dos. */
+.planes__mes { display: block; min-height: 1em; margin-top: 2px; font-size: 0.56rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ceniza-2); }
+
+.planes__tabla tbody th { text-align: left; font-weight: 400; color: var(--ceniza); padding: 12px 14px 12px 0; border-top: 1px solid var(--hairline-2); overflow-wrap: anywhere; }
+.planes__tabla tbody td { text-align: center; padding: 12px 10px; border-top: 1px solid var(--hairline-2); }
 .planes__tabla tbody tr:hover th, .planes__tabla tbody tr:hover td { background: rgba(236,230,216,0.02); }
 .es-si { color: var(--esmeralda-luz); }
 .es-no { color: var(--ceniza-2); }
@@ -77,9 +85,9 @@
 .pub__faq dd { margin: 0; color: var(--ceniza); font-size: 0.95rem; line-height: 1.6; max-width: 64ch; }
 
 @media (max-width: 720px) {
-  .planes__cab { grid-template-columns: repeat(3, 1fr); gap: 8px; }
-  .planes__cab > span { display: none; }
-  .planes__col { padding: 12px 10px; border-color: var(--hairline-2); }
+  .planes__c-plan { width: 104px; }
+  .planes__th { padding: 20px 6px 12px; }
+  .planes__precio { font-size: 1.05rem; }
 }
 
 /* ============================================================================
