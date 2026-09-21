@@ -91,7 +91,7 @@ export default function App() {
           <Route path="/privacidad" element={<Suspense fallback={null}><Privacidad /></Suspense>} />
           <Route path="/contacto" element={<Suspense fallback={null}><Contacto /></Suspense>} />
           {/* Referencia interna del sistema visual. Sin enlace en la navegación. */}
-          <Route path="/sistema" element={<Suspense fallback={null}><GuiaVisual /></Suspense>} />
+          <Route path="/sistema" element={<Suspense fallback={null}><SoloAdmin><GuiaVisual /></SoloAdmin></Suspense>} />
           <Route path="/entrar" element={<Suspense fallback={null}><Entrar /></Suspense>} />
           <Route path="/registro" element={<Suspense fallback={null}><Registro /></Suspense>} />
           <Route path="/recuperar" element={<Suspense fallback={null}><Recuperar /></Suspense>} />
@@ -108,7 +108,7 @@ export default function App() {
             <Route path="/analizar/s/:id" element={<AnalizarSolicitud />} />
             <Route path="/votacion" element={<Votacion />} />
             <Route path="/cuenta" element={<Cuenta />} />
-            <Route path="/piezas" element={<Piezas />} />
+            <Route path="/piezas" element={<SoloAdmin><Piezas /></SoloAdmin>} />
             <Route path="/admin/bandeja" element={<SoloAdmin><Bandeja /></SoloAdmin>} />
             <Route path="/admin/bandeja/:id" element={<SoloAdmin><BandejaDetalle /></SoloAdmin>} />
             <Route path="/admin/cuentas" element={<SoloAdmin><Cuentas /></SoloAdmin>} />
