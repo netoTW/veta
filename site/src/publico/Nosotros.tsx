@@ -34,7 +34,7 @@ export function Nosotros() {
 
           <section className="pub__bloque" aria-labelledby="ns-separa">
             <h2 id="ns-separa" className="display pub__h2">Lo que nos separa</h2>
-            <p className="pub__p pub__p--fuerte">Ese criterio no se aplica a mano, a una moneda por semana.</p>
+            <p className="pub__p pub__p--fuerte">Ese oficio no se aplica a mano, a una moneda por semana.</p>
             <p className="pub__p">Lo ejecuta un equipo de agentes de inteligencia artificial especializados. Uno mira el negocio y lo que factura. Otro, lo que ocurre en la cadena. Otro, la narrativa y quién la sostiene. Y uno más tiene un solo trabajo: buscar por dónde se cae la tesis antes de que se publique.</p>
             <p className="pub__p">Todos corren el mismo método sobre cada moneda, todos los días. El método no cambia según la moneda, ni según el día, ni según el ánimo con que se mire.</p>
           </section>
