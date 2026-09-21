@@ -133,6 +133,10 @@ function PiezaCard({ p, esAdmin, onCambio }: { p: Pieza; esAdmin: boolean; onCam
   )
 }
 
+/** El motor devuelve el escenario como continuación de una frase. Aquí es un
+    párrafo por sí solo, así que empieza en mayúscula. */
+const mayuscula = (t: string) => (t ? t.charAt(0).toUpperCase() + t.slice(1) : t)
+
 function Agenda({ eventos, hayFichero }: { eventos: Evento[]; hayFichero: boolean }) {
   if (!hayFichero) {
     return <p className="p-nota">La agenda se publica en cuanto el rastreo la deje lista.</p>
@@ -154,7 +158,7 @@ function Agenda({ eventos, hayFichero }: { eventos: Evento[]; hayFichero: boolea
               {e.simbolo && <span className="mono n-agenda__sym"> · {e.simbolo}</span>}
             </p>
             {e.escenario_condicional
-              ? <p className="n-agenda__esc">{e.escenario_condicional.entonces}</p>
+              ? <p className="n-agenda__esc">{mayuscula(e.escenario_condicional.entonces)}</p>
               : e.recorte === 'sin_plan'
                 ? <p className="n-agenda__esc n-agenda__esc--corte mono">El escenario es del plan Base</p>
                 : null}
