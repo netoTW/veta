@@ -158,6 +158,15 @@ await bd.columna('solicitud', 'enviada', 'INTEGER NOT NULL DEFAULT 1')
    reconstruye desde esta fila, no desde el cuerpo de la petición. */
 await bd.columna('solicitud', 'contrato', 'TEXT')
 await bd.columna('solicitud', 'cadena', 'TEXT')
+/* Cobro con Whop. `cancela_al_final` es quien canceló y sigue con acceso hasta
+   que termine el ciclo pagado: no baja de plan, pero el admin tiene que verlo.
+   `pago_fallido_en` es el último cobro que no entró; tampoco baja de plan,
+   porque Whop reintenta y la baja real llega con membership.deactivated.
+   `origen` guarda de dónde vino el suscriptor (UTM de la visita). */
+await bd.columna('suscripcion', 'cancela_al_final', 'INTEGER NOT NULL DEFAULT 0')
+await bd.columna('suscripcion', 'pago_fallido_en', 'TEXT')
+await bd.columna('suscripcion', 'origen', 'TEXT')
+await bd.columna('pago_membresia', 'cancela_al_final', 'INTEGER NOT NULL DEFAULT 0')
 
 export const ahora = () => new Date().toISOString()
 
@@ -189,7 +198,7 @@ export async function asignarPlan(usuarioId: string, plan: 'gratis' | 'base' | '
 export async function asignarPlanExterno(
   usuarioId: string,
   plan: 'gratis' | 'base' | 'pro',
-  o: { proveedor: string; id_externo?: string | null; renovacion?: string | null; estado?: 'activa' | 'vencida' | 'cancelada' },
+  o: { proveedor: string; id_externo?: string | null; renovacion?: string | null; estado?: 'activa' | 'vencida' | 'cancelada'; origen?: string | null },
 ) {
   const hoy = new Date()
   let renov = o.renovacion ? new Date(o.renovacion) : new Date(NaN)
@@ -197,12 +206,17 @@ export async function asignarPlanExterno(
     renov = new Date(hoy); renov.setMonth(renov.getMonth() + 1)
   }
   const estado = o.estado ?? 'activa'
-  await bd.ejecutar(`INSERT INTO suscripcion (usuario_id, plan, estado, fecha_renovacion, proveedor_pago, id_externo, actualizada_en)
-              VALUES (?, ?, ?, ?, ?, ?, ?)
+  /* Un alta limpia el estado de aviso: quien vuelve a pagar ya no está cancelando
+     ni arrastra un cobro fallido. El origen sólo se escribe la primera vez: de
+     dónde vino un suscriptor no cambia porque renueve. */
+  await bd.ejecutar(`INSERT INTO suscripcion (usuario_id, plan, estado, fecha_renovacion, proveedor_pago, id_externo, actualizada_en, cancela_al_final, pago_fallido_en, origen)
+              VALUES (?, ?, ?, ?, ?, ?, ?, 0, NULL, ?)
               ON CONFLICT(usuario_id) DO UPDATE SET plan = excluded.plan, estado = excluded.estado,
                 fecha_renovacion = excluded.fecha_renovacion, proveedor_pago = excluded.proveedor_pago,
-                id_externo = excluded.id_externo, actualizada_en = excluded.actualizada_en`,
-    [usuarioId, plan, estado, renov.toISOString(), o.proveedor, o.id_externo ?? null, ahora()])
+                id_externo = excluded.id_externo, actualizada_en = excluded.actualizada_en,
+                cancela_al_final = 0, pago_fallido_en = NULL,
+                origen = COALESCE(suscripcion.origen, excluded.origen)`,
+    [usuarioId, plan, estado, renov.toISOString(), o.proveedor, o.id_externo ?? null, ahora(), o.origen ?? null])
   // mismo cálculo que cupo.ts: el periodo es el inicio del ciclo, no el mes calendario
   const inicio = new Date(renov); inicio.setMonth(inicio.getMonth() - 1)
   const incluidos = ENV.CUPO[plan] ?? 0

@@ -156,7 +156,7 @@ adminApp.post('/bandeja/:id/decision', async (c) => {
 interface FilaUsuario { id: string; email: string; name: string; role: string | null; plan: string | null; estado: string | null; banned: number | null; banReason: string | null; createdAt: string; ultimo_acceso: string | null }
 
 async function usuarioCompleto(u: FilaUsuario) {
-  const sus = await bd.uno('SELECT plan, estado, fecha_renovacion, proveedor_pago, id_externo FROM suscripcion WHERE usuario_id = ?', [u.id]) ?? null
+  const sus = await bd.uno('SELECT plan, estado, fecha_renovacion, proveedor_pago, id_externo, cancela_al_final, pago_fallido_en, origen FROM suscripcion WHERE usuario_id = ?', [u.id]) ?? null
   const c0 = await cupoDe(u.id, u.plan ?? 'gratis', u.role === 'admin')
   const cupo = { periodo: c0.periodo, analisis_incluidos: c0.incluidos, analisis_usados: c0.usados, solicitudes_scanner_usadas: 0, fecha_reinicio: c0.fecha_reinicio }
   const consumo = await bd.uno('SELECT COUNT(*) AS analisis, COALESCE(SUM(costo_real_usd), 0) AS costo_real_usd, COALESCE(SUM(consumio_cupo), 0) AS con_cupo FROM uso_analisis WHERE usuario_id = ?', [u.id]) as { analisis: number; costo_real_usd: number; con_cupo: number }

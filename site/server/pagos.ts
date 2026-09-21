@@ -3,10 +3,15 @@
 
    Dos rutas y nada más:
 
-     GET  /api/pagos/checkout/:plan   devuelve el enlace de pago del plan, con
-                                      el correo de la sesión precargado.
+     GET  /api/pagos/checkout/:plan   arma la sesión de pago del plan, con el
+                                      correo de la sesión y el origen de la
+                                      visita dentro, y devuelve su enlace.
      POST /api/pagos/whop             el aviso firmado de Whop. Sube o baja el
                                       plan de la cuenta.
+
+   Los cinco eventos suscritos (API 2026-09-15): payment.succeeded y
+   membership.activated suben; membership.deactivated es la ÚNICA vía de baja;
+   payment.failed y membership.cancel_at_period_end_changed sólo se anotan.
 
    Tres reglas que gobiernan el archivo:
 
@@ -157,6 +162,17 @@ function renovacionDe(d: Json): string | null {
   return Number.isFinite(ms) ? new Date(ms).toISOString() : null
 }
 
+/* De dónde vino el suscriptor. Viaja en el metadato de la sesión de checkout,
+   que se arma al pulsar el botón, y Whop lo devuelve intacto en el aviso. */
+const CAMPOS_ORIGEN = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'referente', 'aterrizaje']
+function origenDe(d: Json): string | null {
+  const meta = obj(d.metadata) ?? obj(obj(d.checkout_session)?.metadata)
+  if (!meta) return null
+  const o: Record<string, string> = {}
+  for (const k of CAMPOS_ORIGEN) { const v = txt(meta[k]); if (v) o[k] = v.slice(0, 120) }
+  return Object.keys(o).length ? JSON.stringify(o) : null
+}
+
 /* ---------- consulta a Whop (sólo cuando el aviso no alcanza) ---------- */
 
 async function consultarWhop<T = Json>(ruta: string): Promise<T | null> {
@@ -175,7 +191,41 @@ async function consultarWhop<T = Json>(ruta: string): Promise<T | null> {
 }
 
 /** La membresía completa, para cuando el aviso llega sin correo ni plan. */
-const traerMembresia = (id: string) => consultarWhop(`/v5/company/memberships/${encodeURIComponent(id)}`)
+const traerMembresia = (id: string) => consultarWhop(`/v1/memberships/${encodeURIComponent(id)}`)
+
+/**
+ * Sesión de pago con metadatos. Es lo que permite saber de dónde vino cada
+ * suscriptor: lo que se mete aquí en `metadata` vuelve tal cual en el aviso.
+ *
+ * Se crea al pulsar el botón, no al pintar la página: una sesión por clic real,
+ * no dos por cada visita a /precios. Si Whop no responde, se devuelve null y el
+ * botón cae al enlace de siempre —se pierde el origen, no la venta.
+ */
+async function crearSesionCheckout(plan: string, o: { correo?: string | null; usuarioId?: string | null; origen?: Record<string, string> }): Promise<string | null> {
+  const id = planWhopDe(plan)
+  if (!id || !ENV.WHOP.API_KEY) return null
+  const metadata: Record<string, string> = { veta_plan: plan, ...(o.origen ?? {}) }
+  if (o.usuarioId) metadata.veta_usuario_id = o.usuarioId
+  if (o.correo) metadata.veta_correo = o.correo
+  try {
+    const r = await fetch('https://api.whop.com/v1/checkout_sessions', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${ENV.WHOP.API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ link: id, metadata, ...(ENV.WHOP.RETORNO ? { return_url: `${ENV.WHOP.RETORNO}?plan=${plan}` } : {}) }),
+      signal: AbortSignal.timeout(10_000),
+    })
+    if (!r.ok) { console.warn(`[pagos] sesión de checkout: ${r.status} ${(await r.text().catch(() => '')).slice(0, 160)}`); return null }
+    const s = await r.json() as { id?: string }
+    if (!s.id) return null
+    const u = new URL(`https://whop.com/checkout/${id}`)
+    u.searchParams.set('session', s.id)
+    if (o.correo) u.searchParams.set('email', o.correo)
+    return u.toString()
+  } catch (e) {
+    console.warn('[pagos] sesión de checkout:', (e as Error).message)
+    return null
+  }
+}
 
 /* ---------- a quién corresponde ---------- */
 
@@ -234,28 +284,28 @@ async function resolverCuenta(d: Json, membresia: string | null, correo: string 
 
 /* ---------- qué hace cada aviso ---------- */
 
-type Accion = 'subir' | 'bajar'
-/* El usuario lo pidió así: pago exitoso o membresía activa suben; cancelación,
-   pago fallido o vencimiento bajan a Gratis. Un fallo de cobro que Whop después
-   recupera se arregla solo: el `payment.succeeded` posterior vuelve a subir. */
+type Accion = 'subir' | 'bajar' | 'anotar'
+/* Los cinco eventos suscritos en Whop (versión de API 2026-09-15). No hay más:
+   went_valid, went_invalid, resumed, cancelled y expired no existen en esta
+   versión, así que no se contemplan.
+
+   La única vía de baja es `membership.deactivated`. Un cobro fallido NO baja el
+   plan: Whop reintenta, y si de verdad se pierde el acceso llega el deactivated.
+   Cancelar tampoco baja: quien cancela sigue con acceso hasta el final del ciclo
+   que pagó; se anota para que el admin lo vea venir. */
 const ACCIONES: Record<string, Accion> = {
   'payment.succeeded': 'subir',
   'membership.activated': 'subir',
-  'membership.went_valid': 'subir',
-  'membership.resumed': 'subir',
-  'payment.failed': 'bajar',
   'membership.deactivated': 'bajar',
-  'membership.went_invalid': 'bajar',
-  'membership.cancelled': 'bajar',
-  'membership.canceled': 'bajar',
-  'membership.expired': 'bajar',
+  'payment.failed': 'anotar',
+  'membership.cancel_at_period_end_changed': 'anotar',
 }
 
 interface Resultado { resultado: string; detalle?: unknown; usuario_id?: string | null; plan?: string | null }
 
 async function aplicar(tipo: string, d: Json, emitido: string | null): Promise<Resultado> {
   const accion = ACCIONES[tipo]
-  if (!accion) return { resultado: 'ignorado', detalle: { motivo: 'tipo no manejado' } }
+  if (!accion) return { resultado: 'ignorado', detalle: { motivo: 'evento no suscrito' } }
 
   const membresia = membresiaDe(tipo, d)
   let correo = correoDe(d)
@@ -272,7 +322,7 @@ async function aplicar(tipo: string, d: Json, emitido: string | null): Promise<R
     }
   }
 
-  // Sólo se crea cuenta cuando alguien paga: una baja nunca inventa un usuario.
+  // Sólo se crea cuenta cuando alguien paga: una baja ni un aviso inventan un usuario.
   const cuenta = await resolverCuenta(d, membresia, correo, accion === 'subir')
   if (!cuenta) return { resultado: 'sin_cuenta', detalle: { membresia, correo, motivo: 'no se pudo identificar al usuario' } }
 
@@ -284,6 +334,30 @@ async function aplicar(tipo: string, d: Json, emitido: string | null): Promise<R
     }
   }
 
+  /* ---------- lo que se anota sin tocar el plan ---------- */
+  if (accion === 'anotar') {
+    const cancela = tipo === 'membership.cancel_at_period_end_changed'
+    // Whop manda el valor nuevo de la bandera; si no viene, se asume que canceló.
+    const activo = cancela ? (d.cancel_at_period_end === false ? false : true) : false
+    if (cancela) {
+      await bd.ejecutar('UPDATE suscripcion SET cancela_al_final = ?, actualizada_en = ? WHERE usuario_id = ?', [activo ? 1 : 0, ahora(), cuenta.id])
+      if (membresia) await bd.ejecutar('UPDATE pago_membresia SET cancela_al_final = ?, ultimo_evento = ?, actualizada = ? WHERE membresia_id = ?', [activo ? 1 : 0, emitido, ahora(), membresia])
+    } else {
+      await bd.ejecutar('UPDATE suscripcion SET pago_fallido_en = ?, actualizada_en = ? WHERE usuario_id = ?', [emitido ?? ahora(), ahora(), cuenta.id])
+      if (membresia) await bd.ejecutar('UPDATE pago_membresia SET ultimo_evento = ?, actualizada = ? WHERE membresia_id = ?', [emitido, ahora(), membresia])
+    }
+    await registrarAccion({
+      admin_id: 'whop', admin_email: 'whop@pagos',
+      accion: cancela ? (activo ? 'usuario.plan.cancela_al_final' : 'usuario.plan.cancelacion_revertida') : 'usuario.pago.fallido',
+      objetivo_tipo: 'usuario', objetivo_id: cuenta.id,
+      detalle: { evento: tipo, membresia, correo: cuenta.email, renovacion, sigue_con_acceso: true },
+    })
+    const r = cancela ? (activo ? 'cancela_al_final' : 'cancelacion_revertida') : 'pago_fallido'
+    console.log(`[pagos] ${tipo} · ${cuenta.email} · anotado (${r}), el plan no se toca`)
+    return { resultado: r, usuario_id: cuenta.id, detalle: { membresia, sigue_con_acceso: true } }
+  }
+
+  /* ---------- lo que sí cambia el plan ---------- */
   const planPrevio = (await bd.uno<{ plan: string | null }>('SELECT plan FROM "user" WHERE id = ?', [cuenta.id]))?.plan ?? 'gratis'
   let plan: 'gratis' | 'base' | 'pro'
   if (accion === 'bajar') {
@@ -300,15 +374,16 @@ async function aplicar(tipo: string, d: Json, emitido: string | null): Promise<R
     proveedor: 'whop',
     id_externo: membresia,
     renovacion: accion === 'subir' ? renovacion : null,
-    estado: accion === 'subir' ? 'activa' : (tipo === 'membership.expired' || tipo === 'payment.failed' ? 'vencida' : 'cancelada'),
+    estado: accion === 'subir' ? 'activa' : 'cancelada',
+    origen: accion === 'subir' ? origenDe(d) : null,
   })
 
   if (membresia) {
-    await bd.ejecutar(`INSERT INTO pago_membresia (membresia_id, usuario_id, plan, estado, plan_whop, renovacion, ultimo_evento, actualizada)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    await bd.ejecutar(`INSERT INTO pago_membresia (membresia_id, usuario_id, plan, estado, plan_whop, renovacion, ultimo_evento, actualizada, cancela_al_final)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
                 ON CONFLICT(membresia_id) DO UPDATE SET usuario_id = excluded.usuario_id, plan = excluded.plan,
                   estado = excluded.estado, plan_whop = excluded.plan_whop, renovacion = excluded.renovacion,
-                  ultimo_evento = excluded.ultimo_evento, actualizada = excluded.actualizada`,
+                  ultimo_evento = excluded.ultimo_evento, actualizada = excluded.actualizada, cancela_al_final = 0`,
       [membresia, cuenta.id, plan, accion === 'subir' ? 'activa' : 'baja', planWhop, renovacion, emitido, ahora()])
   }
 
@@ -317,24 +392,37 @@ async function aplicar(tipo: string, d: Json, emitido: string | null): Promise<R
     admin_id: 'whop', admin_email: 'whop@pagos',
     accion: accion === 'subir' ? 'usuario.plan.alta' : 'usuario.plan.baja',
     objetivo_tipo: 'usuario', objetivo_id: cuenta.id,
-    detalle: { de: planPrevio, a: plan, evento: tipo, membresia, plan_whop: planWhop, renovacion, correo: cuenta.email, cuenta_creada: cuenta.creada },
+    detalle: { de: planPrevio, a: plan, evento: tipo, membresia, plan_whop: planWhop, renovacion, correo: cuenta.email, cuenta_creada: cuenta.creada, origen: origenDe(d) },
   })
 
   console.log(`[pagos] ${tipo} · ${cuenta.email} · ${planPrevio} → ${plan}${cuenta.creada ? ' (cuenta nueva)' : ''}`)
   return { resultado: accion === 'subir' ? 'plan_subido' : 'plan_bajado', usuario_id: cuenta.id, plan, detalle: { de: planPrevio, a: plan, membresia, cuenta_creada: cuenta.creada } }
 }
 
+
 /* ---------- rutas ---------- */
 
-/** El enlace de pago del plan, con el correo de la sesión si la hay. */
-pagosApp.get('/checkout/:plan', (c) => {
+/**
+ * El enlace de pago del plan. Se pide al pulsar el botón, no al pintar la
+ * página, porque cada llamada crea una sesión de checkout con el origen de la
+ * visita dentro. Los parámetros UTM llegan en la consulta; lo que no sea un
+ * campo de origen conocido se descarta.
+ */
+pagosApp.get('/checkout/:plan', async (c) => {
   const plan = c.req.param('plan')
   if (plan !== 'base' && plan !== 'pro') return c.json({ error: 'plan_invalido' }, 400)
+  if (!planWhopDe(plan)) return c.json({ error: 'cobro_no_configurado' }, 503)
   const s = c.get('sesion')
-  const url = enlaceCheckout(plan, s?.user.email ?? null)
+  const correo = s?.user.email ?? null
+
+  const origen: Record<string, string> = {}
+  for (const k of CAMPOS_ORIGEN) { const v = c.req.query(k); if (v) origen[k] = v.slice(0, 120) }
+
+  const conSesion = await crearSesionCheckout(plan, { correo, usuarioId: s?.user.id ?? null, origen })
+  const url = conSesion ?? enlaceCheckout(plan, correo)
   if (!url) return c.json({ error: 'cobro_no_configurado' }, 503)
   if (c.req.query('ir') === '1') return c.redirect(url, 302)
-  return c.json({ url })
+  return c.json({ url, con_origen: !!conSesion })
 })
 
 /**

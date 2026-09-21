@@ -16,6 +16,15 @@ interface Detalle {
   acciones: { admin_email: string; accion: string; detalle: string | null; fecha: string }[]
 }
 
+/** El origen viene como JSON de campos UTM; se muestra corto y legible. */
+function origenLegible(bruto: string): string {
+  try {
+    const o = JSON.parse(bruto) as Record<string, string>
+    const partes = [o.utm_source, o.utm_medium, o.utm_campaign].filter(Boolean)
+    return partes.length ? partes.join(' · ') : (o.referente ?? o.aterrizaje ?? 'directo')
+  } catch { return bruto.slice(0, 80) }
+}
+
 export function CuentaDetalle() {
   const { id = '' } = useParams()
   const { yo } = useSesion()
@@ -68,7 +77,21 @@ export function CuentaDetalle() {
             <Dato k="Último acceso" v={u.ultimo_acceso ? fechaHora(u.ultimo_acceso) : '—'} tono="mudo" />
             <Dato k="Suscripción" v={u.suscripcion ? `${u.suscripcion.plan} · ${u.suscripcion.estado}` : '—'} sub={u.suscripcion ? <>renueva {fechaHora(u.suscripcion.fecha_renovacion)} · proveedor {u.suscripcion.proveedor_pago ?? 'sin conectar'}</> : undefined} />
             <Dato k="Costo real acumulado" v={`${num(u.consumo.costo_real_usd, 2)} USD`} sub={<>{u.consumo.analisis} análisis · {u.consumo.con_cupo} con cupo</>} />
+            {u.suscripcion?.origen && <Dato k="Origen" v={origenLegible(u.suscripcion.origen)} tono="mudo" />}
           </div>
+          {/* Canceló pero sigue con acceso hasta que termine el ciclo que pagó: no
+              es una baja, es un aviso. El cobro fallido tampoco baja el plan —Whop
+              reintenta— pero conviene verlo antes de que llegue la baja de verdad. */}
+          {!!u.suscripcion?.cancela_al_final && (
+            <p className="p-nota" style={{ color: 'var(--oro-luz)' }}>
+              Canceló la renovación. Sigue con acceso hasta el {fechaHora(u.suscripcion.fecha_renovacion)}, y ese día baja a Gratis.
+            </p>
+          )}
+          {u.suscripcion?.pago_fallido_en && !u.suscripcion.cancela_al_final && (
+            <p className="p-nota" style={{ color: 'var(--oro-luz)' }}>
+              Un cobro no entró el {fechaHora(u.suscripcion.pago_fallido_en)}. Whop lo reintenta; el plan sigue activo hasta que Whop dé de baja la membresía.
+            </p>
+          )}
           {u.motivo_suspension && <p className="p-nota" style={{ color: 'var(--rojo-luz)' }}>Suspendida: {u.motivo_suspension}</p>}
         </section>
 

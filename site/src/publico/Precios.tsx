@@ -4,6 +4,7 @@ import { Nav } from '../components/Nav'
 import { Footer } from '../components/Footer'
 import { api } from '../lib/datos'
 import { useSesion } from '../lib/sesion'
+import { origenComoConsulta } from '../lib/origen'
 
 /* ============================================================================
    Planes. Precios y cupos vienen del servidor, no del código del cliente:
@@ -38,6 +39,7 @@ const PREGUNTAS: { p: string; r: string }[] = [
 
 export function Precios() {
   const [cat, setCat] = useState<Catalogo | null>(null)
+  const [yendo, setYendo] = useState<string | null>(null)
   const { yo } = useSesion()
   // Se vuelve a pedir al entrar o salir de la sesión: el enlace de pago lleva
   // el correo de quien está dentro, y cambiar de cuenta cambia el enlace.
@@ -69,8 +71,25 @@ export function Precios() {
   const destino = (k: string) => pago(k) ?? correo(k)
   const etiqueta = (k: string) => {
     const nombre = k === 'pro' ? 'Pro' : 'Base'
+    if (yendo === k) return 'Abriendo el pago…'
     if (pago(k)) return `Empezar con ${nombre}`
     return cat?.contacto ? `Quiero el plan ${nombre}` : `Crear cuenta y pedir ${nombre}`
+  }
+
+  /* El enlace del href ya sirve para pagar. Se pide uno mejor al vuelo —con el
+     origen de la visita dentro— para saber qué campaña trajo a cada suscriptor.
+     Si eso falla, se sigue por el href: se pierde el origen, no la venta. */
+  const irAlPago = async (e: React.MouseEvent<HTMLAnchorElement>, k: string) => {
+    if (!pago(k)) return
+    e.preventDefault()
+    setYendo(k)
+    try {
+      const q = origenComoConsulta()
+      const { url } = await api<{ url: string }>(`/api/pagos/checkout/${k}${q ? `?${q}` : ''}`)
+      window.location.assign(url)
+    } catch {
+      window.location.assign(destino(k))
+    }
   }
 
   return (
@@ -122,8 +141,8 @@ export function Precios() {
 
             <div className="planes__acciones">
               <Link to="/analizar" className="btn btn--ghost">Probar la lectura gratis</Link>
-              <a href={destino('base')} className="btn">{etiqueta('base')}</a>
-              <a href={destino('pro')} className="btn btn--esmeralda">{etiqueta('pro')}</a>
+              <a href={destino('base')} className="btn" onClick={(e) => irAlPago(e, 'base')} aria-busy={yendo === 'base'}>{etiqueta('base')}</a>
+              <a href={destino('pro')} className="btn btn--esmeralda" onClick={(e) => irAlPago(e, 'pro')} aria-busy={yendo === 'pro'}>{etiqueta('pro')}</a>
             </div>
             {cat && (cat.cobro_automatico
               ? <p className="planes__nota mono">El plan queda activo al terminar el pago. Si aún no tienes cuenta, la creamos con el correo con el que pagues.</p>

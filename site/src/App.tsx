@@ -4,8 +4,12 @@ import { Nav } from './components/Nav'
 import { Footer } from './components/Footer'
 import { useLenis, useReveals } from './lib/motion'
 import { ProveedorSesion } from './lib/sesion'
+import { recordarOrigen } from './lib/origen'
 import { Shell } from './producto/Shell'
 import { SoloAdmin } from './producto/admin/SoloAdmin'
+
+/* De dónde vino la visita: se anota al entrar, antes de pintar nada. */
+recordarOrigen()
 
 /* Producto: carga aparte. La portada no lo necesita. */
 const Gemas = lazy(() => import('./producto/paginas/Gemas').then((m) => ({ default: m.Gemas })))

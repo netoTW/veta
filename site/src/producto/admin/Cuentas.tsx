@@ -19,7 +19,7 @@ import { AdminCab, PLAN_DESC, SegmentoPlan } from './piezasAdmin'
 export interface UsuarioAdmin {
   id: string; email: string; nombre: string; rol: string; plan: string; estado: string; motivo_suspension: string | null
   fecha_alta: string; ultimo_acceso: string | null
-  suscripcion: { plan: string; estado: string; fecha_renovacion: string; proveedor_pago: string | null; id_externo: string | null } | null
+  suscripcion: { plan: string; estado: string; fecha_renovacion: string; proveedor_pago: string | null; id_externo: string | null; cancela_al_final?: number | boolean | null; pago_fallido_en?: string | null; origen?: string | null } | null
   cupo: { periodo: string; analisis_incluidos: number; analisis_usados: number; solicitudes_scanner_usadas: number; fecha_reinicio: string } | null
   consumo: { analisis: number; costo_real_usd: number; con_cupo: number }
 }
