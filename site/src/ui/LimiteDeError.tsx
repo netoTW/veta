@@ -1,5 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
 import { EmptyState } from './EmptyState'
+import { esFalloDeFragmento } from '../lib/fragmentos'
 
 /* ============================================================================
    Límite de error.
@@ -51,18 +52,27 @@ export class LimiteDeError extends Component<Props, Estado> {
   }
 
   private reintentar = () => { this.avisado = false; this.setState({ fallo: null }) }
+  /* Si lo que faltó fue un trozo de la propia página, reintentar no puede
+     funcionar: el fichero ya no existe en el servidor. Lo que hace falta es
+     pedir la versión nueva. */
+  private recargar = () => { window.location.reload() }
 
   render() {
     if (!this.state.fallo) return this.props.children
+    const viejo = esFalloDeFragmento(this.state.fallo)
     return (
       <div className="shell">
         <EmptyState
           kind="error"
-          title="Esta pantalla no se pudo dibujar."
-          detail="Ya quedó registrado de nuestro lado y lo vamos a mirar. Puedes reintentar o volver al inicio."
+          title={viejo ? 'Esta página se actualizó mientras la tenías abierta.' : 'Esta pantalla no se pudo dibujar.'}
+          detail={viejo
+            ? 'Hay una versión nueva. Cárgala y sigues donde estabas.'
+            : 'Ya quedó registrado de nuestro lado y lo vamos a mirar. Puedes reintentar o volver al inicio.'}
           action={
             <div className="pub__acciones">
-              <button type="button" className="btn" onClick={this.reintentar}>Reintentar</button>
+              {viejo
+                ? <button type="button" className="btn" onClick={this.recargar}>Cargar la versión nueva</button>
+                : <button type="button" className="btn" onClick={this.reintentar}>Reintentar</button>}
               <a href="/" className="btn btn--ghost">Volver al inicio</a>
             </div>
           }
