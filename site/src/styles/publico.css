@@ -41,6 +41,13 @@
 .footer__links { display: flex; flex-wrap: wrap; gap: 6px 20px; font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; }
 .footer__links a { color: var(--ceniza); text-decoration: none; transition: color 0.3s var(--ease); }
 .footer__links a:hover { color: var(--oro-luz); }
+/* En móvil se tocan con el dedo, no se apuntan con un ratón: 44 px de alto
+   mínimo y separación suficiente para no pulsar el enlace de al lado. En
+   escritorio se dejan como están, que ahí el puntero acierta. */
+@media (max-width: 720px) {
+  .footer__links { gap: 2px 14px; }
+  .footer__links a { display: inline-flex; align-items: center; min-height: 44px; padding-inline: 2px; }
+}
 
 /* ---------- planes ---------- */
 .planes { margin-block: 8px 12px; }
