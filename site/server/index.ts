@@ -12,7 +12,7 @@
 import { Hono, type Context } from 'hono'
 import { serve } from '@hono/node-server'
 import { serveStatic } from '@hono/node-server/serve-static'
-import { existsSync, readFileSync } from 'node:fs'
+import { accessSync, constants, existsSync, readdirSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { ENV, RAIZ_SITE } from './entorno.ts'
 import { auth, migrar, sesionDe, type Sesion } from './auth.ts'
@@ -236,6 +236,27 @@ function spa(c: Context) {
 if (ENV.SERVIR_DIST) {
   app.use('/*', serveStatic({ root: './dist' }))
 }
+
+/* Al arrancar: ¿puede el servicio reescribir sus propios datos? El 21-sep un
+   script de mantenimiento corrió como root y los dejó suyos; `veta` podía leerlos
+   pero no escribirlos, la sincronización fallaba cada diez minutos y tumbaba el
+   proceso. Se tardó horas en verlo. Preguntarlo al arrancar cuesta siete accesos
+   y lo pone en la primera línea del log. */
+function comprobarDatosEscribibles() {
+  try {
+    if (!existsSync(ENV.DATOS)) return
+    const malos = readdirSync(ENV.DATOS).filter((f) => {
+      try { accessSync(resolve(ENV.DATOS, f), constants.W_OK); return false } catch { return true }
+    })
+    if (malos.length) {
+      console.error(`[datos] NO SE PUEDEN REESCRIBIR ${malos.length} ficheros de ${ENV.DATOS}: ${malos.join(', ')}`)
+      console.error(`[datos] la sincronización va a fallar. Arréglalo con: sudo chown -R veta:veta ${ENV.DATOS}`)
+    }
+  } catch (e) {
+    console.warn('[datos] no se pudo comprobar el dueño:', (e as Error).message)
+  }
+}
+comprobarDatosEscribibles()
 
 /* Red de seguridad: ninguna tarea de fondo puede tumbar la API. Node 22 mata el
    proceso ante una promesa rechazada sin manejar, y una sincronización fallida

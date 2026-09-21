@@ -187,3 +187,20 @@ navegador ──HTTPS──▶ Vercel (dist/)  ──/api/* reescrito──▶ C
 | nadie recibe el correo de contraseña | `VETA_SMTP_URL`; `journalctl -u veta-web | grep correo` |
 | bandeja vacía | `/opt/veta-web/datos/*.json` (los compila el servicio cada 10 min; a mano: `sudo -u veta env VETA_BASE_CONTENIDO=/opt/veta/gem-pipeline/base_contenido VETA_DATOS=/opt/veta-web/datos node scripts/datos.mjs`) |
 | Operación dice «caído» | `systemctl status veta-servicio` (el motor) |
+
+## Dueño de los datos compilados
+
+`/opt/veta-web/datos/` tiene que ser de `veta:veta`. Si algo queda de root —un
+script de mantenimiento corrido con sudo, por ejemplo— el servicio puede leer
+pero no reescribir, la sincronización falla cada ciclo y el proceso se cae.
+
+Se comprueba en tres sitios, y no hay que acordarse de ninguno:
+
+- **Al instalar**, al final de `instalar-web.sh`. Corre como root, así que corrige.
+- **En cada sincronización**, al terminar de compilar. Corre como `veta`: avisa en
+  el log con el comando exacto para arreglarlo.
+- **Al arrancar la API**, que pregunta si puede escribir cada fichero y lo deja en
+  la primera línea del log.
+
+A mano: `bash despliegue/comprobar-dueno.sh [carpeta] [usuario]` — corrige si eres
+root, avisa y sale con error si no.

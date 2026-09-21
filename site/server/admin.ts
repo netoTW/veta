@@ -81,7 +81,13 @@ async function filaBandeja(r: Record<string, unknown> & { id: string; tipo: stri
     publicacion: await contenido.estadoPublicacion(r),
     vigente: esVigente ? esVigente(r as never) : true,
     /* El informe de cinco secciones del contrato §11: se ve de un vistazo quién lo trae. */
-    cinco_secciones: !!(r.informe_cliente as { lectura?: { veredicto?: string } } | undefined)?.lectura?.veredicto,
+    /* §15: `informe_cliente` viene siempre; lo que dice si hubo narrado es
+       `disponible`. Para los registros viejos, que no lo traen, sigue valiendo
+       el veredicto de la lectura. */
+    cinco_secciones: (() => {
+      const ic = r.informe_cliente as { disponible?: boolean; lectura?: { veredicto?: string } } | undefined
+      return typeof ic?.disponible === 'boolean' ? ic.disponible : !!ic?.lectura?.veredicto
+    })(),
   }
 }
 const todosLosRegistros = async () => [...contenido.gemasTodas(), ...(await contenido.analisisTodos())]

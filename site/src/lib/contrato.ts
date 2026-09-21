@@ -141,9 +141,10 @@ export interface Onchain {
   concentracion_top10_neta: number | null
   concentracion_top50: number | null
   hhi: number | null; hhi_etiqueta: string; n: number
-  /** OJO: el motor manda `[]` —lista vacía, no objeto— cuando no hay ninguna
-      entidad etiquetada. El tipo lo dice para que nadie vuelva a dar por hecho
-      el objeto: usa `etiquetadasDe()` antes de tocar sus campos. */
+  /** §15 lo fijó como objeto siempre, con ceros y vacíos cuando no hay datos.
+      La tolerancia se queda porque los informes **obsoletos no se reexportaron**
+      y siguen trayendo `[]`: la bandeja los enseña con el filtro de historial.
+      Usa `etiquetadasDe()` antes de tocar sus campos. */
   entidades_etiquetadas: EntidadesEtiquetadas | unknown[] | null
   netflows: unknown[]
   lectura: string; cota_superior: boolean; nota_cota: string; naturaleza: string

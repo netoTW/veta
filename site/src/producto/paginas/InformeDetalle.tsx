@@ -192,16 +192,27 @@ export interface NivelesCliente {
   parrafos?: string[]
 }
 export interface Hallazgo { titular?: string; parrafos?: string[]; por_que_no_se_ve?: string }
+/**
+ * §15: una sección que no aplica llega como `null` (objetos) o `[]` (listas),
+ * nunca ausente, y `disponible` dice si hubo narrado publicable. `lectura`
+ * viene siempre. Los tipos admiten `null` a propósito: si alguien escribe
+ * `ic.lectura.veredicto` sin comprobar, el compilador lo para.
+ *
+ * Las secciones ya degradan solas —`null` es falso igual que ausente— y cada
+ * una cae a su dato de ficha, así que un informe sin narrado sigue enseñando
+ * tesis, niveles e invalidación en vez de cinco cajas vacías.
+ */
 export interface InformeCliente {
-  que_paso?: { titular?: string; parrafos?: string[]; cuando?: string }
-  lectura?: { veredicto?: string; parrafos?: string[]; direccion?: string; horizonte_dias?: number }
-  hallazgo?: Hallazgo
+  disponible?: boolean
+  que_paso?: { titular?: string; parrafos?: string[]; cuando?: string } | null
+  lectura?: { veredicto?: string; parrafos?: string[]; direccion?: string; horizonte_dias?: number } | null
+  hallazgo?: Hallazgo | null
   hallazgos?: Hallazgo[]
-  niveles?: NivelesCliente
-  vigilar?: { senal?: string; parrafos?: string[] }
-  invalida?: { condicion?: string }
+  niveles?: NivelesCliente | null
+  vigilar?: { senal?: string; parrafos?: string[] } | null
+  invalida?: { condicion?: string } | null
   riesgos?: string[]
-  avanzado?: Record<string, string>
+  avanzado?: Record<string, string> | null
 }
 
 /* ---------- el gráfico de precio: serie real, máximo marcado y zonas de volumen ---------- */

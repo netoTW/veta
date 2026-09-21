@@ -586,3 +586,39 @@ fallos, ya corregidos añadiendo el tipo a la clave:
 reclasificación crea un registro nuevo, que lleve identificador nuevo y que el viejo apunte al
 nuevo. Mientras tanto la web usa `id` + `tipo`, que funciona pero es un parche sobre algo que
 debería ser único por definición.
+
+## 15. Forma única de cada campo  ·  ACUSE DE RECIBO
+
+El motor añadió esta sección el 21-sep-2026 con siete cambios. Aquí queda **qué
+hizo la web con cada uno**, para que ninguno se dé por aplicado sin estarlo.
+
+| # | Lo que fija el motor | Lo que hizo la web |
+|---|---|---|
+| 1 | `onchain.entidades_etiquetadas` siempre objeto | El informe ya lo toleraba desde el arreglo de la pantalla en blanco. **La tolerancia se queda**: los obsoletos no se reexportaron y siguen trayendo `[]`, y la bandeja los enseña con el filtro de historial. |
+| 2 | `escenarios[].evidencia_citada` siempre texto | Ya estaba tipado `string` y se pinta tal cual. Sin cambio. |
+| 3 | `derivados` siempre presente, con `medido: false` | La web no lee ese campo. Sin cambio. |
+| 4 | `asimetria`, `asimetria_liquidaciones`, `prosa`, `narrado`, `derivados` con todas sus claves | El informe ya decide por `niveles.<sección>.disponible`, no por si la clave está. Sin cambio. |
+| 5 | `informe_cliente`: sección que no aplica = `null`, nunca ausente; `disponible: bool`; `lectura` siempre | Tipos al día (`\| null` explícito) y la marca de cinco secciones pasa a leer `disponible`, con el veredicto como respaldo para los registros viejos. |
+| 6 | `null` sólo donde la tabla lo dice; lista vacía es `[]` | Nada que adaptar. |
+| 7 | Vigentes reexportados con versión nueva | **Ojo:** cada reexportación sube `version_registro`, y una aprobación de la bandeja vale para la versión que aprobó. Los informes vuelven a `nueva_version` y hay que aprobarlos otra vez. |
+
+**Por qué el punto 5 no obligó a tocar el render.** Las cinco secciones ya
+degradaban solas: `null` es falso igual que ausente, y cada sección cae a su
+dato de ficha. Un informe sin narrado enseña tesis, niveles e invalidación en
+vez de cinco cajas vacías.
+
+### 15.1 Lo que la web pide al motor  ·  ABIERTO
+
+1. **El decimal y el signo de porcentaje.** En texto de cliente van con coma
+   decimal y espacio duro antes del signo: «+1,2 %», no «+1.2%». Afecta al
+   escenario condicional de la agenda, al informe del narrador y a cualquier
+   prosa con cifras. Hay un cambio preparado en el repositorio del motor,
+   pendiente de que esa sesión lo revise y lo commitee: formateador único,
+   80 porcentajes convertidos, y la batería de tests sin regresiones (10
+   fallos antes, 10 después, 1222 pasan).
+2. **Un aviso cuando una reexportación suba la versión de un informe ya
+   aprobado.** Hoy la web no distingue «versión nueva porque cambió el
+   análisis» de «versión nueva porque se reexportó con otra forma», y en las
+   dos el informe desaparece del sitio público hasta que alguien lo vuelva a
+   aprobar. Basta un campo en `cambios_respecto_version_anterior` que diga que
+   el cambio fue de forma y no de contenido.

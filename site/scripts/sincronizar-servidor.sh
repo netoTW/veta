@@ -13,6 +13,7 @@ DEST="${VETA_DATOS_MOTOR:-../datos-motor}"
 # Modo local (la web corre en el mismo servidor que el motor): no hay nada que traer, sólo recompilar.
 if [ "${VETA_SYNC_MODO:-}" = "local" ] || { [ -z "$SSH_DEST" ] && [ -n "${VETA_BASE_CONTENIDO:-}" ]; }; then
   node scripts/datos.mjs
+  bash despliegue/comprobar-dueno.sh "${VETA_DATOS:-}" veta || true
   echo "compilado en local $(date -u +%Y-%m-%dT%H:%M:%SZ)"
   exit 0
 fi
@@ -27,4 +28,5 @@ rsync -az --timeout=40 -e "$SSH" \
   "$SSH_DEST:$RUTA/base_contenido/" "$DEST/base_contenido/"
 rsync -az --timeout=40 -e "$SSH" "$SSH_DEST:$RUTA/reports/" "$DEST/reports/"
 node scripts/datos.mjs
+bash despliegue/comprobar-dueno.sh "${VETA_DATOS:-}" veta || true
 echo "sincronizado $(date -u +%Y-%m-%dT%H:%M:%SZ)"

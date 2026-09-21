@@ -32,6 +32,9 @@ install -m 644 despliegue/veta-web.service /etc/systemd/system/veta-web.service
 systemctl daemon-reload && systemctl enable --now veta-web && systemctl restart veta-web
 # Caddy: HTTPS automático para api.<dominio>
 sed "s/{\$VETA_DOMINIO}/$DOMINIO/" despliegue/Caddyfile > /etc/caddy/Caddyfile
+# Al terminar: que el servicio pueda escribir sus datos. Corriendo como root, se corrige solo.
+bash "$(dirname "$0")/comprobar-dueno.sh" "$DEST/datos" veta
+
 mkdir -p /var/log/caddy && chown caddy:caddy /var/log/caddy
 systemctl enable --now caddy && systemctl reload caddy
 ufw allow 80,443/tcp >/dev/null 2>&1 || true
