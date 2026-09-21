@@ -5,6 +5,12 @@ import puppeteer from 'puppeteer-core'
 import { readFileSync } from 'node:fs'
 const env = Object.fromEntries(readFileSync('.env','utf8').split('\n').filter(l=>l.includes('=')&&!l.startsWith('#')).map(l=>[l.slice(0,l.indexOf('=')).trim(),l.slice(l.indexOf('=')+1).trim()]))
 const PROHIBIDAS = /\b(escéptico|verificador|redactor|umbral|observable|criterio|§|corrida|scanner|sos|tenés|podés|querés|elegís|decidís|pedí|entrá|probá|escribí|tocá|votá|elegí|marcás|mirás|acá)\b/gi
+/* Texto de máquina que se cuela en pantallas de cliente: nombres de campo en
+   snake_case, cadenas de llamada a una fuente, URL sueltas y jerga de índice.
+   Es la familia que sacó "revenue_holders_30d" y "binance:spot/klines · equal-weight". */
+const MAQUINA = /\b[a-z]+(?:_[a-z0-9]+){1,}\b|\b(?:binance|defillama|coingecko|okx|arkham):[\w\/]+|dataType=|equal-weight|long-only|https?:\/\/[^\s)]+/g
+/* Lo que sí puede aparecer: palabras compuestas nuestras y direcciones públicas. */
+const PERDONADAS = /^(veta_|utm_|no_|sin_)|^(e_?mail|on_?chain)$|vetalab\.io|bls\.gov|federalreserve\.gov|whop\.com/i
 const b = await puppeteer.launch({ executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', headless:'new', args:['--no-sandbox'] })
 const p = await b.newPage(); await p.setViewport({width:1440,height:1000})
 await p.goto('http://localhost:5310/gemas',{waitUntil:'networkidle0'})
@@ -17,6 +23,7 @@ for (const r of rutas) {
   await p.goto('http://localhost:5310'+r,{waitUntil:'networkidle0'}); await new Promise(x=>setTimeout(x,1800))
   const t = await p.evaluate(()=>document.body.innerText)
   const hits = [...new Set((t.match(PROHIBIDAS)||[]).map(s=>s.toLowerCase()))]
+  for (const m of new Set(t.match(MAQUINA)||[])) if (!PERDONADAS.test(m)) hits.push(m.slice(0,48))
   total += hits.length
   console.log('  '+(hits.length?'⚠ ':'✓ ')+r.padEnd(38)+(hits.join(', ')||'limpio'))
   for (const h of hits) { const i = t.toLowerCase().indexOf(h); console.log('      …'+t.slice(Math.max(0,i-90), i+90).replace(/\n/g,' ')+'…') }
