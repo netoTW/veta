@@ -10,7 +10,7 @@
    ========================================================================== */
 import { readFileSync, existsSync, statSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { bd } from './db.ts'
+import { bd, ahora } from './db.ts'
 import { ENV } from './entorno.ts'
 import { puede, type Rol } from '../src/lib/matriz.ts'
 
@@ -211,12 +211,71 @@ export async function analisisUnoPara(id: string, rol: Rol) {
   return a && (await visiblePara(a, rol)) ? conPublicacion(a, rol) : null
 }
 
-export async function seguimientoPara(rol: Rol) {
-  const visibles = new Set((await filtrar(gemasTodas(), (g) => visiblePara(g, rol))).map((g) => g.id))
+/* ---------- qué cuenta como track record ----------
+
+   El seguimiento y el marcador daban números distintos —"1 tesis en
+   seguimiento" contra "2 tesis vivas"— porque cada uno filtraba por su cuenta:
+   uno por `visiblePara`, el otro sólo por "aprobado". Ahora salen los dos de
+   aquí.
+
+   La regla: entra un informe cuyo tipo vigente es gema Y que el público vio
+   como gema. Lo segundo no se puede deducir del dato de hoy —una aprobación
+   vieja no dice si alguien llegó a verla—, así que se marca cuando ocurre, en
+   `gema_publica`.
+
+   Y una vez marcada no sale nunca, aunque el motor la reclasifique a análisis:
+   lo que se publicó se mide hasta su plazo, con la fecha en que cambió. Un
+   track record del que se pueden caer las que salieron mal no es un track
+   record. */
+
+/** ¿La ve el público ahora mismo, como gema? Ventana de anticipo incluida. */
+async function visibleComoGemaAhora(g: Registro): Promise<boolean> {
+  if (g.tipo !== 'gema' || ocultoSiempre(g)) return false
+  const p = await estadoPublicacion(g)
+  if (p.estado !== 'aprobado' || !p.publicado_en) return false
+  return Date.now() >= new Date(p.publicado_en).getTime() + ENV.HORAS_ANTICIPO * 3600_000
+}
+
+/** Se llama al arrancar y tras cada sincronización: anota lo que pasó a público. */
+export async function marcarGemasPublicas(): Promise<number> {
+  let nuevas = 0
+  for (const g of gemasTodas()) {
+    if (await visibleComoGemaAhora(g)) {
+      const r = await bd.ejecutar('INSERT INTO gema_publica (informe_id, desde, reclasificada_en) VALUES (?, ?, NULL) ON CONFLICT(informe_id) DO NOTHING', [g.id, ahora()])
+      if (r.cambios) { nuevas++; console.log(`[track] ${g.simbolo} entra al seguimiento: el público ya la ve como gema`) }
+    }
+    // Si una marcada se reclasificó, se anota cuándo la vimos cambiar.
+    if ((g as { reclasificado_a?: string }).reclasificado_a) {
+      await bd.ejecutar('UPDATE gema_publica SET reclasificada_en = ? WHERE informe_id = ? AND reclasificada_en IS NULL', [ahora(), g.id])
+    }
+  }
+  return nuevas
+}
+
+/** Los informes del track record, con la fecha de reclasificación si la hubo. */
+export async function gemasDelSeguimiento(): Promise<{ registro: Registro; reclasificada_en: string | null }[]> {
+  const marcadas = await bd.todos<{ informe_id: string; reclasificada_en: string | null }>('SELECT informe_id, reclasificada_en FROM gema_publica')
+  const porId = new Map(gemasTodas().map((g) => [g.id, g]))
+  const out: { registro: Registro; reclasificada_en: string | null }[] = []
+  for (const m of marcadas) {
+    const g = porId.get(m.informe_id)
+    if (g) out.push({ registro: g, reclasificada_en: m.reclasificada_en })
+  }
+  return out
+}
+
+export async function seguimientoPara(_rol: Rol) {
+  const track = await gemasDelSeguimiento()
+  const dentro = new Set(track.map((t) => t.registro.id))
+  const recl = new Map(track.filter((t) => t.reclasificada_en).map((t) => [t.registro.id, t.reclasificada_en!]))
   const s = seguimientoTodo()
+  const marcar = (x: Record<string, unknown>) => {
+    const f = recl.get(String(x.gema_id))
+    return f ? { ...x, reclasificada_en: f } : x
+  }
   return {
-    ultimo: s.ultimo.filter((x) => visibles.has(String(x.gema_id))),
-    historial: s.historial.filter((x) => visibles.has(String(x.gema_id))),
+    ultimo: s.ultimo.filter((x) => dentro.has(String(x.gema_id))).map(marcar),
+    historial: s.historial.filter((x) => dentro.has(String(x.gema_id))).map(marcar),
   }
 }
 
@@ -270,8 +329,10 @@ export function marcadorDe(u: Registro, simbolo: string): MarcadorGema {
 
 /** Marcador agregado: cómo van TODAS las gemas vivas y publicadas. Es evidencia de método: gratis para todos. */
 export async function marcadorAgregado() {
-  const gemas = await filtrar(gemasTodas(), async (g) => (await estadoPublicacion(g)).estado === 'aprobado')
-  const porId = new Map(gemas.map((g) => [g.id, g]))
+  // El mismo conjunto que el seguimiento: si no, la cabecera y el marcador
+  // cuentan cosas distintas y una de las dos miente.
+  const track = await gemasDelSeguimiento()
+  const porId = new Map(track.map((t) => [t.registro.id, t.registro]))
   const filas = seguimientoTodo().ultimo.filter((u) => porId.has(String(u.gema_id))).map((u) => marcadorDe(u, String(porId.get(String(u.gema_id))!.simbolo)))
   const cuenta = (k: 'b1' | 'b2') => ({ gana: filas.filter((f) => f[k].lado === 'gana').length, pierde: filas.filter((f) => f[k].lado === 'pierde').length, sin_medir: filas.filter((f) => f[k].lado === 'sin_medir').length })
   const fecha = filas.map((f) => f.fecha).sort().at(-1) ?? null

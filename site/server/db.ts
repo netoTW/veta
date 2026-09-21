@@ -125,6 +125,16 @@ CREATE TABLE IF NOT EXISTS acciones_admin (
   detalle TEXT,
   fecha TEXT NOT NULL
 );
+-- Track record: qué gemas vio el público COMO gemas. Se marca la primera vez
+-- que una pasa a ser visible de verdad (aprobada, sin reclasificar y con la
+-- ventana de anticipo ya cumplida). Una vez marcada no sale nunca del
+-- seguimiento, aunque el motor la reclasifique después: lo que se publicó, se
+-- mide hasta su plazo. Sin esta marca habría que adivinar el pasado.
+CREATE TABLE IF NOT EXISTS gema_publica (
+  informe_id TEXT PRIMARY KEY,
+  desde TEXT NOT NULL,
+  reclasificada_en TEXT
+);
 -- Enlaces cortos de redes: vetalab.io/ig y compañía. Viven aquí y no en el
 -- código para poder añadir o cambiar uno desde admin sin desplegar.
 CREATE TABLE IF NOT EXISTS enlace_corto (

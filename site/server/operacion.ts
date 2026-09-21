@@ -127,6 +127,8 @@ export const avisoDePublicados = () => avisoPublicados
 
 export async function vigilarPublicados(): Promise<{ total: number; gemas: number; analisis: number }> {
   const contenido = await import('./contenido.ts')
+  // Antes de contar: anotar lo que acaba de hacerse público como gema.
+  await contenido.marcarGemasPublicas().catch((e) => console.warn('[track]', (e as Error).message))
   // Como los ve un suscriptor base: lo aprobado y nada más.
   const [gemas, analisis] = await Promise.all([contenido.gemasPara('base'), contenido.analisisPara('base')])
   const cuenta = { gemas: gemas.length, analisis: analisis.length, total: gemas.length + analisis.length }
