@@ -51,7 +51,7 @@ export const useUniverso = () => useDatos<{ monedas: Moneda[]; motor: string }>(
 /* ---------- vocabulario llano ---------- */
 export const ETAPA_LABEL: Record<Etapa, { titulo: string; que: string }> = {
   recolectando: { titulo: 'Trayendo los datos', que: 'precio, futuros, ingresos, quién tiene el token' },
-  calculando: { titulo: 'Calculando el riesgo', que: 'cola de caídas, las dos varas, concentración' },
+  calculando: { titulo: 'Calculando el riesgo', que: 'cola de caídas, las dos referencias, concentración' },
   esceptico: { titulo: 'Buscando los contraargumentos', que: 'se ataca la lectura antes de darla por buena' },
   redactando: { titulo: 'Redactando', que: 'tesis en una línea, escenarios, qué la invalidaría' },
   verificando: { titulo: 'Comprobando cada cifra', que: 'número por número contra su fuente; si no coincide, no sale' },
@@ -318,7 +318,7 @@ export function Decidir({ simbolo, cupo, puedeProfundo, onPedir, ocupado, error 
         <h3 id="an-decidir-t" className="display">Lo que la lectura no dice: la tesis, y quién la ataca</h3>
         <ul className="an-decidir__lista">
           <li>Una tesis en una línea y qué la invalidaría, con número</li>
-          <li>Escenarios con rango y horizonte, contra dos varas</li>
+          <li>Escenarios con rango y horizonte, contra dos referencias</li>
           <li>La lectura contraria, buscada a propósito antes de escribir</li>
           <li>Cada cifra verificada contra su fuente</li>
         </ul>

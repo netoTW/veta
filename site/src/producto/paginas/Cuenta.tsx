@@ -27,7 +27,7 @@ interface MiCuenta {
    entorno— sino que se pide con el resto del catálogo. */
 const PLANES = [
   { k: 'gratis', rol: 'visitante' as const, t: 'Gratis', d: ['Titular y tier de cada gema', 'Análisis de monedas sin tesis', 'Titular de cada noticia', 'Lectura instantánea de cualquier moneda'] },
-  { k: 'base', rol: 'base' as const, t: 'Base', d: ['Todo el informe: tesis, dos varas, escenarios, riesgo', 'Los dos niveles de lectura', 'Seguimiento diario', 'Watchlist y radar', 'Noticias y agenda con su lectura', 'CUPO análisis profundos al mes'] },
+  { k: 'base', rol: 'base' as const, t: 'Base', d: ['Todo el informe: tesis, dos referencias, escenarios, riesgo', 'Los dos niveles de lectura', 'Seguimiento diario', 'Watchlist y radar', 'Noticias y agenda con su lectura', 'CUPO análisis profundos al mes'] },
   { k: 'pro', rol: 'pro' as const, t: 'Pro', d: ['Todo lo del base', 'Acceso anticipado a gemas nuevas', 'Alertas de invalidación y gatillos', 'Exportar en JSON', 'Voto de la moneda de la semana', 'CUPO análisis profundos al mes'] },
 ]
 

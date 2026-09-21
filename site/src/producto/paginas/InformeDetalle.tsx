@@ -135,11 +135,14 @@ function VaraRevenueBloque({ v, esAnalisis }: { v: VaraRevenue & { no_disponible
 
 function EscenarioFila({ e }: { e: Escenario }) {
   const { nivel } = useNivel()
+  const { rol } = useRol()
   return (
     <div className={`p-escenario p-escenario--${e.tipo}`}>
       <div className="p-escenario__tipo">
         <strong>{TIPO_ESCENARIO[e.tipo] ?? e.tipo}</strong>
-        <span className="p-escenario__rango num">{mult(e.rango_min)} – {mult(e.rango_max)}</span>
+        {/* El múltiplo del escenario se parece demasiado a una promesa de
+            retorno. Queda en admin, donde se usa para revisar. */}
+        {rol === 'admin' && <span className="p-escenario__rango num">{mult(e.rango_min)} – {mult(e.rango_max)}</span>}
         <span className="mono" style={{ color: 'var(--ceniza-2)' }}>horizonte {dias(e.horizonte_dias)}</span>
       </div>
       <div className="p-escenario__cuerpo">
@@ -308,6 +311,7 @@ function SeccionCliente({ n, k, titulo, children }: { n: string; k: string; titu
    Una escala de precios, no una línea: el informe no trae serie temporal, y
    dibujar una línea sin datos sería inventar cifras (hueco §11.3). */
 function Niveles({ inf, nc }: { inf: Informe; nc?: NivelesCliente | null }) {
+  const esAdmin = useRol().rol === 'admin'
   const f = inf.ficha_esencial
   const hoy = f.precio_y_fecha_referencia?.precio_usd
   const rf = inf.varas?.reflexiva as { maximo_valor?: number | null; maximo_fecha?: string | null; fraccion_del_maximo?: string | null } | undefined
@@ -329,8 +333,8 @@ function Niveles({ inf, nc }: { inf: Informe; nc?: NivelesCliente | null }) {
     const baja = e.rango_min < 1
     const x = baja ? e.rango_min : e.rango_max
     const v = hoy * x
-    if (cerca(v)) marcas.push({ v, et: `${et} · ${mult(x)}${e.horizonte_dias ? ` · ${e.horizonte_dias} d` : ''}`, clase: baja ? 'is-baja' : 'is-alza' })
-    else lejano.push({ v, que: `el techo del escenario ${baja ? 'a la baja' : 'al alza'}, ${mult(x)}` })
+    if (cerca(v)) marcas.push({ v, et: `${et}${esAdmin ? ` · ${mult(x)}` : ''}${e.horizonte_dias ? ` · ${e.horizonte_dias} d` : ''}`, clase: baja ? 'is-baja' : 'is-alza' })
+    else lejano.push({ v, que: `el techo del escenario ${baja ? 'a la baja' : 'al alza'}${esAdmin ? `, ${mult(x)}` : ''}` })
   }
   const vs0 = marcas.map((m) => m.v)
   const lo = Math.min(...vs0), hi = Math.max(...vs0)
@@ -383,7 +387,7 @@ function Niveles({ inf, nc }: { inf: Informe; nc?: NivelesCliente | null }) {
             const igual = e.rango_min === e.rango_max
             return (
               <li key={i} className={e.rango_max >= 1 ? 'is-alza' : 'is-baja'}>
-                <span className="p-niv__mult mono">{igual ? mult(e.rango_max) : `${mult(e.rango_min)} – ${mult(e.rango_max)}`}</span>
+                {esAdmin && <span className="p-niv__mult mono">{igual ? mult(e.rango_max) : `${mult(e.rango_min)} – ${mult(e.rango_max)}`}</span>}
                 {e.horizonte_dias ? <span className="p-niv__plazo mono">{e.horizonte_dias} días</span> : <span />}
                 <span className="p-niv__cond">{nombre ? <b>{nombre}. </b> : null}{prosaDeCliente(e.catalizador ?? '')}</span>
               </li>
@@ -542,7 +546,7 @@ export function Cuerpo({ inf, esAnalisis }: { inf: Informe; esAnalisis: boolean 
         )}
 
         {/* ------------ las dos varas ------------ */}
-        <Seccion id="varas" titulo="Las dos varas" esencial={prosaDeCliente(n.varas.esencial.texto)} advertencias={n.varas.esencial.advertencias}>
+        <Seccion id="varas" titulo={n.varas.titulo_cliente || "Las dos referencias"} esencial={prosaDeCliente(n.varas.esencial.texto)} advertencias={n.varas.esencial.advertencias}>
           {v && v.precio.serie.length > 1 && <PrecioMaximos v={v} fraccion={rf?.fraccion_del_maximo} movil={movil} />}
           <div className="p-varas" style={{ marginTop: 18 }}>
             <VaraRevenueBloque v={rv} esAnalisis={esAnalisis} />
@@ -785,7 +789,7 @@ function SoloTitular({ inf }: { inf: Informe }) {
           <RiesgoLlano inf={inf} />
         </div>
       </div>
-      <Puerta seccion="gemas.informe" que="La tesis, las dos varas lado a lado, los escenarios con su catalizador, el riesgo de cola, el on-chain, los fundamentales y las objeciones del Escéptico." />
+      <Puerta seccion="gemas.informe" que="La tesis, las dos referencias lado a lado, los escenarios con su catalizador, el riesgo de cola, el on-chain, los fundamentales y las objeciones del Escéptico." />
     </div>
   )
 }

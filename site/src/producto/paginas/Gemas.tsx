@@ -70,7 +70,7 @@ function TarjetaGema({ g }: { g: Informe }) {
           <Advertencias items={f.advertencias} compacta />
         </>
       ) : (
-        <Puerta seccion="gemas.informe" que="La tesis, las dos varas, los escenarios y el riesgo de esta gema." compacta />
+        <Puerta seccion="gemas.informe" que="La tesis, las dos referencias, los escenarios y el riesgo de esta gema." compacta />
       )}
 
       <footer className="p-gema__pie mono">
@@ -118,7 +118,7 @@ export function Gemas() {
             <Cabecera
               eyebrow={<>Gemas · {gemas.length} publicadas</>}
               titulo={<>Lo que encontramos.</>}
-              lead="Cada gema es un informe con tesis, dos varas, escenarios y riesgo. Se agrupan por tier de riesgo; el tier no es una recomendación, es cuántas condiciones incumple."
+              lead="Cada gema es un informe con tesis, dos referencias, escenarios y riesgo. Se agrupan por tier de riesgo; el tier no es una recomendación, es cuántas condiciones incumple."
               acciones={<Exportar que="gemas" />}
             />
             <div className="shell">

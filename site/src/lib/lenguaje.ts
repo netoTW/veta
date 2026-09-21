@@ -225,6 +225,10 @@ export const TRADUCCIONES: { de: RegExp; a: string; nota: string }[] = [
   { de: /\bcorrida\b/gi, a: 'pasada', nota: 'término del taller' },
   { de: /\bscanner\b/gi, a: 'rastreo', nota: 'término del taller' },
   /* Jerga de índices que el motor mete en los nombres de sus varas. */
+  /* El motor renombró la sección: lo que llamaba "varas" se muestra
+     "referencias". Aquí para que valga también en el texto que él manda. */
+  { de: /\bvaras\b/gi, a: 'referencias', nota: 'nombre viejo de la sección' },
+  { de: /\bvara\b/gi, a: 'referencia', nota: 'nombre viejo de la sección' },
   { de: /\bequal-weight\b/gi, a: 'de peso igual', nota: 'jerga de índices' },
   { de: /\blong-only\b/gi, a: 'sólo comprado', nota: 'jerga de índices' },
   { de: /\brevenue anualizado\b/gi, a: 'ingresos anualizados', nota: 'inglés sin traducir' },

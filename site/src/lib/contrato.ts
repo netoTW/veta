@@ -180,6 +180,9 @@ export interface Verificador { estado: string; reconsultas: Reconsulta[]; hallaz
 
 export interface NivelSeccion<E = Record<string, unknown>, A = Record<string, unknown>> {
   seccion: string; disponible: boolean; motivo_ausencia: string
+  /** §18: el motor dice cómo se llama la sección de cara al cliente («varas»
+      se muestra «Dos referencias»). Mientras no llegue, manda el de la web. */
+  titulo_cliente?: string
   esencial: { texto: string; advertencias: Advertencia[] } & E
   avanzado: A & { advertencias?: Advertencia[] }
 }
