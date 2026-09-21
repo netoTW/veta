@@ -4,7 +4,7 @@ import { Cabecera } from '../Shell'
 import { Cargando, PlanBadge } from '../piezas'
 import { useDatos, api, invalidarDatos } from '../../lib/datos'
 import { useRol } from '../../lib/acceso'
-import { fecha, fechaHora } from '../../lib/formato'
+import { fecha, fechaHora, pct } from '../../lib/formato'
 import { EmptyState } from '../../ui/EmptyState'
 
 /* ============================================================================
@@ -67,8 +67,8 @@ function Cerrojo({ que }: { que: string }) {
 
 function Cifra({ v }: { v?: number }) {
   if (typeof v !== 'number' || !Number.isFinite(v)) return null
-  const pct = v * 100
-  return <span className={`mono ${pct >= 0 ? 'es-si' : 'es-no'}`}>{pct >= 0 ? '+' : ''}{pct.toFixed(1)} %</span>
+  // Por el formateador de siempre: coma decimal y espacio duro antes del signo.
+  return <span className={`mono ${v >= 0 ? 'es-si' : 'es-no'}`}>{pct(v, 1, true)}</span>
 }
 
 function PiezaCard({ p, esAdmin, onCambio }: { p: Pieza; esAdmin: boolean; onCambio: () => void }) {

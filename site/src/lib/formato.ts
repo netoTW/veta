@@ -8,7 +8,9 @@ export function num(v: number | null | undefined, dec = 0): string {
   const s = Math.abs(v).toFixed(dec)
   const [ent, fr] = s.split('.')
   const miles = ent.replace(/\B(?=(\d{3})+(?!\d))/g, NBSP)
-  return (v < 0 ? '−' : '') + miles + (fr ? '.' + fr : '')
+  // Coma decimal: en español el punto separa los miles, así que «1.5» se lee
+  // como mil quinientos. El de miles es un espacio duro, no un punto.
+  return (v < 0 ? '−' : '') + miles + (fr ? ',' + fr : '')
 }
 
 /** Porcentaje a partir de una fracción (0.061 → 6.1 %). */
