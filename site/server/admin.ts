@@ -97,7 +97,11 @@ adminApp.get('/bandeja', async (c) => {
   const esVigente = marcarVigencia(registros as never)
   const filas = await Promise.all(registros.map((r) => filaBandeja(r as never, esVigente)))
   const orden = { pendiente: 0, nueva_version: 1, pedir_mas: 2, rechazado: 3, despublicado: 4, aprobado: 5 } as Record<string, number>
-  filas.sort((a, b) => (orden[a.publicacion.estado] ?? 9) - (orden[b.publicacion.estado] ?? 9) || String(b.escrito_en).localeCompare(String(a.escrito_en)))
+  /* Lo aprobado que cambió sigue publicado, pero pide una mirada: va arriba, con
+     lo pendiente, en vez de enterrado al final entre lo que ya está resuelto. */
+  const peso = (f: { publicacion: { estado: string; revisar?: boolean } }) =>
+    f.publicacion.revisar ? 0.5 : (orden[f.publicacion.estado] ?? 9)
+  filas.sort((a, b) => peso(a) - peso(b) || String(b.escrito_en).localeCompare(String(a.escrito_en)))
   const vigentes = filas.filter((f) => f.vigente)
   return c.json({
     filas,

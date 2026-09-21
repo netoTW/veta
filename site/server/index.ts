@@ -23,7 +23,7 @@ import { adminApp, sincronizarAlertas } from './admin.ts'
 import { votacionApp, votacionAdmin } from './votacion.ts'
 import { cupoDe } from './cupo.ts'
 import { analizarApp, consumoAdmin } from './analizar.ts'
-import { operacionAdmin } from './operacion.ts'
+import { operacionAdmin, vigilarPublicados } from './operacion.ts'
 import { pagosApp, cobroAutomatico, enlacesCheckout } from './pagos.ts'
 import { noticiasPara, noticiasAdmin } from './noticias.ts'
 import { sembrar } from './semilla.ts'
@@ -267,6 +267,9 @@ process.on('uncaughtException', (e) => { console.error('[veta] excepción no cap
 await migrar()
 await sembrar()
 console.log(`[alertas] ${await sincronizarAlertas()} nuevas`)
+/* Un despliegue es un arranque: se cuenta lo publicado y se compara con lo de
+   antes. Si bajó, queda el aviso en Operación en vez de un sitio vacío callado. */
+{ const p = await vigilarPublicados().catch(() => null); if (p) console.log(`[publicados] ${p.total} (gemas ${p.gemas}, analisis ${p.analisis})`) }
 serve({ fetch: app.fetch, port: ENV.PUERTO, ...(ENV.HOST ? { hostname: ENV.HOST } : {}) }, (info) => {
   console.log(`[veta] servidor en http://localhost:${info.port} · datos ${ENV.DATOS} · base ${ENV.DATABASE_URL ? 'postgres' : ENV.DB}${ENV.SERVIR_DIST ? ' · sirviendo dist/' : ''}`)
 })

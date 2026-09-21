@@ -473,3 +473,8 @@
 .a-fila--obsoleta .a-fila__piedra { filter: grayscale(0.7); }
 .a-filtro--obs { margin-left: auto; }
 .p-chip--esm { color: var(--esmeralda-luz); border-color: rgba(31,164,111,0.4); }
+
+/* Aprobado pero cambió desde entonces: sigue publicado, y el aviso lo dice sin
+   alarmar. Oro, no rojo: no hay nada roto, hay algo que mirar. */
+.a-pub-revisar { display: inline-flex; align-items: center; gap: 6px; margin-top: 6px; padding: 3px 8px; border: 1px solid var(--oro-sombra); background: rgba(201,162,75,0.07); color: var(--oro-luz); font-size: 0.56rem; letter-spacing: 0.1em; text-transform: uppercase; }
+.a-pub-revisar__v { color: var(--ceniza-2); }

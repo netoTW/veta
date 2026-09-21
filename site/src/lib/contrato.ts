@@ -212,6 +212,11 @@ export interface Publicacion {
   ultima?: { accion: string; motivo: string | null; version_registro: number; admin_email: string; fecha: string; bloqueo_confirmado: number; verificador_estado: string | null }
   publicado_en?: string
   version_aprobada?: number
+  /** Publicado, pero la versión cambió después de aprobarse: pide una mirada.
+      No se baja solo: un sitio vacío sin que nadie lo decida es peor. */
+  revisar?: boolean
+  version_actual?: number
+  cambios?: string[]
 }
 
 /** Un informe del motor: gema (con tesis) o análisis (sin tesis).

@@ -46,6 +46,7 @@ export function sincronizar(): Promise<Sync> {
           sync.proxima = new Date(Date.now() + ENV.SYNC_MINUTOS * 60_000).toISOString()
           await bd.ejecutar("INSERT INTO ajustes (clave, valor, actualizado) VALUES ('sync_ultimo', ?, ?) ON CONFLICT(clave) DO UPDATE SET valor = excluded.valor, actualizado = excluded.actualizado", [JSON.stringify(sync), ahora()])
           if (err) console.warn('[sync] falló:', sync.salida); else console.log('[sync]', sync.salida.split('\n').pop())
+          if (!err) await vigilarPublicados().catch((e) => console.warn('[publicados]', (e as Error).message))
         } catch (e) {
           sync.en_curso = false
           console.error('[sync] error al registrar el resultado:', (e as Error).message)
@@ -107,14 +108,55 @@ operacionAdmin.use('*', async (c, next) => {
 })
 
 /** Todo junto para la pestaña: estado, hits, cola, alertas, sincronización y última tanda. */
+/* ---------- vigilancia de lo publicado ----------
+
+   El 21-sep el motor reexportó los informes vigentes para darles una forma
+   única. Eso subió `version_registro` de todos, las aprobaciones dejaron de
+   valer y el sitio público se quedó en cero. Nadie se enteró hasta que un
+   humano lo miró.
+
+   Esto cuenta lo que el público ve de verdad —el mismo camino que sirve las
+   listas, no un atajo— después de cada sincronización y en cada arranque. Si
+   baja, queda un aviso en Operación con cuánto había y cuánto hay. No lo
+   arregla: lo dice, que es lo que faltó. */
+export interface AvisoPublicados {
+  cuando: string; antes: number; ahora: number; gemas: number; analisis: number
+}
+let avisoPublicados: AvisoPublicados | null = null
+export const avisoDePublicados = () => avisoPublicados
+
+export async function vigilarPublicados(): Promise<{ total: number; gemas: number; analisis: number }> {
+  const contenido = await import('./contenido.ts')
+  // Como los ve un suscriptor base: lo aprobado y nada más.
+  const [gemas, analisis] = await Promise.all([contenido.gemasPara('base'), contenido.analisisPara('base')])
+  const cuenta = { gemas: gemas.length, analisis: analisis.length, total: gemas.length + analisis.length }
+  try {
+    const fila = await bd.uno<{ valor: string }>("SELECT valor FROM ajustes WHERE clave = 'publicados_ultimo'")
+    const antes = fila ? Number(JSON.parse(fila.valor).total) : null
+    if (antes !== null && Number.isFinite(antes) && cuenta.total < antes) {
+      avisoPublicados = { cuando: ahora(), antes, ahora: cuenta.total, gemas: cuenta.gemas, analisis: cuenta.analisis }
+      console.error(`[publicados] BAJARON: ${antes} -> ${cuenta.total} (gemas ${cuenta.gemas}, analisis ${cuenta.analisis}). Revisa la bandeja.`)
+    } else if (antes !== null && cuenta.total > antes && avisoPublicados) {
+      avisoPublicados = null  // se recuperó: el aviso deja de tener sentido
+    }
+    await bd.ejecutar("INSERT INTO ajustes (clave, valor, actualizado) VALUES ('publicados_ultimo', ?, ?) ON CONFLICT(clave) DO UPDATE SET valor = excluded.valor, actualizado = excluded.actualizado",
+      [JSON.stringify(cuenta), ahora()])
+  } catch (e) {
+    console.warn('[publicados] no se pudo comparar:', (e as Error).message)
+  }
+  return cuenta
+}
+
 operacionAdmin.get('/resumen', async (c) => {
   const [estado, hits, cola, alertas] = await Promise.all([motor('/operacion/estado'), motor('/operacion/hits?limite=60'), motor('/operacion/cola'), motor('/operacion/alertas')])
+  const conteo_publicado = await vigilarPublicados().catch(() => ({ total: -1, gemas: -1, analisis: -1 }))
   const conteo = { gemas: 0, analisis: 0 }
   try { conteo.gemas = (JSON.parse(readFileSync(resolve(ENV.DATOS, 'gemas.json'), 'utf8')) as unknown[]).length; conteo.analisis = (JSON.parse(readFileSync(resolve(ENV.DATOS, 'analisis.json'), 'utf8')) as unknown[]).length } catch { /* sin datos */ }
   return c.json({
     conexion: { url: ENV.OPERACION_URL, caido: estado.caido, status: estado.status, token_local: !!ENV.OPERACION_TOKEN, tunel: ENV.SYNC_MODO === 'local' ? 'systemctl status veta-servicio' : 'ssh -i ~/.ssh/veta_vps -f -N -L 8788:127.0.0.1:8787 ' + (ENV.SERVIDOR_SSH || 'root@<servidor>') },
     estado: estado.cuerpo, hits: hits.cuerpo, cola: cola.cuerpo, alertas: alertas.cuerpo,
     sync: { ...sync, configurado: configurado(), modo: ENV.SYNC_MODO, cada_minutos: ENV.SYNC_MINUTOS, destino: ENV.BASE_CONTENIDO, ...conteo },
+    publicados: { ...conteo_publicado, aviso: avisoPublicados },
     tanda: tandaLocal(),
   })
 })

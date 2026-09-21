@@ -69,6 +69,27 @@ export interface EstadoPublicacion {
   ultima?: { accion: string; motivo: string | null; version_registro: number; admin_email: string; fecha: string; bloqueo_confirmado: number; verificador_estado: string | null }
   publicado_en?: string
   version_aprobada?: number
+  /** La versión cambió después de aprobarse: sigue publicado, pero hay que mirarlo. */
+  revisar?: boolean
+  version_actual?: number
+  cambios?: string[]
+}
+
+/** Una reexportación que sólo cambia la forma de los campos no es contenido nuevo.
+    El motor lo marcará; mientras tanto, cualquier cambio de versión se manda a revisar. */
+function soloForma(r: Registro): boolean {
+  const c = (r as { cambios_respecto_version_anterior?: unknown }).cambios_respecto_version_anterior
+  return !!c && typeof c === 'object' && !Array.isArray(c) && (c as { solo_forma?: boolean }).solo_forma === true
+}
+
+function camposCambiados(r: Registro): string[] {
+  const c = (r as { cambios_respecto_version_anterior?: unknown }).cambios_respecto_version_anterior
+  if (Array.isArray(c)) return c.filter((x): x is string => typeof x === 'string')
+  if (c && typeof c === 'object') {
+    const campos = (c as { campos?: unknown }).campos
+    if (Array.isArray(campos)) return campos.filter((x): x is string => typeof x === 'string')
+  }
+  return []
 }
 
 export async function estadoPublicacion(r: Registro): Promise<EstadoPublicacion> {
@@ -76,8 +97,23 @@ export async function estadoPublicacion(r: Registro): Promise<EstadoPublicacion>
                              FROM publicacion WHERE informe_id = ? AND tipo = ? ORDER BY id DESC LIMIT 1`, [r.id, r.tipo])
   if (!ultima) return { estado: 'pendiente' }
   if (ultima.accion === 'aprobar') {
-    if (ultima.version_registro !== r.version_registro) return { estado: 'nueva_version', ultima, version_aprobada: ultima.version_registro }
-    return { estado: 'aprobado', ultima, publicado_en: ultima.fecha, version_aprobada: ultima.version_registro }
+    /* La aprobación es de la CORRIDA (id + tipo), no de la versión del registro.
+       El 21-sep el motor reexportó los vigentes para darles una forma única, eso
+       subió `version_registro` de todos, y el sitio público se quedó en cero sin
+       que nadie decidiera nada. Una reexportación del mismo análisis conserva la
+       aprobación; sólo una corrida nueva de la moneda —otro id— vuelve a
+       pendiente, porque entonces es otro informe.
+
+       Si además cambió el contenido, sigue publicado y se marca para revisar:
+       bajar algo solo, sin que nadie lo mire, es cómo se llega a un sitio vacío. */
+    const distinta = ultima.version_registro !== r.version_registro
+    return {
+      estado: 'aprobado', ultima, publicado_en: ultima.fecha,
+      version_aprobada: ultima.version_registro,
+      version_actual: r.version_registro,
+      revisar: distinta && !soloForma(r),
+      cambios: distinta ? camposCambiados(r) : [],
+    }
   }
   if (ultima.accion === 'rechazar') return { estado: 'rechazado', ultima }
   if (ultima.accion === 'despublicar') return { estado: 'despublicado', ultima }

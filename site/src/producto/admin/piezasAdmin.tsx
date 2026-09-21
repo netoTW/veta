@@ -50,13 +50,24 @@ export function AdminCab({ eyebrow, titulo, lead, tiles, acciones, compacta = fa
 
 export function EstadoPublicacion({ p, conFecha = true }: { p: Publicacion; conFecha?: boolean }) {
   return (
-    <span className={`a-pub a-pub--${p.estado} mono`} title={p.ultima ? `${p.ultima.accion} · ${p.ultima.admin_email} · ${fechaHora(p.ultima.fecha)}` : 'sin decisión'}>
-      <span className="a-pub__dot" aria-hidden="true" />
-      <span className="a-pub__t">
-        <span className="a-pub__l">{ESTADO_PUB_LABEL[p.estado]}</span>
-        {conFecha && p.ultima && <span className="a-pub__quien">{fechaHora(p.ultima.fecha)} · {p.ultima.admin_email.split('@')[0]}</span>}
+    <>
+      <span className={`a-pub a-pub--${p.estado} mono`} title={p.ultima ? `${p.ultima.accion} · ${p.ultima.admin_email} · ${fechaHora(p.ultima.fecha)}` : 'sin decisión'}>
+        <span className="a-pub__dot" aria-hidden="true" />
+        <span className="a-pub__t">
+          <span className="a-pub__l">{ESTADO_PUB_LABEL[p.estado]}</span>
+          {conFecha && p.ultima && <span className="a-pub__quien">{fechaHora(p.ultima.fecha)} · {p.ultima.admin_email.split('@')[0]}</span>}
+        </span>
       </span>
-    </span>
+      {/* Sigue publicado. El aviso es para que lo mires, no para esconderlo. */}
+      {p.revisar && (
+        <span className="a-pub-revisar mono" title={p.cambios?.length ? `cambió: ${p.cambios.join(', ')}` : undefined}>
+          cambió desde que lo aprobaste
+          {p.version_aprobada != null && p.version_actual != null && (
+            <span className="a-pub-revisar__v"> · v{p.version_aprobada} → v{p.version_actual}</span>
+          )}
+        </span>
+      )}
+    </>
   )
 }
 

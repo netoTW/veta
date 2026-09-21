@@ -42,7 +42,10 @@ export function Bandeja() {
   if (error) return <div className="shell"><EmptyState kind="error" title="No se pudo cargar la bandeja." detail={error} /></div>
   if (!datos) return <div className="shell p-cargando"><Loader size={72} label="Cargando la bandeja" /></div>
   const base = verObsoletos ? datos.filas : datos.filas.filter((f) => f.vigente)
-  const filas = filtro === 'pendientes' ? base.filter((f) => PENDIENTES.has(f.publicacion.estado)) : base
+  /* Lo marcado para revisar entra en "pendientes" aunque esté aprobado: es lo
+     que hay que mirar hoy, y si no sale aquí no lo ve nadie. */
+  const porMirar = (f: FilaBandeja) => PENDIENTES.has(f.publicacion.estado) || !!f.publicacion.revisar
+  const filas = filtro === 'pendientes' ? base.filter(porMirar) : base
 
   const n = (e: string) => base.filter((f) => f.publicacion.estado === e).length
   return (
@@ -61,7 +64,7 @@ export function Bandeja() {
       />
       <div className="shell">
         <div className="a-filtros" role="tablist">
-          <button type="button" role="tab" aria-selected={filtro === 'pendientes'} className={`a-filtro mono ${filtro === 'pendientes' ? 'is-on' : ''}`} onClick={() => setFiltro('pendientes')}>Pendientes · {base.filter((f) => PENDIENTES.has(f.publicacion.estado)).length}</button>
+          <button type="button" role="tab" aria-selected={filtro === 'pendientes'} className={`a-filtro mono ${filtro === 'pendientes' ? 'is-on' : ''}`} onClick={() => setFiltro('pendientes')}>Pendientes · {base.filter(porMirar).length}</button>
           <button type="button" role="tab" aria-selected={filtro === 'todos'} className={`a-filtro mono ${filtro === 'todos' ? 'is-on' : ''}`} onClick={() => setFiltro('todos')}>Todos · {base.length}</button>
           <button type="button" className={`a-filtro a-filtro--obs mono ${verObsoletos ? 'is-on' : ''}`} aria-pressed={verObsoletos} onClick={() => setVerObsoletos((v) => !v)}>
             {verObsoletos ? 'Ocultar obsoletos' : 'Ver obsoletos'} · {datos.n_obsoletos}
