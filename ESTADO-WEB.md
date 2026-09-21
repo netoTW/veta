@@ -420,10 +420,30 @@ botón de pago sin secreto del webhook cobra sin poder activar el plan.
 - *Orden.* Se compara la fecha del evento con la del último aplicado a esa
   membresía en `pago_membresia`: un aviso viejo no apaga un plan ya repagado.
 
-**Qué evento hace qué.** Suben: `payment.succeeded`, `membership.activated`,
-`membership.went_valid`, `membership.resumed`. Bajan a Gratis: `payment.failed`,
-`membership.deactivated`, `membership.went_invalid`, `membership.cancelled`,
-`membership.expired`. El resto se anota y se ignora.
+**Qué evento hace qué.** Son los cinco suscritos en Whop (API 2026-09-15);
+`went_valid`, `went_invalid`, `resumed`, `cancelled` y `expired` **no existen** en
+esta versión y no están en el código.
+
+| Evento | Efecto |
+|---|---|
+| `payment.succeeded` | sube el plan |
+| `membership.activated` | sube el plan |
+| `membership.deactivated` | baja a Gratis — **única vía de baja** |
+| `payment.failed` | sólo se anota en `suscripcion.pago_fallido_en` |
+| `membership.cancel_at_period_end_changed` | sólo se anota en `suscripcion.cancela_al_final` |
+
+Un cobro fallido no baja el plan: Whop reintenta, y si el acceso se pierde de
+verdad llega el `deactivated`. Cancelar tampoco: quien cancela sigue con acceso
+hasta el final del ciclo que pagó. Los dos salen en la ficha de la cuenta en
+admin, para verlos venir.
+
+**De dónde viene cada suscriptor.** Al entrar al sitio se anotan los UTM de la
+visita en `sessionStorage` (`src/lib/origen.ts`), una sola vez y sin pisarse. Al
+pulsar un botón de plan, `GET /api/pagos/checkout/:plan` crea una sesión de pago
+(`POST /v1/checkout_sessions`) con esos campos en `metadata`, y Whop los devuelve
+en el aviso. Quedan en `suscripcion.origen` y se ven en la ficha de la cuenta.
+Si la creación de la sesión falla, el botón cae al enlace de siempre: se pierde
+el origen, no la venta.
 
 **El cupo** se reinicia en la fecha que informa Whop. `asignarPlanExterno`
 (en `db.ts`) calcula el periodo igual que `cupo.ts` —renovación menos un mes—
@@ -441,10 +461,12 @@ con el identificador de la membresía y el plan de Whop en el detalle.
 **Tablas nuevas:** `pago_evento` (un aviso recibido por fila) y `pago_membresia`
 (qué membresía de Whop es de qué cuenta).
 
-**Pendiente:** la clave de API que hay en el `.env` la rechaza Whop
-(«Your API Key is invalid») en v2, v5 y GraphQL. Sólo se usa como respaldo
-cuando un aviso llega sin correo o sin plan; hay que reemplazarla por una App
-API Key válida del panel de Whop.
+**La clave de API** está restringida por IP a 144.91.123.49, así que **sólo
+funciona desde el servidor** —desde cualquier otra máquina responde «Your API Key
+is invalid», que no es un problema de la clave—. La API buena es la **v1** con
+`Authorization: Bearer`: v2, v5 y GraphQL rechazan esta clave. Lectura por id
+(`/v1/plans/{id}`, `/v1/memberships/{id}`) funciona; los listados y la lectura de
+sesiones de checkout, no.
 
 ## 8. Huecos del contrato abiertos
 
