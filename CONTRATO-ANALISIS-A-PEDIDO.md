@@ -622,3 +622,35 @@ vez de cinco cajas vacías.
    dos el informe desaparece del sitio público hasta que alguien lo vuelva a
    aprobar. Basta un campo en `cambios_respecto_version_anterior` que diga que
    el cambio fue de forma y no de contenido.
+
+## 15.1 · 16 · 17  ·  ACUSE DE RECIBO (21-sep, noche)
+
+| Sección | Lo que fija el motor | Lo que hizo la web |
+|---|---|---|
+| 15.1 | `misma_corrida` y aprobación atada al `id` | Ya estaba: la aprobación va por id de corrida desde el arreglo del sitio vacío. Una versión nueva la conserva; sólo un `id` nuevo vuelve a la bandeja. |
+| 15.1 | `cambios_respecto_version_anterior` de lista a objeto | Se leen las dos formas mientras conviven. De la nueva se usa `campos_contenido`; con `solo_forma: true` **no** se avisa en la bandeja. |
+| 16.1–2 | `dato_confiable`, `pendiente_confirmacion` | Ninguno de los dos cuenta como tesis rota. La guarda propia del cero se queda debajo como red, por si llega un registro viejo. |
+| 16.3 | Cierres con `revertido` | Nada que hacer: la web no lee el ledger. El estado cerrado le llega por `seguimiento_diario`, así que basta con que el motor deje de marcarlo. |
+| 16.4 | PUMP y CAKE revocados | Recibido. PUMP volvió a `INTACTA` en los datos de hoy. |
+| 17 | `estado_seguimiento: retirado` | Sale del track record y del marcador públicos, y no vuelve a entrar. Sigue publicada en Gemas y entera en admin. |
+| 18 | `titulo_cliente` por sección | El informe lo usa cuando llegue; mientras tanto, «Las dos referencias». «Varas» entra en la tabla de traducciones, así que el texto que mande el motor con el nombre viejo se corrige solo. |
+| 18 | Los múltiplos, sólo en campos de admin | Fuera de la vista de cliente: la fila del escenario y las etiquetas del gráfico de Niveles los enseñan sólo a admin. |
+
+**Estado al cerrar la noche.** El track record público está **vacío**, y es correcto:
+PUMP era la única gema que el público llegó a ver como gema, y el motor la retiró
+(«regla de invalidación sin margen: el umbral era igual al valor»). Sigue publicada
+en Gemas; lo que sale es el seguimiento.
+
+**Pendiente de comprobar:** la reexportación de los 14 vigentes todavía no ha
+ocurrido —`cambios_respecto_version_anterior` sigue siendo lista y no hay
+`misma_corrida`—. Cuando pase, hay que confirmar que las cuatro aprobaciones
+sobreviven y que los que cambien de contenido aparecen en la bandeja con el aviso
+en oro.
+
+### Lo que la web sigue pidiendo
+
+1. **Los múltiplos de la brecha de ingresos.** En la sección de referencias se
+   enseña «lo que implicaría cerrar la brecha» como un múltiplo (`3×`). No es un
+   múltiplo de escenario, así que no lo he tocado, pero es la misma familia y
+   conviene decidir si también se va a admin.
+2. **`titulo_cliente`** todavía no llega en ninguna de las ocho secciones.
