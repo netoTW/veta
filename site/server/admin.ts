@@ -328,15 +328,31 @@ export async function sincronizarAlertas() {
   /* Una invalidación que el motor revierte —o que nunca estuvo sostenida, como
      un cero de una fuente caída— tiene que dejar de avisar. Antes las alertas
      sólo se creaban: la de PUMP habría seguido ahí después del arreglo. */
-  const activadas = seg.filter((s) => s.invalidacion_activada && contenido.invalidacionFiable(s.evaluacion_invalidacion))
-  const vivas = new Set(activadas.map((s) => `${s.gema_id}|${s.fecha}`))
-  const guardadas = await bd.todos<{ id: number; gema_id: string; fecha: string }>("SELECT id, gema_id, fecha FROM alerta WHERE tipo = 'invalidacion'")
-  const sobran = guardadas.filter((a) => !vivas.has(`${a.gema_id}|${a.fecha}`)).map((a) => a.id)
+  /* A un suscriptor sólo se le avisa de lo que puede abrir. CAKE estaba
+     generando alertas y es una gema que el público nunca vio: el aviso llevaba
+     a una pantalla vacía. Admin sí las ve todas, que para eso administra. */
+  const enPublico = new Set((await contenido.gemasDelSeguimiento()).map((t) => t.registro.id))
+  const fiables = seg.filter((s) => s.invalidacion_activada && contenido.invalidacionFiable(s.evaluacion_invalidacion))
+  const paraSuscriptor = fiables.filter((s) => enPublico.has(String(s.gema_id)))
+
+  const vivasSusc = new Set(paraSuscriptor.map((s) => `${s.gema_id}|${s.fecha}`))
+  const vivasAdmin = new Set(fiables.map((s) => `${s.gema_id}|${s.fecha}`))
+  const admins = new Set((await bd.todos<{ id: string }>(`SELECT id FROM "user" WHERE role = 'admin'`)).map((u) => u.id))
+  const guardadas = await bd.todos<{ id: number; usuario_id: string; gema_id: string; fecha: string }>("SELECT id, usuario_id, gema_id, fecha FROM alerta WHERE tipo = 'invalidacion'")
+  const sobran = guardadas.filter((a) => {
+    const clave = `${a.gema_id}|${a.fecha}`
+    return admins.has(a.usuario_id) ? !vivasAdmin.has(clave) : !vivasSusc.has(clave)
+  }).map((a) => a.id)
   for (const id of sobran) await bd.ejecutar('DELETE FROM alerta WHERE id = ?', [id])
-  if (sobran.length) console.log(`[alertas] retiradas ${sobran.length} invalidaciones que ya no se sostienen`)
-  if (!activadas.length) return 0
-  const usuarios = await bd.todos<{ id: string }>(`SELECT id FROM "user" WHERE role = 'admin' OR plan = 'pro'`)
+  if (sobran.length) console.log(`[alertas] retiradas ${sobran.length} que ya no corresponden`)
+
+  const pro = await bd.todos<{ id: string }>(`SELECT id FROM "user" WHERE plan = 'pro' AND (role IS NULL OR role <> 'admin')`)
+  const adminUsuarios = [...admins].map((id) => ({ id }))
   let n = 0
-  for (const s of activadas) for (const u of usuarios) n += (await bd.ejecutar('INSERT INTO alerta (usuario_id, tipo, gema_id, fecha, leida, detalle) VALUES (?, ?, ?, ?, 0, ?) ON CONFLICT DO NOTHING', [u.id, 'invalidacion', s.gema_id, s.fecha, JSON.stringify(s.evaluacion_invalidacion ?? null)])).cambios
+  const poner = async (s: { gema_id: string; fecha: string; evaluacion_invalidacion?: unknown }, u: { id: string }) =>
+    (await bd.ejecutar('INSERT INTO alerta (usuario_id, tipo, gema_id, fecha, leida, detalle) VALUES (?, ?, ?, ?, 0, ?) ON CONFLICT DO NOTHING',
+      [u.id, 'invalidacion', s.gema_id, s.fecha, JSON.stringify(s.evaluacion_invalidacion ?? null)])).cambios
+  for (const s of paraSuscriptor) for (const u of pro) n += await poner(s, u)
+  for (const s of fiables) for (const u of adminUsuarios) n += await poner(s, u)
   return n
 }
