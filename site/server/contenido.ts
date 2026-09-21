@@ -84,10 +84,14 @@ function soloForma(r: Registro): boolean {
 
 function camposCambiados(r: Registro): string[] {
   const c = (r as { cambios_respecto_version_anterior?: unknown }).cambios_respecto_version_anterior
+  // Antes era una lista de campos; §15.1 la convierte en objeto. Se aceptan las dos
+  // mientras conviven, y de la nueva interesa qué cambió de CONTENIDO, no de forma.
   if (Array.isArray(c)) return c.filter((x): x is string => typeof x === 'string')
   if (c && typeof c === 'object') {
-    const campos = (c as { campos?: unknown }).campos
-    if (Array.isArray(campos)) return campos.filter((x): x is string => typeof x === 'string')
+    const o = c as { campos_contenido?: unknown; detalle?: unknown; campos?: unknown }
+    for (const lista of [o.campos_contenido, o.campos, o.detalle]) {
+      if (Array.isArray(lista) && lista.length) return lista.filter((x): x is string => typeof x === 'string')
+    }
   }
   return []
 }
@@ -231,6 +235,7 @@ export async function analisisUnoPara(id: string, rol: Rol) {
 /** ¿La ve el público ahora mismo, como gema? Ventana de anticipo incluida. */
 async function visibleComoGemaAhora(g: Registro): Promise<boolean> {
   if (g.tipo !== 'gema' || ocultoSiempre(g)) return false
+  if ((g as { estado_seguimiento?: string }).estado_seguimiento === 'retirado') return false
   const p = await estadoPublicacion(g)
   if (p.estado !== 'aprobado' || !p.publicado_en) return false
   return Date.now() >= new Date(p.publicado_en).getTime() + ENV.HORAS_ANTICIPO * 3600_000
@@ -259,7 +264,11 @@ export async function gemasDelSeguimiento(): Promise<{ registro: Registro; recla
   const out: { registro: Registro; reclasificada_en: string | null }[] = []
   for (const m of marcadas) {
     const g = porId.get(m.informe_id)
-    if (g) out.push({ registro: g, reclasificada_en: m.reclasificada_en })
+    if (!g) continue
+    /* §17: una tesis retirada sale del track record y del marcador públicos.
+       No se borra nada: sigue entera en admin y en la base. */
+    if ((g as { estado_seguimiento?: string }).estado_seguimiento === 'retirado') continue
+    out.push({ registro: g, reclasificada_en: m.reclasificada_en })
   }
   return out
 }
@@ -274,7 +283,15 @@ export async function gemasDelSeguimiento(): Promise<{ registro: Registro; recla
    La medición la hace el motor; aquí sólo se decide no afirmar lo que no está
    sostenido. Mientras el valor sea cero o falte, el estado es EN_REVISION: ni
    se afirma que la tesis aguanta ni que se rompió. Y no se genera alerta. */
-export function invalidacionFiable(ev: unknown): boolean {
+export function invalidacionFiable(ev: unknown, fila?: Record<string, unknown>): boolean {
+  /* §16: el motor ya lo declara. `dato_confiable: false` es un cero contra un
+     umbral positivo, un dato ausente o una caída de más del 80 % en un día;
+     `pendiente_confirmacion` es un cruce sin la segunda lectura que lo
+     confirme. Ninguno de los dos es una tesis rota. */
+  if (fila) {
+    if (fila.dato_confiable === false) return false
+    if (fila.pendiente_confirmacion === true) return false
+  }
   if (!ev || typeof ev !== 'object') return false
   const e = ev as { valor?: unknown; evaluable?: unknown }
   if (e.evaluable === false) return false
@@ -284,7 +301,7 @@ export function invalidacionFiable(ev: unknown): boolean {
 /** La fila del seguimiento, con el estado corregido si la medición no se sostiene. */
 function conInvalidacionRevisada(x: Record<string, unknown>): Record<string, unknown> {
   if (!x.invalidacion_activada) return x
-  if (invalidacionFiable(x.evaluacion_invalidacion)) return x
+  if (invalidacionFiable(x.evaluacion_invalidacion, x)) return x
   return { ...x, estado_tesis: 'EN_REVISION', invalidacion_activada: false, invalidacion_en_revision: true }
 }
 
