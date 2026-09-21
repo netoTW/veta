@@ -94,7 +94,7 @@ function camposCambiados(r: Registro): string[] {
 
 export async function estadoPublicacion(r: Registro): Promise<EstadoPublicacion> {
   const ultima = await bd.uno<NonNullable<EstadoPublicacion['ultima']>>(`SELECT accion, motivo, version_registro, admin_email, fecha, bloqueo_confirmado, verificador_estado
-                             FROM publicacion WHERE informe_id = ? AND tipo = ? ORDER BY id DESC LIMIT 1`, [r.id, r.tipo])
+                             FROM publicacion WHERE informe_id = ? ORDER BY id DESC LIMIT 1`, [r.id])
   if (!ultima) return { estado: 'pendiente' }
   if (ultima.accion === 'aprobar') {
     /* La aprobación es de la CORRIDA (id + tipo), no de la versión del registro.
@@ -106,6 +106,9 @@ export async function estadoPublicacion(r: Registro): Promise<EstadoPublicacion>
 
        Si además cambió el contenido, sigue publicado y se marca para revisar:
        bajar algo solo, sin que nadie lo mire, es cómo se llega a un sitio vacío. */
+    /* Por id, no por id+tipo: cuando el motor reclasifica una gema a análisis
+       conserva el id, porque es la misma corrida. Atarlo al tipo dejaba fuera a
+       STONK, aprobado como gema el 19-sep y reclasificado después. */
     const distinta = ultima.version_registro !== r.version_registro
     return {
       estado: 'aprobado', ultima, publicado_en: ultima.fecha,
