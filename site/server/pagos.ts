@@ -217,6 +217,12 @@ async function crearSesionCheckout(plan: string, o: { correo?: string | null; us
     if (!r.ok) { console.warn(`[pagos] sesión de checkout: ${r.status} ${(await r.text().catch(() => '')).slice(0, 160)}`); return null }
     const s = await r.json() as { id?: string }
     if (!s.id) return null
+    /* Qué origen se le colgó a esta sesión. Sirve para comprobar que la cadena
+       —enlace corto, navegador, servidor, Whop— no pierde la atribución por el
+       camino, que es lo único que no se puede mirar después: Whop no deja leer
+       una sesión de vuelta. Son UTM, no datos de nadie. */
+    const marcas = Object.entries(o.origen ?? {}).map(([k, v]) => `${k}=${v}`).join(' ')
+    console.log(`[pagos] sesión ${s.id} · plan ${plan} · origen ${marcas || '(sin marcar)'}`)
     const u = new URL(`https://whop.com/checkout/${id}`)
     u.searchParams.set('session', s.id)
     if (o.correo) u.searchParams.set('email', o.correo)
