@@ -8,7 +8,7 @@
    ========================================================================== */
 
 export type Tier = 'BAJO' | 'MEDIO' | 'ALTO'
-export type EstadoTesis = 'INTACTA' | 'DEBILITANDOSE' | 'ROTA' | 'CERRADA'
+export type EstadoTesis = 'INTACTA' | 'DEBILITANDOSE' | 'ROTA' | 'CERRADA' | 'EN_REVISION'
 export type Calidad = 'ok' | 'parcial' | 'ausente' | string
 
 export interface Fuente { campo: string; fuente: string; timestamp: string; calidad: Calidad }

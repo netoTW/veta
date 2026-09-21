@@ -264,14 +264,39 @@ export async function gemasDelSeguimiento(): Promise<{ registro: Registro; recla
   return out
 }
 
+/* ---------- una invalidación con cero no es una tesis rota ----------
+
+   PUMP salió como ROTA porque `revenue_holders_30d` se leyó 0 USD y cero está,
+   por debajo de cualquier umbral. Un cero casi nunca es una medición: es una
+   fuente que no respondió. Decirle a un suscriptor que su tesis se rompió por
+   eso es el peor error posible de esta pantalla.
+
+   La medición la hace el motor; aquí sólo se decide no afirmar lo que no está
+   sostenido. Mientras el valor sea cero o falte, el estado es EN_REVISION: ni
+   se afirma que la tesis aguanta ni que se rompió. Y no se genera alerta. */
+export function invalidacionFiable(ev: unknown): boolean {
+  if (!ev || typeof ev !== 'object') return false
+  const e = ev as { valor?: unknown; evaluable?: unknown }
+  if (e.evaluable === false) return false
+  return typeof e.valor === 'number' && Number.isFinite(e.valor) && e.valor !== 0
+}
+
+/** La fila del seguimiento, con el estado corregido si la medición no se sostiene. */
+function conInvalidacionRevisada(x: Record<string, unknown>): Record<string, unknown> {
+  if (!x.invalidacion_activada) return x
+  if (invalidacionFiable(x.evaluacion_invalidacion)) return x
+  return { ...x, estado_tesis: 'EN_REVISION', invalidacion_activada: false, invalidacion_en_revision: true }
+}
+
 export async function seguimientoPara(_rol: Rol) {
   const track = await gemasDelSeguimiento()
   const dentro = new Set(track.map((t) => t.registro.id))
   const recl = new Map(track.filter((t) => t.reclasificada_en).map((t) => [t.registro.id, t.reclasificada_en!]))
   const s = seguimientoTodo()
   const marcar = (x: Record<string, unknown>) => {
-    const f = recl.get(String(x.gema_id))
-    return f ? { ...x, reclasificada_en: f } : x
+    const y = conInvalidacionRevisada(x)
+    const f = recl.get(String(y.gema_id))
+    return f ? { ...y, reclasificada_en: f } : y
   }
   return {
     ultimo: s.ultimo.filter((x) => dentro.has(String(x.gema_id))).map(marcar),

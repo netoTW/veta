@@ -127,6 +127,43 @@ function sinMarcaRepetida(t: string): string {
   return /sin fecha/i.test(sinLaDeFuera) ? (sinLaDeFuera.endsWith('.') ? sinLaDeFuera : `${sinLaDeFuera}.`) : t
 }
 
+/* ---------- las fuentes, en palabras ----------
+
+   El motor identifica sus fuentes con la cadena que usa para pedirlas:
+   `binance:spot/klines`, `defillama:/summary/fees/pumpswap?dataType=…`,
+   `equal-weight sobre 69 de 100 monedas`. Eso es una dirección de llamada, no
+   una explicación, y en una pantalla de cliente se lee como un descuido.
+
+   Aquí se traduce a lo que la persona necesita saber: de dónde sale el número
+   y cómo está construido. La cadena original no se tira —vale para auditar—,
+   se guarda para el desplegable de avanzado. */
+const FUENTES: { re: RegExp; di: (m: RegExpMatchArray) => string }[] = [
+  { re: /equal-weight sobre (\d+) de (\d+) monedas/i, di: (m) => `Canasta de ${m[1]} monedas, mismo peso cada una` },
+  { re: /medias\s*(\d+)\s*\/\s*(\d+)\s*long-only/i, di: (m) => `Regla de medias de ${m[1]} y ${m[2]} días, sólo comprado` },
+  { re: /expuesto (\d+) de (\d+) d[ií]as desde la publicaci[oó]n/i, di: (m) => `Comprado ${m[1]} de los ${m[2]} días desde que se publicó` },
+  { re: /^binance:[\w/]+/i, di: () => 'Precios de Binance' },
+  { re: /^defillama/i, di: () => 'Datos de DefiLlama' },
+  { re: /^coingecko/i, di: () => 'Datos de CoinGecko' },
+]
+
+/** La fuente del motor contada en una línea. '' si no hay nada que decir. */
+export function fuenteDeCliente(bruto?: string | null): string {
+  const t = (bruto ?? '').trim()
+  if (!t) return ''
+  const partes: string[] = []
+  for (const { re, di } of FUENTES) {
+    const m = t.match(re)
+    if (m && !partes.includes(di(m))) partes.push(di(m))
+  }
+  return partes.join(' · ')
+}
+
+/** ¿Queda algo sin traducir? Entonces es texto de máquina y no se enseña. */
+export const esFuenteCruda = (bruto?: string | null) => {
+  const t = (bruto ?? '').trim()
+  return !!t && /[a-z]+:[\w/]|https?:\/\/|dataType=|\?|equal-weight|long-only/i.test(t)
+}
+
 /** Mientras el motor no exporte su propio chequeo, una moneda es analizable si hay algo que
     medir: ingresos del protocolo o capital depositado. Sin ninguno de los dos, el informe no
     puede decir nada cuantitativo y no se publica en Análisis. (Hueco 39 del contrato.) */
@@ -187,6 +224,9 @@ export const TRADUCCIONES: { de: RegExp; a: string; nota: string }[] = [
   { de: /\bobservable\b/gi, a: 'señal', nota: 'término del taller' },
   { de: /\bcorrida\b/gi, a: 'pasada', nota: 'término del taller' },
   { de: /\bscanner\b/gi, a: 'rastreo', nota: 'término del taller' },
+  /* Jerga de índices que el motor mete en los nombres de sus varas. */
+  { de: /\bequal-weight\b/gi, a: 'de peso igual', nota: 'jerga de índices' },
+  { de: /\blong-only\b/gi, a: 'sólo comprado', nota: 'jerga de índices' },
   { de: /\brevenue anualizado\b/gi, a: 'ingresos anualizados', nota: 'inglés sin traducir' },
   { de: /\b(el|El)\s+revenue\b/g, a: '$1 ingreso', nota: 'singular masculino: conserva verbo y adjetivo' },
   { de: /\bdel\s+revenue\b/gi, a: 'del ingreso', nota: 'contracción en singular' },

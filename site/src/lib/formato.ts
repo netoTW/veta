@@ -65,6 +65,9 @@ export const TIPO_ESCENARIO: Record<string, string> = {
 }
 export const ESTADO_TESIS_LABEL: Record<string, string> = {
   INTACTA: 'Intacta', DEBILITANDOSE: 'Debilitándose', ROTA: 'Rota', CERRADA: 'Cerrada',
+  /* Ni rota ni intacta: la medición que la rompería no se sostiene (un cero de
+     una fuente caída, por ejemplo) y no se afirma nada mientras tanto. */
+  EN_REVISION: 'Dato en revisión',
 }
 export const TIER_LABEL: Record<string, string> = { BAJO: 'Riesgo bajo', MEDIO: 'Riesgo medio', ALTO: 'Riesgo alto' }
 export const CALIDAD_LABEL: Record<string, string> = { ok: 'ok', parcial: 'parcial', ausente: 'ausente' }
@@ -93,7 +96,11 @@ export const MOTIVO_BENCHMARK_LABEL: Record<string, string> = {
 export const CAMPO_LABEL: Record<string, string> = {
   tvl_usd: 'fondos bloqueados', revenue_protocolo_30d: 'ingresos del protocolo (30 días)',
   revenue_sobre_mcap: 'ingresos sobre capitalización', revenue_a_holders: 'ingresos que llegan al token',
+  /* Faltaba, y por eso el seguimiento enseñaba "revenue_holders_30d" tal cual. */
+  revenue_holders_30d: 'ingresos para holders (30 días)',
+  revenue_holders: 'ingresos para holders', revenue_protocolo: 'ingresos del protocolo',
   mcap_usd: 'capitalización', precio_usd: 'precio', volumen_24h_usd: 'volumen 24 h',
+  holders: 'tenedores', supply_circulante: 'monedas en circulación',
 }
 
 /** Valor con su unidad, decidida por la unidad del contrato: formatear no es calcular. */

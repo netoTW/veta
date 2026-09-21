@@ -1,9 +1,9 @@
 import { Cabecera } from '../Shell'
-import { Cargando, Puerta } from '../piezas'
+import { Cargando, Puerta, Avanzado } from '../piezas'
 import { useWatchlist } from '../../lib/datos'
 import { useRol, puede } from '../../lib/acceso'
 import { fecha, num } from '../../lib/formato'
-import { prosaDeCliente } from '../../lib/lenguaje'
+import { prosaDeCliente, fuenteDeCliente } from '../../lib/lenguaje'
 import { Link } from 'react-router-dom'
 import type { Watch } from '../../lib/contrato'
 
@@ -69,11 +69,17 @@ function Fila({ w, pl }: { w: Watch; pl: ReturnType<typeof plantillas> }) {
       <div>
         <span className="p-watch__k">Gatillo</span>
         <p className="p-watch__gatillo">{observablePropio ? prosaDeCliente(w.observable) : gatilloLlano(w)}</p>
+        {/* La cadena con la que el motor consulta la fuente no es información
+            para quien lee: se cuenta en palabras y el original queda en avanzado. */}
         <p className="p-watch__fuente">
-          {w.fuente_a_vigilar}
-          {slug && <> · {slug}</>}
+          {fuenteDeCliente(w.fuente_a_vigilar) || 'medido por nosotros'}
           {w.valor_al_anotar !== null && <> · al anotar {num(w.valor_al_anotar)}</>}
         </p>
+        <Avanzado>
+          <p className="p-watch__fuente mono" style={{ overflowWrap: 'anywhere' }}>
+            {w.fuente_a_vigilar}{slug && <> · {slug}</>}
+          </p>
+        </Avanzado>
       </div>
       <div>
         {cerrada ? (

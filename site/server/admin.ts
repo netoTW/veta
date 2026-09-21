@@ -325,7 +325,15 @@ adminApp.get('/acciones', async (c) => {
 /** Crea alertas para los usuarios pro/admin a partir del seguimiento actual. Idempotente. */
 export async function sincronizarAlertas() {
   const seg = contenido.seguimientoTodo().ultimo as unknown as Array<{ gema_id: string; fecha: string; invalidacion_activada?: boolean; evaluacion_invalidacion?: unknown }>
-  const activadas = seg.filter((s) => s.invalidacion_activada)
+  /* Una invalidación que el motor revierte —o que nunca estuvo sostenida, como
+     un cero de una fuente caída— tiene que dejar de avisar. Antes las alertas
+     sólo se creaban: la de PUMP habría seguido ahí después del arreglo. */
+  const activadas = seg.filter((s) => s.invalidacion_activada && contenido.invalidacionFiable(s.evaluacion_invalidacion))
+  const vivas = new Set(activadas.map((s) => `${s.gema_id}|${s.fecha}`))
+  const guardadas = await bd.todos<{ id: number; gema_id: string; fecha: string }>("SELECT id, gema_id, fecha FROM alerta WHERE tipo = 'invalidacion'")
+  const sobran = guardadas.filter((a) => !vivas.has(`${a.gema_id}|${a.fecha}`)).map((a) => a.id)
+  for (const id of sobran) await bd.ejecutar('DELETE FROM alerta WHERE id = ?', [id])
+  if (sobran.length) console.log(`[alertas] retiradas ${sobran.length} invalidaciones que ya no se sostienen`)
   if (!activadas.length) return 0
   const usuarios = await bd.todos<{ id: string }>(`SELECT id FROM "user" WHERE role = 'admin' OR plan = 'pro'`)
   let n = 0

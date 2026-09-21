@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
-import { llano } from '../../lib/lenguaje'
+import { llano, fuenteDeCliente } from '../../lib/lenguaje'
 import { Cabecera, Exportar } from '../Shell'
-import { Cargando, Puerta, EstadoTesisBadge, TierBadge, Dato, Adv } from '../piezas'
+import { Cargando, Puerta, EstadoTesisBadge, TierBadge, Dato, Adv, Avanzado } from '../piezas'
 import { useBenchmark, useGemas, useSeguimiento } from '../../lib/datos'
 import { useRol, puede } from '../../lib/acceso'
 import { dias, fecha, fechaHora, frases, pct, precio, conUnidad, CAMPO_LABEL, DIRECCION_LABEL, DIRECCION_SIGNO, MOTIVO_BENCHMARK_LABEL } from '../../lib/formato'
@@ -41,7 +41,10 @@ function Benchmark({ k, nombre, valor, detalle, motivo }: { k: string; nombre: s
       ) : (
         <>
           <span className="p-bench__v num">{pct(detalle ? detalle.valor : valor, 1, true)}</span>
-          {detalle?.fuente && <p className="p-bench__why">{detalle.fuente}</p>}
+          {/* La cadena con la que el motor pide el dato no es una explicación.
+              Se cuenta en palabras; la original queda en avanzado, para auditar. */}
+          {detalle?.fuente && <p className="p-bench__why">{fuenteDeCliente(detalle.fuente) || null}</p>}
+          {detalle?.fuente && <Avanzado><p className="p-nota mono p-bench__crudo">{detalle.fuente}</p></Avanzado>}
         </>
       )}
     </div>
@@ -68,7 +71,8 @@ function Evaluacion({ ev }: { ev: EvaluacionInvalidacion }) {
         <div className="p-eval__c"><span className="mono">la invalida si queda {DIRECCION_LABEL[ev.direccion] ?? ev.direccion}</span><span className="num p-eval__v">{conUnidad(ev.umbral, ev.unidad)}</span></div>
       </div>
       <p className="p-eval__lectura">{llanoCampo(ev.motivo, ev.campo)}</p>
-      <span className="p-eval__meta">{ev.fuente} · {fechaHora(ev.timestamp)}</span>
+      <span className="p-eval__meta">{fuenteDeCliente(ev.fuente) || 'medido por nosotros'} · {fechaHora(ev.timestamp)}</span>
+      <Avanzado><span className="p-eval__meta mono">{ev.fuente}</span></Avanzado>
     </div>
   )
 }
@@ -140,7 +144,7 @@ function ComoSeMide({ b }: { b: BenchmarkDef }) {
       <p className="p-nota">{b.por_que}</p>
       <div className="p-varas" style={{ marginTop: 16 }}>
         <div className="p-vara">
-          <div className="p-vara__h"><h3>{b.b1.nombre}</h3></div>
+          <div className="p-vara__h"><h3>{llano(b.b1.nombre)}</h3></div>
           <dl className="p-kv">
             <dt>universo</dt><dd>{llano(String(b.b1.universo ?? ''))}</dd>
             <dt>ponderación</dt><dd>{llano(String(b.b1.ponderacion ?? ''))}</dd>
@@ -150,7 +154,7 @@ function ComoSeMide({ b }: { b: BenchmarkDef }) {
           {b.b1.decidido_por_pablo && <p className="p-nota p-nota--regla">Decidido: {llano(String(b.b1.decidido_por_pablo))}</p>}
         </div>
         <div className="p-vara">
-          <div className="p-vara__h"><h3>{b.b2.nombre}</h3></div>
+          <div className="p-vara__h"><h3>{llano(b.b2.nombre)}</h3></div>
           <dl className="p-kv">
             <dt>regla</dt><dd>{llano(String(b.b2.regla ?? ''))}</dd>
             <dt>posición</dt><dd>{llano(String(b.b2.posicion ?? ''))}</dd>

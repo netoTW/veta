@@ -814,3 +814,9 @@
 @media (max-width: 600px) {
   .n-agenda__ev { grid-template-columns: 1fr; gap: 6px; }
 }
+
+/* Ni rota ni intacta: la medición que la rompería no se sostiene. Oro, no rojo:
+   no hay nada roto que anunciar, hay un dato que no se puede afirmar. */
+.p-estado--en_revision { color: var(--oro-luz); border-color: var(--oro-sombra); }
+.p-estado--en_revision .p-estado__dot { background: var(--oro); }
+.p-bench__crudo { overflow-wrap: anywhere; color: var(--ceniza-2); font-size: 0.56rem; }
