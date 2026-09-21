@@ -542,3 +542,47 @@ vocabulario interno, y rangos iguales en mínimo y máximo (`1.1393` – `1.1393
 se lee como un rango que no es rango. Para la sección Niveles hacen falta un **nombre legible**
 y, si existe, la **probabilidad**; y si el mínimo y el máximo coinciden, decirlo como un solo
 número y no como un intervalo.
+
+---
+
+# 12. Vigencia de un informe en la bandeja
+
+Pablo pidió que la bandeja muestre por defecto sólo lo vigente, una tarjeta por moneda, con
+un filtro aparte para el historial. La web ya lo hace.
+
+## 12.1 El campo que la web espera
+
+En cada registro de `gema.jsonl` y `analisis.jsonl`:
+
+```json
+"vigente": true
+```
+
+`true` si es el informe que vale hoy para esa moneda; `false` si es historial. La web usa ese
+campo en cuanto exista. Vale también `"obsoleto": true` como forma negativa.
+
+**Mientras no llegue**, la web lo deduce: de cada moneda vale el registro escrito más
+recientemente, y uno con `reclasificado_a` nunca vale. Sobre los datos de hoy, eso reduce la
+bandeja de 118 registros a 37 tarjetas, una por moneda.
+
+## 12.2 Marca de informe de cinco secciones
+
+Cada tarjeta dice si el registro trae `informe_cliente.lectura.veredicto` (contrato §11). Hoy lo
+traen 39 de 118. No hace falta nada del motor: se lee del propio registro.
+
+## 12.3 Dos registros comparten identificador  ·  HUECO
+
+Cuando una gema se reclasifica a análisis, **los dos registros conservan el mismo `id`**. Por
+ejemplo `AKE-20260918-041146` existe como gema (con `reclasificado_a: "analisis"`) y como
+análisis. Hoy hay **diez** casos.
+
+Eso rompe cualquier cosa que identifique un informe sólo por su `id`. En la web causaba dos
+fallos, ya corregidos añadiendo el tipo a la clave:
+
+- El estado de publicación se leía compartido: aprobar el análisis marcaba también la gema.
+- La ruta de decisión resolvía por `id` y podía actuar sobre el registro equivocado.
+
+**Lo que hace falta del motor:** que un identificador designe un único registro. Si una
+reclasificación crea un registro nuevo, que lleve identificador nuevo y que el viejo apunte al
+nuevo. Mientras tanto la web usa `id` + `tipo`, que funciona pero es un parche sobre algo que
+debería ser único por definición.

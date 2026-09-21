@@ -466,3 +466,10 @@
 .a-borrar .a-dec__motivo input { width: 100%; background: var(--roca-0); border: 1px solid var(--hairline); color: var(--hueso); padding: 10px 12px; font-family: var(--font-mono); font-size: 0.84rem; }
 .a-borrar .a-dec__motivo input:focus-visible { outline: none; border-color: var(--rojo); }
 .a-borrar .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ---------- bandeja: vigencia y marca de informe de cliente ---------- */
+.a-fila__marcas { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.a-fila--obsoleta { opacity: 0.62; }
+.a-fila--obsoleta .a-fila__piedra { filter: grayscale(0.7); }
+.a-filtro--obs { margin-left: auto; }
+.p-chip--esm { color: var(--esmeralda-luz); border-color: rgba(31,164,111,0.4); }

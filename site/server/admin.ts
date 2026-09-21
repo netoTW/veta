@@ -41,7 +41,32 @@ const conteoSeveridad = (r: Record<string, unknown>) => {
   return { total: advs.length, COMPROMETE_TESIS: n('COMPROMETE_TESIS'), LIMITA_LECTURA: n('LIMITA_LECTURA'), CONTEXTO: n('CONTEXTO') }
 }
 
-async function filaBandeja(r: Record<string, unknown> & { id: string; tipo: string; version_registro: number }) {
+/* ¿Es el informe que vale hoy para esta moneda?
+   Cuando el motor marque la vigencia, manda él. Mientras tanto se deduce: de cada moneda
+   vale el más reciente, y uno reclasificado a otro tipo nunca vale. */
+function marcarVigencia(regs: (Record<string, unknown> & { id: string; simbolo?: string })[]) {
+  const vigente = new Map<string, string>()
+  const clave = (r: { simbolo?: string }) => String(r.simbolo ?? '').toUpperCase()
+  /* El motor reutiliza el mismo identificador para una gema y el análisis en que se
+     reclasificó, así que el id solo no distingue un registro del otro: hace falta el tipo. */
+  const identidad = (r: { id: string; tipo?: unknown }) => `${r.id}|${String(r.tipo ?? '')}`
+  const orden = [...regs].sort((a, b) =>
+    String(b.escrito_en ?? '').localeCompare(String(a.escrito_en ?? '')) ||
+    Number(b.version_registro ?? 0) - Number(a.version_registro ?? 0))
+  for (const r of orden) {
+    const k = clave(r)
+    if (!k || r.reclasificado_a) continue
+    if (!vigente.has(k)) vigente.set(k, identidad(r as never))
+  }
+  return (r: Record<string, unknown> & { id: string; simbolo?: string }) => {
+    const delMotor = r.vigente
+    if (typeof delMotor === 'boolean') return delMotor
+    if (r.obsoleto === true) return false
+    return vigente.get(clave(r)) === identidad(r as never)
+  }
+}
+
+async function filaBandeja(r: Record<string, unknown> & { id: string; tipo: string; version_registro: number }, esVigente?: (x: never) => boolean) {
   const ver = r.verificador as { estado?: string; motivo_bloqueo?: string; hallazgos?: unknown[] } | undefined
   const esc = r.esceptico as { objeciones?: unknown[]; rechaza?: boolean } | undefined
   const sol = r.solicitud as { usuario_email?: string | null } | undefined
@@ -54,20 +79,35 @@ async function filaBandeja(r: Record<string, unknown> & { id: string; tipo: stri
     advertencias: conteoSeveridad(r),
     contradicciones: contradiccionesDelRegistro(r as unknown as Parameters<typeof contradiccionesDelRegistro>[0]),
     publicacion: await contenido.estadoPublicacion(r),
+    vigente: esVigente ? esVigente(r as never) : true,
+    /* El informe de cinco secciones del contrato §11: se ve de un vistazo quién lo trae. */
+    cinco_secciones: !!(r.informe_cliente as { lectura?: { veredicto?: string } } | undefined)?.lectura?.veredicto,
   }
 }
 const todosLosRegistros = async () => [...contenido.gemasTodas(), ...(await contenido.analisisTodos())]
 
 adminApp.get('/bandeja', async (c) => {
-  const filas = await Promise.all((await todosLosRegistros()).map(filaBandeja))
+  const registros = await todosLosRegistros()
+  const esVigente = marcarVigencia(registros as never)
+  const filas = await Promise.all(registros.map((r) => filaBandeja(r as never, esVigente)))
   const orden = { pendiente: 0, nueva_version: 1, pedir_mas: 2, rechazado: 3, despublicado: 4, aprobado: 5 } as Record<string, number>
   filas.sort((a, b) => (orden[a.publicacion.estado] ?? 9) - (orden[b.publicacion.estado] ?? 9) || String(b.escrito_en).localeCompare(String(a.escrito_en)))
-  return c.json({ filas, pendientes: filas.filter((f) => ['pendiente', 'nueva_version'].includes(f.publicacion.estado)).length })
+  const vigentes = filas.filter((f) => f.vigente)
+  return c.json({
+    filas,
+    pendientes: vigentes.filter((f) => ['pendiente', 'nueva_version'].includes(f.publicacion.estado)).length,
+    n_vigentes: vigentes.length,
+    n_obsoletos: filas.length - vigentes.length,
+  })
 })
 
 adminApp.get('/bandeja/:id', async (c) => {
   const id = c.req.param('id')
-  const r = (await todosLosRegistros()).find((x) => x.id === id)
+  const tipo = c.req.query('tipo')
+  const cand = (await todosLosRegistros()).filter((x) => x.id === id)
+  const r = cand.find((x) => tipo && x.tipo === tipo)
+    ?? cand.find((x) => !(x as { reclasificado_a?: string }).reclasificado_a)
+    ?? cand[0]
   if (!r) return c.json({ error: 'no_encontrado' }, 404)
   const historial = await bd.todos('SELECT * FROM publicacion WHERE informe_id = ? ORDER BY id DESC', [id])
   return c.json({ informe: r, fila: await filaBandeja(r), historial, paquete: contenido.paqueteDe(id) })
@@ -77,9 +117,15 @@ const BLOQUEADO = (estado: string | undefined) => !!estado && estado !== 'pasa'
 
 adminApp.post('/bandeja/:id/decision', async (c) => {
   const id = c.req.param('id')
-  const r = (await todosLosRegistros()).find((x) => x.id === id)
+  const body = await c.req.json().catch(() => ({})) as { accion?: string; motivo?: string; bloqueo_confirmado?: boolean; tipo?: string }
+  const candidatos = (await todosLosRegistros()).filter((x) => x.id === id)
+  // Dos registros pueden compartir identificador (una gema y el análisis en que se
+  // reclasificó). Decide sobre el que se pidió, y si no se dijo, sobre el que no está
+  // reclasificado: aprobar el equivocado publicaría lo que no era.
+  const r = candidatos.find((x) => body.tipo && x.tipo === body.tipo)
+    ?? candidatos.find((x) => !(x as { reclasificado_a?: string }).reclasificado_a)
+    ?? candidatos[0]
   if (!r) return c.json({ error: 'no_encontrado' }, 404)
-  const body = await c.req.json().catch(() => ({})) as { accion?: string; motivo?: string; bloqueo_confirmado?: boolean }
   const accion = body.accion
   if (!accion || !['aprobar', 'rechazar', 'pedir_mas', 'despublicar'].includes(accion)) return c.json({ error: 'accion_invalida' }, 400)
   const motivo = (body.motivo ?? '').trim()

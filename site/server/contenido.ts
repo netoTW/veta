@@ -73,7 +73,7 @@ export interface EstadoPublicacion {
 
 export async function estadoPublicacion(r: Registro): Promise<EstadoPublicacion> {
   const ultima = await bd.uno<NonNullable<EstadoPublicacion['ultima']>>(`SELECT accion, motivo, version_registro, admin_email, fecha, bloqueo_confirmado, verificador_estado
-                             FROM publicacion WHERE informe_id = ? ORDER BY id DESC LIMIT 1`, [r.id])
+                             FROM publicacion WHERE informe_id = ? AND tipo = ? ORDER BY id DESC LIMIT 1`, [r.id, r.tipo])
   if (!ultima) return { estado: 'pendiente' }
   if (ultima.accion === 'aprobar') {
     if (ultima.version_registro !== r.version_registro) return { estado: 'nueva_version', ultima, version_aprobada: ultima.version_registro }
