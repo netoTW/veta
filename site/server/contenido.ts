@@ -358,7 +358,13 @@ export async function marcadorAgregado() {
   // cuentan cosas distintas y una de las dos miente.
   const track = await gemasDelSeguimiento()
   const porId = new Map(track.map((t) => [t.registro.id, t.registro]))
-  const filas = seguimientoTodo().ultimo.filter((u) => porId.has(String(u.gema_id))).map((u) => marcadorDe(u, String(porId.get(String(u.gema_id))!.simbolo)))
+  /* Por el mismo filtro que la pantalla: si aquí se lee el dato crudo, el
+     marcador dice ROTA mientras el seguimiento dice "dato en revisión", y una
+     de las dos miente. Es el mismo error que ya costó "1 tesis" contra "2". */
+  const filas = seguimientoTodo().ultimo
+    .filter((u) => porId.has(String(u.gema_id)))
+    .map((u) => conInvalidacionRevisada(u as Record<string, unknown>) as typeof u)
+    .map((u) => marcadorDe(u, String(porId.get(String(u.gema_id))!.simbolo)))
   const cuenta = (k: 'b1' | 'b2') => ({ gana: filas.filter((f) => f[k].lado === 'gana').length, pierde: filas.filter((f) => f[k].lado === 'pierde').length, sin_medir: filas.filter((f) => f[k].lado === 'sin_medir').length })
   const fecha = filas.map((f) => f.fecha).sort().at(-1) ?? null
   return { fecha, vivas: filas.filter((f) => !f.cerrada).length, cerradas: filas.filter((f) => f.cerrada).length, b1: cuenta('b1'), b2: cuenta('b2'), gemas: filas, definicion: benchmark() }
