@@ -9,7 +9,9 @@ const b = await puppeteer.launch({ executablePath:'/Applications/Google Chrome.a
 const p = await b.newPage(); await p.setViewport({width:1440,height:1000})
 await p.goto('http://localhost:5310/gemas',{waitUntil:'networkidle0'})
 await p.evaluate(async (pw)=>{await fetch('/api/auth/sign-in/email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:'pro@veta.local',password:pw}),credentials:'same-origin'})}, env.VETA_DEMO_PASSWORD)
-const rutas = ['/','/gemas','/gemas/RAY-20260912-012647','/seguimiento','/analisis','/analisis/MORPHO-20260918-053222','/watchlist','/analizar','/votacion','/cuenta']
+const rutas = ['/','/gemas','/gemas/RAY-20260912-012647','/seguimiento','/analisis','/analisis/MORPHO-20260918-053222','/watchlist','/analizar','/votacion','/cuenta',
+  // Las páginas públicas y las nuevas: son las que más texto de venta llevan.
+  '/metodologia','/nosotros','/precios','/noticias','/gracias','/terminos','/privacidad','/contacto','/entrar','/registro','/recuperar']
 let total = 0
 for (const r of rutas) {
   await p.goto('http://localhost:5310'+r,{waitUntil:'networkidle0'}); await new Promise(x=>setTimeout(x,1800))
@@ -19,5 +21,18 @@ for (const r of rutas) {
   console.log('  '+(hits.length?'⚠ ':'✓ ')+r.padEnd(38)+(hits.join(', ')||'limpio'))
   for (const h of hits) { const i = t.toLowerCase().indexOf(h); console.log('      …'+t.slice(Math.max(0,i-90), i+90).replace(/\n/g,' ')+'…') }
 }
+// Los correos salientes: el mismo texto de cliente, y nadie los mira nunca.
+import { readdirSync as _ls, readFileSync as _leer } from 'node:fs'
+try {
+  const dir = 'server/correo-saliente'
+  const ficheros = _ls(dir).filter((f) => f.endsWith('.txt')).slice(-12)
+  console.log('  ---- correos (' + ficheros.length + ')')
+  for (const f of ficheros) {
+    const t = _leer(dir + '/' + f, 'utf8')
+    const hits = [...new Set((t.match(PROHIBIDAS) || []).map((x) => x.toLowerCase()))]
+    total += hits.length
+    console.log('  ' + (hits.length ? '⚠ ' : '✓ ') + f.slice(0, 44).padEnd(46) + (hits.join(', ') || 'limpio'))
+  }
+} catch (e) { console.log('  ---- correos: sin carpeta (' + e.message.slice(0, 40) + ')') }
 console.log('  ---- palabras distintas encontradas:', total)
 await b.close()
