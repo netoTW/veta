@@ -23,6 +23,7 @@ import { resolve } from 'node:path'
 import { bd, ahora, registrarAccion } from './db.ts'
 import { ENV } from './entorno.ts'
 import { puede, type Rol } from '../src/lib/matriz.ts'
+import * as contenido from './contenido.ts'
 import type { Sesion } from './auth.ts'
 
 const CARPETA = () => resolve(ENV.BASE_CONTENIDO, 'noticias')
@@ -99,11 +100,13 @@ const recortar = (p: Pieza) => ({
 
 /* ---------- agenda ---------- */
 /** Sólo lo que está por venir. Hoy cuenta: un evento de esta tarde todavía es agenda. */
-function agendaFutura(): Evento[] {
+function agendaFutura(retirados: Set<string>): Evento[] {
   const a = leerJson<{ eventos?: Evento[]; solo_publicados?: boolean }>('agenda.json')
   const hoy = new Date().toISOString().slice(0, 10)
   return (a?.eventos ?? [])
     .filter((e) => typeof e?.fecha === 'string' && e.fecha >= hoy)
+    // Un evento que cuelga de un informe retirado se va con él.
+    .filter((e) => !e.informe_id || !retirados.has(e.informe_id))
     .sort((x, y) => x.fecha.localeCompare(y.fecha))
 }
 
@@ -142,7 +145,7 @@ export async function noticiasPara(rol: Rol) {
   const piezas = leerJsonl<Pieza>('publicadas.jsonl')
     .filter((p) => p?.id && (esAdmin || !fuera.has(p.id)))
     .sort((a, b) => String(b.publicada_en ?? '').localeCompare(String(a.publicada_en ?? '')))
-  const agenda = agendaFutura()
+  const agenda = agendaFutura(esAdmin ? new Set<string>() : contenido.idsRetirados())
   return {
     completo,
     piezas: piezas.map((p) => (completo ? { ...p, despublicada: fuera.has(p.id) } : recortar(p))),

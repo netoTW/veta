@@ -142,7 +142,20 @@ function ocultoSiempre(r: Registro): boolean {
   // Un informe que cambió de tipo deja una versión final marcada: la vieja no se
   // lista, o la misma moneda aparece en gemas y en análisis.
   if ((r as { reclasificado_a?: string }).reclasificado_a) return true
+  /* §17: retirado es retirado en todas partes, no sólo del seguimiento. Estaba
+     sólo en el track record y PUMP seguía apareciendo en Gemas. Aquí vale para
+     listas, detalle, seguimiento, visuales y exportación a la vez. */
+  if ((r as { estado_seguimiento?: string }).estado_seguimiento === 'retirado') return true
   return false
+}
+
+/** Los informes retirados, para filtrar lo que cuelga de ellos (la agenda). */
+export function idsRetirados(): Set<string> {
+  const out = new Set<string>()
+  for (const r of [...gemasTodas(), ...leer<Registro[]>('analisis')]) {
+    if ((r as { estado_seguimiento?: string }).estado_seguimiento === 'retirado') out.add(r.id)
+  }
+  return out
 }
 
 /** Visible para un rol: aprobado en su versión actual y, para base, pasada la ventana de anticipo del pro. */

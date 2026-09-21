@@ -80,6 +80,10 @@ async function filaBandeja(r: Record<string, unknown> & { id: string; tipo: stri
     contradicciones: contradiccionesDelRegistro(r as unknown as Parameters<typeof contradiccionesDelRegistro>[0]),
     publicacion: await contenido.estadoPublicacion(r),
     vigente: esVigente ? esVigente(r as never) : true,
+    /* §17: retirado sale del público en todas partes. Aquí no: admin lo ve
+       entero y con el motivo, que para eso administra. */
+    retirado: r.estado_seguimiento === 'retirado',
+    motivo_retiro: (r.motivo_retiro as string | undefined) ?? null,
     /* El informe de cinco secciones del contrato §11: se ve de un vistazo quién lo trae. */
     /* §15: `informe_cliente` viene siempre; lo que dice si hubo narrado es
        `disponible`. Para los registros viejos, que no lo traen, sigue valiendo

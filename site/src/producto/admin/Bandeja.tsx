@@ -23,6 +23,8 @@ export interface FilaBandeja {
   advertencias: { total: number; COMPROMETE_TESIS: number; LIMITA_LECTURA: number; CONTEXTO: number }
   contradicciones: { campo: string; dice: string; motor: string; sobre: string }[]
   publicacion: Publicacion
+  retirado?: boolean
+  motivo_retiro?: string | null
   /** El informe que vale hoy para esa moneda. Los demás son historial. */
   vigente: boolean
   /** Trae el informe de cinco secciones escrito para el cliente. */
@@ -92,7 +94,14 @@ export function Bandeja() {
                 <BarraSeveridad c={f.advertencias} />
                 {f.contradicciones.length > 0 && <span className="p-chip p-chip--rojo mono" title={f.contradicciones.map((c) => `${c.campo}: «${c.dice}» vs ${c.motor}`).join('\n')}>prosa contradice al motor · {f.contradicciones.length}</span>}
               </div>
-              <div className="a-fila__estado"><EstadoPublicacion p={f.publicacion} /></div>
+              <div className="a-fila__estado">
+                <EstadoPublicacion p={f.publicacion} />
+                {f.retirado && (
+                  <span className="a-pub-revisar mono" title={f.motivo_retiro ?? undefined}>
+                    retirada del público{f.motivo_retiro ? ` · ${f.motivo_retiro.slice(0, 70)}` : ''}
+                  </span>
+                )}
+              </div>
               <Link to={`/admin/bandeja/${f.id}`} className="btn a-fila__ir">Revisar</Link>
             </article>
           ))}
