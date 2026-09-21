@@ -29,7 +29,9 @@ const LINKS = [
 const LINKS_ADMIN = [
   { to: '/admin/bandeja', label: 'Bandeja' },
   { to: '/admin/cuentas', label: 'Cuentas' },
-  { to: '/admin/votacion', label: 'Votación' },
+  /* La de producto es donde se vota; ésta es donde se gobierna la semana.
+     Con el mismo nombre en los dos sitios, admin veía "Votación" dos veces. */
+  { to: '/admin/votacion', label: 'Mesa de la semana' },
   { to: '/admin/consumo', label: 'Consumo' },
   { to: '/admin/enlaces', label: 'Enlaces' },
   { to: '/admin/contenido', label: 'Contenido' },
