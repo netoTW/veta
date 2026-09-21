@@ -128,14 +128,23 @@ export interface Microestructura {
 }
 
 export interface Entidad { direccion: string; nombre: string; tipo: string; fuente: string }
+export interface EntidadesEtiquetadas {
+  n_etiquetadas: number; n_sin_etiquetar: number
+  por_tipo: Record<string, number>; entidades: Entidad[]; fuente: string
+}
+/** El objeto si de verdad lo es; null si el motor mandó una lista vacía o nada. */
+export function etiquetadasDe(v: unknown): EntidadesEtiquetadas | null {
+  return v && typeof v === 'object' && !Array.isArray(v) && 'n_etiquetadas' in v ? v as EntidadesEtiquetadas : null
+}
+
 export interface Onchain {
   concentracion_top10_neta: number | null
   concentracion_top50: number | null
   hhi: number | null; hhi_etiqueta: string; n: number
-  entidades_etiquetadas: {
-    n_etiquetadas: number; n_sin_etiquetar: number
-    por_tipo: Record<string, number>; entidades: Entidad[]; fuente: string
-  }
+  /** OJO: el motor manda `[]` —lista vacía, no objeto— cuando no hay ninguna
+      entidad etiquetada. El tipo lo dice para que nadie vuelva a dar por hecho
+      el objeto: usa `etiquetadasDe()` antes de tocar sus campos. */
+  entidades_etiquetadas: EntidadesEtiquetadas | unknown[] | null
   netflows: unknown[]
   lectura: string; cota_superior: boolean; nota_cota: string; naturaleza: string
   supply_referencia: number; advertencias: Advertencia[]

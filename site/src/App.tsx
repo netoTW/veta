@@ -1,11 +1,12 @@
 import { lazy, Suspense } from 'react'
-import { BrowserRouter, Routes, Route, Outlet } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Outlet, useLocation } from 'react-router-dom'
 import { Nav } from './components/Nav'
 import { Footer } from './components/Footer'
 import { useLenis, useReveals } from './lib/motion'
 import { ProveedorSesion } from './lib/sesion'
 import { recordarOrigen } from './lib/origen'
 import { Shell } from './producto/Shell'
+import { LimiteDeError } from './ui/LimiteDeError'
 import { SoloAdmin } from './producto/admin/SoloAdmin'
 
 /* De dónde vino la visita: se anota al entrar, antes de pintar nada. */
@@ -55,11 +56,18 @@ function GuiaVisual() {
   return (<><Nav /><main><Sistema /></main><Footer /></>)
 }
 
+/* El límite se vuelve a montar al cambiar de ruta: si una pantalla revienta,
+   navegar a otra tiene que devolverte una pantalla viva, no el mismo error. */
+function Limite({ donde, children }: { donde: string; children: React.ReactNode }) {
+  const { pathname } = useLocation()
+  return <LimiteDeError key={pathname} donde={donde}>{children}</LimiteDeError>
+}
+
 function Producto() {
   return (
     <Shell>
       <Suspense fallback={null}>
-        <Outlet />
+        <Limite donde="producto"><Outlet /></Limite>
       </Suspense>
     </Shell>
   )
@@ -69,6 +77,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <ProveedorSesion>
+        <Limite donde="publico">
         <Routes>
           <Route path="/" element={<Suspense fallback={null}><Portada /></Suspense>} />
           <Route path="/metodologia" element={<Suspense fallback={null}><Metodologia /></Suspense>} />
@@ -107,6 +116,7 @@ export default function App() {
             <Route path="/admin/acciones" element={<SoloAdmin><Acciones /></SoloAdmin>} />
           </Route>
         </Routes>
+        </Limite>
       </ProveedorSesion>
     </BrowserRouter>
   )

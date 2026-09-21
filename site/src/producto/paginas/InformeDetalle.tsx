@@ -11,6 +11,7 @@ import { useEffect, useState } from 'react'
 import { puede, useRol } from '../../lib/acceso'
 import { fecha, fechaHora, mult, num, pct, precio, usd, conUnidad, TIPO_ESCENARIO, DIRECCION_LABEL, CAMPO_LABEL, dias } from '../../lib/formato'
 import type { Advertencia, Escenario, Informe, Invalidacion, VaraRevenue } from '../../lib/contrato'
+import { etiquetadasDe } from '../../lib/contrato'
 import { EmptyState } from '../../ui/EmptyState'
 import { Cifras, Prosa, RiesgoLlano } from '../cifras'
 import { estadoEconomicoLlano, tieneCriterioInterno, llano, delCatalogo, prosaDeCliente } from '../../lib/lenguaje'
@@ -661,24 +662,35 @@ export function Cuerpo({ inf, esAnalisis }: { inf: Informe; esAnalisis: boolean 
         <Seccion id="onchain" titulo="On-chain" esencial={prosaDeCliente(n.onchain.esencial.texto)} advertencias={n.onchain.esencial.advertencias}>
           {v && <Concentracion v={v} top10Neto={inf.onchain?.concentracion_top10_neta ?? null} />}
           <Avanzado>
-            <div className="p-datos">
-              <Dato k="top-10 neto" v={pct(inf.onchain.concentracion_top10_neta)} sub={inf.onchain.cota_superior ? 'cota superior' : undefined} />
-              {inf.onchain.concentracion_top50 !== null && <Dato k="top-50" v={pct(inf.onchain.concentracion_top50)} tono="mudo" />}
-              <Dato k="HHI" v={num(inf.onchain.hhi, 0)} sub={inf.onchain.hhi_etiqueta} />
-              <Dato k="entidades etiquetadas" v={`${inf.onchain.entidades_etiquetadas.n_etiquetadas} de ${inf.onchain.entidades_etiquetadas.n_etiquetadas + inf.onchain.entidades_etiquetadas.n_sin_etiquetar}`} sub={Object.entries(inf.onchain.entidades_etiquetadas.por_tipo).map(([k, v]) => `${k} ${v}`).join(' · ')} />
-              <Dato k="supply de referencia" v={num(inf.onchain.supply_referencia, 0)} tono="mudo" />
-            </div>
-            <p className="p-nota p-nota--regla">{inf.onchain.nota_cota}</p>
-            {inf.onchain.entidades_etiquetadas.entidades.length > 0 && (
-              <div className="p-tabla-wrap">
-                <table className="p-tabla">
-                  <thead><tr><th>Entidad</th><th>tipo</th><th>dirección</th></tr></thead>
-                  <tbody>{inf.onchain.entidades_etiquetadas.entidades.map((e) => (
-                    <tr key={e.direccion}><td>{e.nombre}</td><td className="mono">{e.tipo}</td><td className="mono" style={{ wordBreak: 'break-all' }}>{e.direccion}</td></tr>
-                  ))}</tbody>
-                </table>
-              </div>
-            )}
+            {/* El motor manda [] cuando no hay ninguna entidad etiquetada, así que
+                esto puede no ser el objeto. Lo que no hay, no se muestra. */}
+            {(() => {
+              const et = etiquetadasDe(inf.onchain.entidades_etiquetadas)
+              const porTipo = et && et.por_tipo && typeof et.por_tipo === 'object' ? Object.entries(et.por_tipo) : []
+              const entidades = Array.isArray(et?.entidades) ? et.entidades : []
+              return (
+                <>
+                  <div className="p-datos">
+                    <Dato k="top-10 neto" v={pct(inf.onchain.concentracion_top10_neta)} sub={inf.onchain.cota_superior ? 'cota superior' : undefined} />
+                    {inf.onchain.concentracion_top50 !== null && <Dato k="top-50" v={pct(inf.onchain.concentracion_top50)} tono="mudo" />}
+                    <Dato k="HHI" v={num(inf.onchain.hhi, 0)} sub={inf.onchain.hhi_etiqueta} />
+                    {et && <Dato k="entidades etiquetadas" v={`${et.n_etiquetadas} de ${et.n_etiquetadas + et.n_sin_etiquetar}`} sub={porTipo.length ? porTipo.map(([k, v]) => `${k} ${v}`).join(' · ') : undefined} />}
+                    <Dato k="supply de referencia" v={num(inf.onchain.supply_referencia, 0)} tono="mudo" />
+                  </div>
+                  <p className="p-nota p-nota--regla">{inf.onchain.nota_cota}</p>
+                  {entidades.length > 0 && (
+                    <div className="p-tabla-wrap">
+                      <table className="p-tabla">
+                        <thead><tr><th>Entidad</th><th>tipo</th><th>dirección</th></tr></thead>
+                        <tbody>{entidades.map((e) => (
+                          <tr key={e.direccion}><td>{e.nombre}</td><td className="mono">{e.tipo}</td><td className="mono" style={{ wordBreak: 'break-all' }}>{e.direccion}</td></tr>
+                        ))}</tbody>
+                      </table>
+                    </div>
+                  )}
+                </>
+              )
+            })()}
           </Avanzado>
         </Seccion>
 

@@ -35,19 +35,30 @@ export function sincronizar(): Promise<Sync> {
   sync.en_curso = true
   const t0 = Date.now()
   return new Promise((res) => {
-    execFile('bash', [resolve(RAIZ_SITE, 'scripts/sincronizar-servidor.sh')], { cwd: RAIZ_SITE, timeout: 180_000, env: { ...process.env, VETA_SERVIDOR_SSH: ENV.SERVIDOR_SSH, VETA_SERVIDOR_CLAVE: ENV.SERVIDOR_CLAVE, VETA_SERVIDOR_RUTA: ENV.SERVIDOR_RUTA, VETA_SYNC_MODO: ENV.SYNC_MODO, VETA_BASE_CONTENIDO: ENV.BASE_CONTENIDO, VETA_DATOS: ENV.DATOS } }, async (err, stdout, stderr) => {
-      sync.en_curso = false; sync.cuando = ahora(); sync.duracion_s = Math.round((Date.now() - t0) / 100) / 10
-      sync.ok = !err; sync.salida = (err ? `${stderr || err.message}` : stdout).trim().split('\n').slice(-6).join('\n')
-      sync.proxima = new Date(Date.now() + ENV.SYNC_MINUTOS * 60_000).toISOString()
-      await bd.ejecutar("INSERT INTO ajustes (clave, valor, actualizado) VALUES ('sync_ultimo', ?, ?) ON CONFLICT(clave) DO UPDATE SET valor = excluded.valor, actualizado = excluded.actualizado", [JSON.stringify(sync), ahora()])
-      if (err) console.warn('[sync] falló:', sync.salida); else console.log('[sync]', sync.salida.split('\n').pop())
-      res(sync)
+    /* El callback es async y execFile no recoge lo que devuelve: si algo de aquí
+       dentro lanza, la promesa queda sin manejar y Node 22 mata el proceso. Una
+       sincronización que falla no puede dejar la web sin servir a nadie. */
+    execFile('bash', [resolve(RAIZ_SITE, 'scripts/sincronizar-servidor.sh')], { cwd: RAIZ_SITE, timeout: 180_000, env: { ...process.env, VETA_SERVIDOR_SSH: ENV.SERVIDOR_SSH, VETA_SERVIDOR_CLAVE: ENV.SERVIDOR_CLAVE, VETA_SERVIDOR_RUTA: ENV.SERVIDOR_RUTA, VETA_SYNC_MODO: ENV.SYNC_MODO, VETA_BASE_CONTENIDO: ENV.BASE_CONTENIDO, VETA_DATOS: ENV.DATOS } }, (err, stdout, stderr) => {
+      void (async () => {
+        try {
+          sync.en_curso = false; sync.cuando = ahora(); sync.duracion_s = Math.round((Date.now() - t0) / 100) / 10
+          sync.ok = !err; sync.salida = (err ? `${stderr || err.message}` : stdout).trim().split('\n').slice(-6).join('\n')
+          sync.proxima = new Date(Date.now() + ENV.SYNC_MINUTOS * 60_000).toISOString()
+          await bd.ejecutar("INSERT INTO ajustes (clave, valor, actualizado) VALUES ('sync_ultimo', ?, ?) ON CONFLICT(clave) DO UPDATE SET valor = excluded.valor, actualizado = excluded.actualizado", [JSON.stringify(sync), ahora()])
+          if (err) console.warn('[sync] falló:', sync.salida); else console.log('[sync]', sync.salida.split('\n').pop())
+        } catch (e) {
+          sync.en_curso = false
+          console.error('[sync] error al registrar el resultado:', (e as Error).message)
+        } finally {
+          res(sync)
+        }
+      })()
     })
   })
 }
 if (configurado() && ENV.SYNC_MINUTOS > 0) {
-  setTimeout(() => { sincronizar() }, 4000)
-  setInterval(() => { sincronizar() }, ENV.SYNC_MINUTOS * 60_000)
+  setTimeout(() => { sincronizar().catch((e) => console.error('[sync]', e)) }, 4000)
+  setInterval(() => { sincronizar().catch((e) => console.error('[sync]', e)) }, ENV.SYNC_MINUTOS * 60_000)
 }
 
 /* ---------- el motor en el servidor ---------- */

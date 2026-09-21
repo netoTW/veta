@@ -82,6 +82,27 @@ app.get('/api/yo', (c) => {
   })
 })
 
+/* Una pantalla que revienta en el navegador de alguien no deja rastro aquí si
+   nadie lo cuenta. El límite de error del cliente manda el fallo a esta ruta.
+   No exige sesión —un visitante también merece que su pantalla rota se vea— y
+   recorta todo lo que entra: es una entrada pública. */
+app.post('/api/fallo', async (c) => {
+  const b = await c.req.json().catch(() => ({})) as Record<string, unknown>
+  const corto = (v: unknown, n: number) => (typeof v === 'string' ? v.slice(0, n) : '')
+  const s = c.get('sesion')
+  console.error('[pantalla-rota]', JSON.stringify({
+    donde: corto(b.donde, 40) || null,
+    ruta: corto(b.ruta, 200),
+    mensaje: corto(b.mensaje, 500),
+    rol: c.get('rol'),
+    usuario: s ? s.user.id : null,
+    pila: corto(b.pila, 2000),
+    componente: corto(b.componente, 1500),
+    cuando: new Date().toISOString(),
+  }))
+  return c.json({ ok: true })
+})
+
 app.get('/api/cuenta', async (c) => {
   const s = c.get('sesion')
   if (!s) return c.json({ error: 'sin_sesion' }, 401)
@@ -210,6 +231,12 @@ function spa(c: Context) {
 if (ENV.SERVIR_DIST) {
   app.use('/*', serveStatic({ root: './dist' }))
 }
+
+/* Red de seguridad: ninguna tarea de fondo puede tumbar la API. Node 22 mata el
+   proceso ante una promesa rechazada sin manejar, y una sincronización fallida
+   no es motivo para dejar de servir a nadie. Se registra y se sigue. */
+process.on('unhandledRejection', (razon) => { console.error('[veta] promesa sin manejar:', razon) })
+process.on('uncaughtException', (e) => { console.error('[veta] excepción no capturada:', e) })
 
 await migrar()
 await sembrar()
