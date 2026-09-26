@@ -25,7 +25,9 @@ const ORDEN = ['demanda', 'riesgo_cola', 'concentracion', 'tokenomics', 'liquide
 const CADENA: Record<string, string> = { ethereum: 'Ethereum', solana: 'Solana', base: 'Base', 'binance-smart-chain': 'BNB Chain', 'arbitrum-one': 'Arbitrum', avalanche: 'Avalanche', 'polygon-pos': 'Polygon' }
 
 /** El contexto de §23 de cada dato: el precio lleva decimales según magnitud; las variaciones, signo. */
-const contexto = (d: DatoFicha): ContextoCifra => (d.clave === 'precio_usd' ? 'precio' : /var_|cambio/.test(d.clave) ? 'variacion' : d.unidad === 'USD' ? 'cantidad' : 'normal')
+// Sólo las variaciones llevan signo («var_24h», «oi_cambio_7d»). «cvar_7d» es una caída, no una variación:
+// con /var_/ salía «Peor semana de cada 20: +31,0 %».
+export const contexto = (d: Pick<DatoFicha, "clave" | "unidad">): ContextoCifra => (d.clave === 'precio_usd' ? 'precio' : /^var_|(^|_)cambio(_|$)/.test(d.clave) ? 'variacion' : d.unidad === 'USD' ? 'cantidad' : 'normal')
 const hay = (d?: DatoFicha | null) => !!d && d.estado !== 'no_disponible' && d.valor !== null
 
 function Fila({ d, bloque }: { d: DatoFicha; bloque: string }) {
