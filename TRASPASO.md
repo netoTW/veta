@@ -18,8 +18,8 @@ ficheros, no. Lo que se necesite de ese lado **se escribe en el contrato** y Pab
 se lo encarga a la sesión del motor. Los cambios sin commitear que aparezcan ahí
 son de esa sesión: no se tocan ni se commitean.
 
-*(Hay 39 ficheros míos sin commitear en ese repo, de un arreglo de formato del
-21-sep. Quedaron a la espera de que el motor los revisara. Ver §6.)*
+*(Los 39 ficheros del arreglo de formato del 21-sep ya los revisó y commiteó la
+sesión del motor, en `b301733`. Su árbol está limpio: no queda nada mío ahí.)*
 
 **Un arreglo, un commit, un despliegue, una verificación.** Sin acumular. Se
 verifica **en producción**, no en local, antes de pasar al siguiente.
@@ -159,10 +159,10 @@ desde entonces no se ha tocado nada.
 Todo esto está escrito en `CONTRATO-ANALISIS-A-PEDIDO.md`, en los acuses de §15,
 §15.1/§16/§17/§18. Lo abierto hoy:
 
-- **El formato de decimales.** Hay un cambio preparado en el repo del motor —
-  formateador único, 80 porcentajes convertidos, tests sin regresiones (10 fallos
-  antes, 10 después) — **pendiente de que esa sesión lo revise y commitee**. Hasta
-  entonces el escenario de la agenda sale con punto decimal.
+- **El formato de decimales.** Revisado y commiteado por el motor en `b301733`
+  (formateador único, mismos separadores en `plano()` y en `engine/formato`).
+  Falta comprobar en producción que el escenario de la agenda ya sale con coma
+  decimal, cuando el motor lo despliegue y corra el noticiero.
 - **`titulo_cliente`** no llega todavía en ninguna de las ocho secciones. Mientras
   tanto el informe usa «Las dos referencias».
 - **Un aviso cuando una reexportación suba la versión de un informe ya aprobado**,
