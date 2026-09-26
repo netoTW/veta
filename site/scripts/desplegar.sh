@@ -28,7 +28,12 @@ echo "✓ push $(git rev-parse --short HEAD) con la marca del árbol $ARBOL"
 
 echo "━━ API ━━"
 "${SSH[@]}" 'cd /opt/veta-web && git fetch -q origin && git reset -q --hard origin/main && git rev-parse --short HEAD && systemctl restart veta-web && sleep 8 && systemctl is-active veta-web'
-curl -sf -o /dev/null https://api.vetalab.io/api/contenido/meta && echo "✓ api.vetalab.io responde"
+# Arrancar tarda ~9 s (conectar a Supabase y migrar): se espera hasta 60 s, y si no responde se para aquí.
+for i in $(seq 1 30); do
+  if curl -sf -o /dev/null https://api.vetalab.io/api/contenido/meta; then echo "✓ api.vetalab.io responde (a los $((i * 2)) s)"; break; fi
+  [ "$i" = 30 ] && { echo "✗ api.vetalab.io no responde 60 s después del reinicio"; exit 1; }
+  sleep 2
+done
 
 echo "━━ front ━━ (esperando a Vercel, hasta 8 min)"
 ENTRADA=$(grep -o 'assets/index-[A-Za-z0-9_-]*\.js' dist/index.html | head -1)
