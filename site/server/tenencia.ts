@@ -11,7 +11,8 @@
 
    Regla de filtrado, para cualquier rol que no sea admin:
    - un elemento de una lista que sea de una moneda declarada se quita;
-   - una respuesta que en sí misma es de una moneda declarada pasa a 404.
+   - una respuesta que contiene, fuera de una lista, un objeto de una moneda
+     declarada (la lectura, el detalle de un informe) pasa entera a 404.
    ========================================================================== */
 import { existsSync, readFileSync, statSync } from 'node:fs'
 import { resolve } from 'node:path'
@@ -71,16 +72,38 @@ export function esDeclarada(o: Record<string, unknown>, d: Declaradas): boolean 
     const pref = texto(o[k]).split('-')[0].toUpperCase()
     if (pref && texto(o[k]).includes('-') && d.simbolos.has(pref)) return true
   }
-  if (Array.isArray(o.monedas) && o.monedas.some((m) => d.simbolos.has(texto(typeof m === 'object' && m ? (m as { simbolo?: unknown }).simbolo : m).toUpperCase()))) return true
+  // Una pieza de noticias lleva sus monedas como lista de símbolos. Una lista de
+  // objetos (el universo entero) no hace declarado al contenedor: se filtra elemento a elemento.
+  if (Array.isArray(o.monedas) && o.monedas.some((m) => typeof m === 'string' && d.simbolos.has(m.toUpperCase()))) return true
   return false
 }
 
-/** Quita de cualquier lista, a cualquier profundidad, lo que sea de una moneda declarada. */
+/** Marca de «esta respuesta habla de una moneda declarada fuera de una lista». */
+export const DECLARADA = Symbol('declarada')
+
+/** Quita de cualquier lista, a cualquier profundidad, lo que sea de una moneda declarada.
+    Si la moneda aparece como objeto suelto (la `lectura` de una respuesta, el `informe`
+    de un detalle), no hay nada que quitar sin dejar la respuesta rota: devuelve
+    DECLARADA y la respuesta entera pasa a 404. */
 export function filtrar(v: unknown, d: Declaradas): unknown {
-  if (Array.isArray(v)) return v.filter((x) => !(x && typeof x === 'object' && !Array.isArray(x) && esDeclarada(x as Record<string, unknown>, d))).map((x) => filtrar(x, d))
+  if (Array.isArray(v)) {
+    const out: unknown[] = []
+    for (const x of v) {
+      if (x && typeof x === 'object' && !Array.isArray(x) && esDeclarada(x as Record<string, unknown>, d)) continue
+      const f = filtrar(x, d)
+      if (f === DECLARADA) return DECLARADA
+      out.push(f)
+    }
+    return out
+  }
   if (v && typeof v === 'object') {
+    if (esDeclarada(v as Record<string, unknown>, d)) return DECLARADA
     const out: Record<string, unknown> = {}
-    for (const [k, x] of Object.entries(v)) out[k] = filtrar(x, d)
+    for (const [k, x] of Object.entries(v)) {
+      const f = filtrar(x, d)
+      if (f === DECLARADA) return DECLARADA
+      out[k] = f
+    }
     return out
   }
   return v
@@ -96,11 +119,8 @@ export async function sinTenencia(c: Context<{ Variables: { rol: Rol } }>, next:
   const cuerpo = await c.res.clone().json().catch(() => undefined)
   if (cuerpo === undefined) return
   const cabeceras = new Headers(c.res.headers); cabeceras.delete('content-length')
-  // Una respuesta que es, entera, de una moneda declarada no existe para este rol.
-  const raiz = cuerpo && typeof cuerpo === 'object' && !Array.isArray(cuerpo) ? cuerpo as Record<string, unknown> : null
-  if (raiz && esDeclarada(raiz, d)) {
-    c.res = new Response(JSON.stringify({ error: 'no_encontrado' }), { status: 404, headers: cabeceras })
-    return
-  }
-  c.res = new Response(JSON.stringify(filtrar(cuerpo, d)), { status: c.res.status, headers: cabeceras })
+  const limpio = filtrar(cuerpo, d)
+  c.res = limpio === DECLARADA
+    ? new Response(JSON.stringify({ error: 'no_encontrado' }), { status: 404, headers: cabeceras })
+    : new Response(JSON.stringify(limpio), { status: c.res.status, headers: cabeceras })
 }

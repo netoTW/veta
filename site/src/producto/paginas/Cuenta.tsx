@@ -32,7 +32,7 @@ const PLANES = [
 ]
 
 /** "CUPO análisis" -> "2 análisis", con el número que dice el servidor. */
-function usarCupos() {
+function useCupos() {
   const [cupos, setCupos] = useState<Record<string, number>>({})
   useEffect(() => {
     api<{ planes: { clave: string; analisis_mes: number }[] }>('/api/planes')
@@ -164,7 +164,7 @@ function MisAnalisis() {
 }
 
 function Planes({ actual }: { actual: string }) {
-  const cupos = usarCupos()
+  const cupos = useCupos()
   const conCupo = (t: string, plan: string) => t.replace('CUPO', String(cupos[plan] ?? '—'))
   return (
     <section className="a-planes" aria-label="Planes">

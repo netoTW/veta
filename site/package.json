@@ -12,7 +12,8 @@
     "preview": "VETA_SERVIR_DIST=1 PORT=5310 BETTER_AUTH_URL=http://localhost:5310 tsx server/index.ts",
     "datos": "node scripts/datos.mjs",
     "typecheck": "tsc -b && tsc -p tsconfig.server.json --noEmit",
-    "lint": "oxlint"
+    "lint": "oxlint",
+    "invariantes": "node scripts/invariantes.mjs"
   },
   "dependencies": {
     "@hono/node-server": "^2.1.1",

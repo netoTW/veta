@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Un push a main con código de la web que no pasó los invariantes se para aquí.
+# Documentos (.md) sí pasan: no se despliegan. El despliegue real es scripts/desplegar.sh,
+# que corre los invariantes y deja la marca; con esa marca este hook no vuelve a correrlos.
+while read -r local_ref local_sha remote_ref remote_sha; do
+  [ "$remote_ref" = "refs/heads/main" ] || continue
+  [ "$local_sha" = "0000000000000000000000000000000000000000" ] && continue
+  arbol=$(git rev-parse "$local_sha^{tree}")
+  marca=$(git log -1 --format=%B "$local_sha" | sed -n 's/^Invariantes-ok: *\([0-9a-f]\{40\}\).*/\1/p' | tail -1)
+  [ "$marca" = "$arbol" ] && continue
+  base="$remote_sha"; [ "$base" = "0000000000000000000000000000000000000000" ] && base=$(git rev-list --max-parents=0 "$local_sha" | tail -1)
+  codigo=$(git diff --name-only "$base" "$local_sha" -- site | grep -v '\.md$' || true)
+  [ -z "$codigo" ] && continue
+  echo "pre-push: estos cambios de código no pasaron los invariantes:"; echo "$codigo" | sed 's/^/  /' | head -20
+  echo "Corre: cd site && npm run invariantes   (o despliega con scripts/desplegar.sh)"
+  echo "Si de verdad hay que empujar sin desplegar: git push --no-verify"
+  exit 1
+done
+exit 0

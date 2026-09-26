@@ -3,6 +3,7 @@
   "framework": "vite",
   "buildCommand": "npm run build:web",
   "outputDirectory": "dist",
+  "ignoreCommand": "bash scripts/vercel-ignorar.sh",
   "rewrites": [
     {
       "source": "/api/:path*",

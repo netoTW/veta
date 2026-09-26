@@ -4,7 +4,10 @@
    en toda pantalla de producto, y que ninguna página se desplace de lado.
 
    Uso: node scripts/barrido.mjs   (con la vista previa en :5310)
-   Sale con la lista de problemas; 0 es lo que hay que ver antes de desplegar. */
+   Sale con la lista de problemas y con código 1 si hay alguno grave: pantalla en
+   blanco o casi vacía, error de consola, petición fallida, página que no carga o
+   aviso legal ausente. Los desbordes en móvil se listan como aviso: los que quedan
+   están en BACKLOG.md y no frenan un despliegue. */
 import puppeteer from 'puppeteer-core'
 import { readFileSync } from 'node:fs'
 const env = Object.fromEntries(readFileSync('.env','utf8').split('\n').filter(l=>l.includes('=')&&!l.startsWith('#')).map(l=>[l.slice(0,l.indexOf('=')).trim(),l.slice(l.indexOf('=')+1).trim()]))
@@ -76,7 +79,12 @@ for (const [rol, email] of Object.entries(CUENTAS)) {
 }
 await b.close()
 console.log('\nBARRIDO · '+Object.keys(CUENTAS).length+' roles\n')
-if (!problemas.length) console.log('  sin problemas')
-for (const [rol, r, q] of problemas) console.log(`  ${rol.padEnd(10)} ${r.padEnd(22)} ${q}`)
+const esAviso = ([, , q]) => q.startsWith('desborda:')
+const graves = problemas.filter((x) => !esAviso(x)), avisos = problemas.filter(esAviso)
+if (!graves.length) console.log('  sin problemas graves')
+for (const [rol, r, q] of graves) console.log(`  ✗ ${rol.padEnd(10)} ${r.padEnd(22)} ${q}`)
+if (avisos.length) console.log('\n  avisos (no frenan el despliegue):')
+for (const [rol, r, q] of avisos) console.log(`    ${rol.padEnd(10)} ${r.padEnd(22)} ${q}`)
 console.log(`\n  páginas medidas: ${vistas.length} · texto más corto: ${Math.min(...vistas.map(v=>v[2]))} caracteres en ${(vistas.sort((a,b)=>a[2]-b[2])[0]||[]).slice(0,2).join(' ')}`)
-console.log(`  TOTAL de problemas: ${problemas.length}\n`)
+console.log(`  TOTAL de problemas graves: ${graves.length} · avisos: ${avisos.length}\n`)
+process.exit(graves.length ? 1 : 0)

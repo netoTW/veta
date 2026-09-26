@@ -1,6 +1,7 @@
 /* Audita el texto que ve un cliente buscando voseo y vocabulario interno.
    Uso: node scripts/auditar-lenguaje.mjs   (con el servidor en modo preview)
-   Devuelve 0 palabras si la web cumple las reglas de CLAUDE.md. */
+   Devuelve 0 palabras si la web cumple las reglas de CLAUDE.md, y sale con 1 si no:
+   es uno de los invariantes que frenan un despliegue (npm run invariantes). */
 import puppeteer from 'puppeteer-core'
 import { readFileSync } from 'node:fs'
 const env = Object.fromEntries(readFileSync('.env','utf8').split('\n').filter(l=>l.includes('=')&&!l.startsWith('#')).map(l=>[l.slice(0,l.indexOf('=')).trim(),l.slice(l.indexOf('=')+1).trim()]))
@@ -43,3 +44,4 @@ try {
 } catch (e) { console.log('  ---- correos: sin carpeta (' + e.message.slice(0, 40) + ')') }
 console.log('  ---- palabras distintas encontradas:', total)
 await b.close()
+process.exit(total ? 1 : 0)
