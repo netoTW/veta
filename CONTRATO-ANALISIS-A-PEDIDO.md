@@ -587,7 +587,902 @@ reclasificación crea un registro nuevo, que lleve identificador nuevo y que el 
 nuevo. Mientras tanto la web usa `id` + `tipo`, que funciona pero es un parche sobre algo que
 debería ser único por definición.
 
-## 15. Forma única de cada campo  ·  ACUSE DE RECIBO
+## 14. Vigencia de los informes (2026-09-21)
+
+La bandeja mezclaba corridas de calibración con las del sistema actual y monedas repetidas.
+Desde hoy cada registro de `gema` y `analisis` lleva dos campos más:
+
+| campo | valores | qué significa |
+|---|---|---|
+| `vigencia` | `vigente` · `obsoleto` · `""` | `vigente`: la corrida que representa a la moneda hoy. `obsoleto`: se conserva en el historial y **la web no lo muestra por defecto**. Vacío sólo en registros anteriores a esta regla. |
+| `motivo_vigencia` | texto | por qué: "superada por <id>", "anterior al corte 07b27ad (2026-09-19T15:54 UTC)", "el rol X no corrió en claude-opus-5", "calibración: la carpeta del informe no existe en esta máquina". |
+
+**Regla (la decide el motor, `pipeline/vigencia.py`, nunca a mano):** es vigente la corrida
+más reciente de cada moneda hecha con el código posterior a los arreglos del 19-sep (A1 + A2 +
+B1/C1, desplegados con `07b27ad` a las 15:54 UTC) y con todos los roles de análisis en Opus.
+Una corrida detenida o bloqueada puede ser la vigente de su moneda (es lo último que el motor
+dijo de ella); en ese caso `veredicto.decidido_por`/`riesgo.motivo_bloqueo` dicen por qué no
+es publicable. La vigencia se recalcula sola al cerrar cada análisis (misma exportación
+automática del hueco 37): la corrida nueva pasa a vigente y la anterior de esa moneda a
+obsoleta, como una versión nueva del registro (`version_registro` + 1, con el cambio en
+`cambios_respecto_version_anterior`).
+
+**Lo que la web hace con esto:** listar por defecto sólo `vigencia == "vigente"`; ofrecer el
+historial (obsoletos) como vista aparte, si quiere. Un registro sin el campo se trata como
+vigente (es anterior a la regla). La aprobación de Pablo sigue viviendo en la bandeja del
+motor: `vigente` no significa aprobado.
+
+### 13.1 Cambios del 2026-09-21 en noticias y agenda
+
+- **Agenda persistida.** La corrida diaria escribe el resultado completo de `engine/agenda.py::construir()` en `base_contenido/noticias/agenda.json` y lo reescribe tras cada decisión de la bandeja. Sólo eventos de hoy en adelante; los pasados salen del archivo. `GET /agenda` sigue calculando en vivo con el mismo código.
+- **Fuentes: 403/429 ≠ 404/410.** Cada fuente de una pieza sale en `fuentes_casos` con su `caso`: `abre` (HTTP 200), `muerta` (404/410, se rechaza siempre), `bloqueada_aceptada` (403/429 o dominio de la lista bloqueada, aceptada porque la URL vino de los resultados de búsqueda del agente —`en_busqueda: true`— y otra fuente de la misma pieza abre —`respaldada_por`—), `bloqueada_rechazada` (sin búsqueda o sin respaldo), `no_responde`, `fuera_de_plazo`, `sin_fecha`, `url_invalida`. `fuentes` lista sólo las aceptadas.
+- **Cifras.** `cifras_verificadas` (con el valor del motor y `ok`) y `cifras_no_verificadas` (con su motivo) viajan siempre, también en las publicadas.
+
+
+## 15. Forma única de cada campo (2026-09-21) — AVISO A VETA
+
+**Qué pasó.** `onchain.entidades_etiquetadas` llegaba como lista vacía `[]` cuando la moneda no
+tenía entidades etiquetadas y como objeto cuando sí. Eso rompió seis informes en la web (AKT,
+APT, BERA, CELO). La web ya lo tolera; el contrato pasa a tener una sola forma por campo.
+
+**Qué cambia para la web (VETA), desde el commit que incluye esta sección:**
+
+1. `onchain.entidades_etiquetadas` (y su copia en `niveles.onchain.avanzado`) es **siempre un
+   objeto** `{n_etiquetadas, n_sin_etiquetar, por_tipo: {}, entidades: [], fuente: ""}`; con
+   ceros y vacíos cuando no hay datos.
+2. `escenarios[].evidencia_citada` es **siempre texto** (llegaba número en 6 escenarios).
+3. `derivados` está **siempre presente** (faltaba en registros anteriores al 20-sep) y lleva
+   `medido: false` con el resto de sus claves vacías cuando la corrida no consultó venues.
+4. `asimetria`, `asimetria_liquidaciones`, `prosa`, `narrado` y `derivados` llevan **todas sus
+   claves siempre**; sin datos, con `null`/`""`/`[]`/`{}` según el tipo.
+5. `informe_cliente` cambia la convención de §11.5 ("campo ausente = no aplica"): ahora
+   **una sección que no aplica viene como `null`** (objetos) o `[]` (listas), nunca ausente,
+   y hay `disponible: bool` (`false` cuando no hubo narrado publicable). `lectura` siempre viene.
+6. `null` sólo aparece donde la tabla dice `|null` (escalar sin dato). Una lista vacía es `[]`.
+7. Los registros vigentes se reexportaron con esta forma (versión nueva de cada uno, con
+   `cambios_respecto_version_anterior`). Los obsoletos no se tocan.
+8. `combustible` (§D.20) está **siempre presente con `estado`**: `estimado` cuando hay lectura
+   (es un modelo, nunca `medido`) o `no_disponible` con `motivo_ausencia` no vacío. Un paquete
+   sin lectura de combustible sale `no_disponible` con «no medido en esta corrida», nunca `{}`.
+   `validar_combustible` lo comprueba dentro de `Gema.validar()`; un registro anterior al campo
+   (`estado` vacío) sólo se valida por forma.
+
+**Validación al cierre.** `contrato/forma.py::validar_forma` corre dentro de `Gema.validar()`:
+un registro que no cumple la forma no entra al contrato, el rechazo queda en
+`base_contenido/exportacion-rechazos.jsonl` y sale como alerta `contrato_rechazado` en
+`/operacion/estado`. Las tablas de abajo se generan con `python -m contrato.forma --md` y un
+test comprueba que estén al día.
+
+<!-- forma:inicio -->
+**Primer nivel**
+
+| campo | forma |
+|---|---|
+| `id` | str |
+| `tipo` | str |
+| `version_motor` | str |
+| `version_registro` | num |
+| `escrito_en` | str |
+| `simbolo` | str |
+| `nombre` | str |
+| `cadena` | str |
+| `fecha_publicacion` | str |
+| `origen` | str |
+| `vigencia` | str |
+| `motivo_vigencia` | str |
+| `misma_corrida` | bool |
+| `cambios_respecto_version_anterior` | objeto de claves fijas |
+| `tier` | str |
+| `categoria` | str |
+| `factores_del_tier` | list[str] |
+| `factores_del_tier_detalle` | list[dict] (elementos de claves fijas) |
+| `estado_economico` | str |
+| `captura_verificada` | bool |
+| `ficha_esencial` | objeto de claves fijas |
+| `tesis` | str|null |
+| `motivo_sin_tesis` | str |
+| `motivo_sin_tesis_cliente` | str|null |
+| `analizabilidad` | objeto de claves fijas |
+| `analizable` | bool|null |
+| `motivo_no_analizable` | str|null |
+| `tesis_contradicha` | str |
+| `prosa` | objeto de claves fijas |
+| `invalidacion` | objeto de claves fijas |
+| `varas` | objeto de claves fijas |
+| `combustible` | objeto de claves fijas |
+| `derivados` | objeto de claves fijas |
+| `asimetria_liquidaciones` | objeto de claves fijas |
+| `escenarios` | list[dict] (elementos de claves fijas) |
+| `asimetria` | objeto de claves fijas |
+| `riesgo` | objeto de claves fijas |
+| `microestructura` | objeto de claves fijas |
+| `onchain` | objeto de claves fijas |
+| `fundamentales` | objeto de claves fijas |
+| `esceptico` | objeto de claves fijas |
+| `verificador` | objeto de claves fijas |
+| `senales_sin_fuente` | list[dict] (elementos de claves fijas) |
+| `calidad_por_seccion` | dict |
+| `fuentes` | list[dict] (elementos de claves fijas) |
+| `apto_para_gemas` | bool |
+| `estado_seguimiento` | str |
+| `motivo_retiro` | str |
+| `retirada_en` | str |
+| `conflicto_interes` | objeto de claves fijas |
+| `solo_admin` | bool |
+| `integridad` | objeto de claves fijas |
+| `benchmark_al_publicar` | objeto de claves fijas |
+| `niveles` | objeto de claves fijas |
+| `narrado` | objeto de claves fijas |
+| `informe_cliente` | objeto de claves fijas |
+| `veredicto` | objeto de claves fijas |
+| `ruta_informe` | str |
+
+**`cambios_respecto_version_anterior`**
+
+| clave | forma |
+|---|---|
+| `solo_forma` | bool |
+| `campos_contenido` | list[str] |
+| `detalle` | list[str] |
+
+**`factores_del_tier_detalle[]`**
+
+| clave | forma |
+|---|---|
+| `condicion` | str |
+| `estado` | str |
+| `op` | str |
+| `umbral` | num|null |
+| `unidad` | str |
+| `valor` | num|null |
+
+**`ficha_esencial`**
+
+| clave | forma |
+|---|---|
+| `tesis_una_linea` | str |
+| `precio_y_fecha_referencia` | dict |
+| `riesgo_resumen` | str |
+| `catalizadores` | list[str] |
+| `catalizadores_resumen` | dict |
+| `que_la_invalidaria` | str |
+| `advertencias` | list[dict] |
+
+**`analizabilidad`**
+
+| clave | forma |
+|---|---|
+| `analizable` | bool |
+| `cumple` | dict |
+| `es_nativa` | bool |
+| `evaluado_en` | str |
+| `faltantes` | list[dict] |
+| `medidas` | dict |
+| `simbolo` | str |
+
+**`prosa`**
+
+| clave | forma |
+|---|---|
+| `vigente` | bool|null |
+| `motivo` | str |
+| `accion` | str |
+| `campos_cambiados` | list[dict] |
+| `cifras_contradichas` | list[dict] |
+| `estilo_ok` | bool|null |
+| `huella_actual` | dict |
+| `huella_al_escribir` | dict |
+| `marcada_en` | str |
+| `violaciones_de_estilo` | list[dict] |
+
+**`invalidacion`**
+
+| clave | forma |
+|---|---|
+| `campo` | str |
+| `direccion` | str |
+| `evaluable` | bool |
+| `motivo_no_evaluable` | str |
+| `origen` | str |
+| `texto` | str |
+| `umbral` | num|null |
+| `unidad` | str |
+| `ventana_dias` | num|null |
+
+**`varas`**
+
+| clave | forma |
+|---|---|
+| `advertencias` | list[dict] |
+| `reflexiva` | dict |
+| `revenue` | dict |
+
+**`combustible`**
+
+| clave | forma |
+|---|---|
+| `calibrado` | bool |
+| `confianza` | str |
+| `hay_combustible` | bool |
+| `indica` | str |
+| `lado_dominante` | str |
+| `lectura` | str |
+| `motivo_ausencia` | str |
+| `no_produce_magnitud` | bool |
+| `notional_corto` | num|null |
+| `notional_largo` | num|null |
+| `squeeze_setup` | bool |
+| `venues` | list[str] |
+| `estado` | str |
+| `fuente` | str |
+
+**`derivados`**
+
+| clave | forma |
+|---|---|
+| `medido` | bool |
+| `hay_perp` | bool|null |
+| `no_aplica` | bool|null |
+| `declaracion` | str |
+| `por_venue` | dict |
+| `venues_consultados` | list[str] |
+| `venues_respondieron` | list[str] |
+| `venues_con_perp` | list[str] |
+| `venues_caidos` | dict |
+| `venues_otro_activo` | dict |
+
+**`asimetria_liquidaciones`**
+
+| clave | forma |
+|---|---|
+| `disponible` | bool |
+| `ratio_long_short` | num|null |
+| `lado_ejecutado` | str |
+| `ventana_dias` | num|null |
+| `dias_de_serie` | num|null |
+| `lectura` | str |
+| `motivo` | str |
+| `fuente` | str |
+
+**`escenarios[]`**
+
+| clave | forma |
+|---|---|
+| `tipo` | str|null |
+| `rango_min` | num|null |
+| `rango_max` | num|null |
+| `catalizador` | str|null |
+| `catalizador_datado` | bool |
+| `evidencia_citada` | str |
+| `horizonte_dias` | num|null |
+| `horizonte_nivel` | num|null |
+| `confianza_horizonte` | str|null |
+| `magnitud_origen` | str|null |
+| `invalidacion` | str|null |
+
+**`asimetria`**
+
+| clave | forma |
+|---|---|
+| `dato` | str |
+| `motivo` | str |
+| `no_calculable_motivo` | str |
+| `ratio` | num|null |
+| `horizonte` | num|null |
+| `confianza` | str|null |
+| `recompensa` | num|null |
+| `riesgo` | num|null |
+| `recompensa_origen` | str|null |
+| `riesgo_origen` | str|null |
+| `vara_origen` | str|null |
+| `regla` | str |
+| `advertencias` | list[dict] |
+
+**`riesgo`**
+
+| clave | forma |
+|---|---|
+| `advertencias` | list[dict] |
+| `confianza` | str |
+| `cvar95_1d` | num|null |
+| `cvar95_1d_empirico` | num|null |
+| `cvar95_7d` | num|null |
+| `cvar95_7d_bootstrap` | num|null |
+| `dias_serie` | num|null |
+| `empirico_vs_parametrico` | str |
+| `limites_declarados` | list[str] |
+| `metodo` | str |
+| `nu` | num|null |
+| `peor_dia_ventana` | num|null |
+| `sigma_anualizada` | num|null |
+| `timestamp` | str |
+| `var95_1d` | num|null |
+| `var95_1d_empirico` | num|null |
+| `var95_7d` | num|null |
+
+**`microestructura`**
+
+| clave | forma |
+|---|---|
+| `advertencias` | list[dict] |
+| `condiciones_perp_driven` | list[dict] |
+| `fs` | num|null |
+| `fs_24h` | num|null |
+| `fs_30d` | num|null |
+| `fs_7d` | num|null |
+| `funding_actual` | num|null |
+| `funding_percentil` | num|null |
+| `lectura` | str |
+| `liquidaciones` | num|null |
+| `liquidez_spot_2pct_usd` | num|null |
+| `liquidez_spot_sobre_oi` | num|null |
+| `long_short` | num|null |
+| `long_short_top_traders` | num|null |
+| `oi_mcap` | num|null |
+| `squeeze_setup` | bool |
+
+**`onchain`**
+
+| clave | forma |
+|---|---|
+| `advertencias` | list[dict] |
+| `concentracion_top10_neta` | num|null |
+| `concentracion_top50` | num|null |
+| `cota_superior` | bool |
+| `entidades_etiquetadas` | objeto de claves fijas |
+| `hhi` | num|null |
+| `hhi_etiqueta` | str|null |
+| `lectura` | str |
+| `n` | num|null |
+| `naturaleza` | str|null |
+| `netflows` | list |
+| `nota_cota` | str |
+| `supply_referencia` | num|null |
+
+**`fundamentales`**
+
+| clave | forma |
+|---|---|
+| `advertencias` | list[dict] |
+| `captura_verificada` | bool |
+| `estado_economico` | str |
+| `github` | dict |
+| `mecanismo_captura` | dict |
+| `puntaje_total` | num|null |
+| `revenue_a_holders` | num|null |
+| `revenue_protocolo` | num|null |
+| `revenue_protocolo_30d` | num|null |
+| `revenue_sobre_mcap` | num|null |
+| `rubrica` | list[dict] |
+| `tvl` | num|null |
+| `unlocks` | dict |
+| `via_captura` | str |
+
+**`esceptico`**
+
+| clave | forma |
+|---|---|
+| `objeciones` | list[dict] |
+| `veredicto_bull` | str |
+| `comparables_son_comparables` | bool|null |
+| `catalizador_tiene_fecha` | bool|null |
+| `rechaza` | bool |
+| `motivo_rechazo` | str |
+| `motivo_rechazo_cliente` | str|null |
+
+**`verificador`**
+
+| clave | forma |
+|---|---|
+| `estado` | str |
+| `reconsultas` | list[dict] |
+| `hallazgos` | list |
+| `motivo_bloqueo` | str |
+| `motivo_bloqueo_cliente` | str|null |
+
+**`senales_sin_fuente[]`**
+
+| clave | forma |
+|---|---|
+| `campo` | str |
+| `motivo` | str |
+
+**`fuentes[]`**
+
+| clave | forma |
+|---|---|
+| `campo` | str |
+| `calidad` | str |
+| `timestamp` | str |
+
+**`conflicto_interes`**
+
+| clave | forma |
+|---|---|
+| `hay` | bool |
+| `quien` | str |
+| `declarado_en` | str |
+| `texto` | str |
+
+**`integridad`**
+
+| clave | forma |
+|---|---|
+| `no_disponibles` | list[dict] (elementos de claves fijas) |
+| `retiradas` | list[dict] (elementos de claves fijas) |
+| `sin_verificar` | list[dict] (elementos de claves fijas) |
+
+**`benchmark_al_publicar`**
+
+| clave | forma |
+|---|---|
+| `advertencia` | str |
+| `b1_composicion` | list[str] |
+| `b1_detalle` | dict |
+| `b1_n` | num|null |
+| `b1_nota` | str |
+| `b2_parametros` | dict |
+| `congelado_en` | str |
+| `definicion` | dict |
+| `estado_definicion` | str |
+| `precio_gema_al_publicar` | num|null |
+| `simbolo` | str |
+
+**`niveles`**
+
+| clave | forma |
+|---|---|
+| `asimetria` | dict |
+| `combustible` | dict |
+| `escenarios` | dict |
+| `fundamentales` | dict |
+| `microestructura` | dict |
+| `onchain` | dict |
+| `riesgo` | dict |
+| `varas` | dict |
+
+**`narrado`**
+
+| clave | forma |
+|---|---|
+| `disponible` | bool |
+| `publicable` | bool|null |
+| `escrito_en` | str |
+| `vueltas` | num|null |
+| `veredicto` | dict |
+| `motivo` | str |
+
+**`informe_cliente`**
+
+| clave | forma |
+|---|---|
+| `disponible` | bool |
+| `que_paso` | dict|null |
+| `lectura` | objeto de claves fijas |
+| `hallazgos` | list[dict] |
+| `hallazgo` | dict|null |
+| `niveles` | dict|null |
+| `vigilar` | dict|null |
+| `invalida` | dict|null |
+| `riesgos` | list[str] |
+| `avanzado` | dict|null |
+
+**`veredicto`**
+
+| clave | forma |
+|---|---|
+| `base` | str |
+| `condicion_invalidacion` | str |
+| `decidido_por` | str |
+| `direccion` | str |
+| `estado_economico` | str |
+| `horizonte_dias` | num|null |
+| `ratio_asimetria` | num|null |
+| `tier` | str |
+
+**`onchain.entidades_etiquetadas`**
+
+| clave | forma |
+|---|---|
+| `n_etiquetadas` | num |
+| `n_sin_etiquetar` | num |
+| `por_tipo` | dict |
+| `entidades` | list[dict] |
+| `fuente` | str |
+
+**`integridad.no_disponibles[]`**
+
+| clave | forma |
+|---|---|
+| `que` | str |
+| `motivo_cliente` | str |
+
+**`integridad.retiradas[]`**
+
+| clave | forma |
+|---|---|
+| `que` | str |
+| `seccion` | str |
+| `cifra` | str |
+| `motivo_interno` | str |
+
+**`integridad.sin_verificar[]`**
+
+| clave | forma |
+|---|---|
+| `que` | str |
+| `fuente` | str |
+| `seccion` | str |
+| `cifra` | str |
+
+**`informe_cliente.lectura`**
+
+| clave | forma |
+|---|---|
+| `veredicto` | str |
+| `direccion` | str|null |
+| `horizonte_dias` | num|null |
+| `parrafos` | list[str] |
+| `decidido_por` | str |
+<!-- forma:fin -->
+
+### 15.1 Una reexportación no es una corrida nueva — AVISO A VETA (2026-09-21)
+
+Al reexportar los 14 vigentes con la forma de §15 la web perdió las aprobaciones de la
+bandeja y el sitio quedó vacío. Regla desde hoy:
+
+- Una reexportación por cambio de contrato (forma, vigencia, reclasificación, narrado sobre
+  el paquete guardado) **conserva el `id` del análisis** y escribe una versión nueva del
+  mismo registro (`version_registro` + 1) con **`misma_corrida: true`**.
+- `misma_corrida: false` sólo en la primera versión de una corrida (id nuevo = análisis
+  nuevo, con agentes).
+- VETA ata la aprobación al `id`: una versión nueva con `misma_corrida: true` la conserva.
+  Sólo un `id` nuevo vuelve a la bandeja de aprobación.
+- Regla operativa del motor: **antes de cualquier reexportación masiva se avisa a Pablo**.
+  Las reexportaciones que dispara el cierre de un análisis (una moneda por vez) siguen
+  siendo automáticas.
+
+**Forma o contenido (segundo aviso del 21-sep).** `misma_corrida: true` dice que es la misma
+corrida, no si cambió lo que dice el informe. Por eso `cambios_respecto_version_anterior`
+pasa de lista a objeto:
+
+```json
+{"solo_forma": true, "campos_contenido": [], "detalle": ["onchain", "derivados"]}
+{"solo_forma": false, "campos_contenido": ["tier", "veredicto", "informe_cliente"], "detalle": ["..."]}
+```
+
+- `solo_forma: true`: las dos versiones, normalizadas (claves vacías completadas, `[]`
+  frente a `{}` vacío, un número escrito como texto), dicen lo mismo. La web NO avisa a
+  Pablo en la bandeja; la aprobación se conserva.
+- `solo_forma: false`: `campos_contenido` lista los campos de primer nivel cuyo contenido
+  cambió (`tier`, `veredicto`, `informe_cliente`, `escenarios`…). La web avisa a Pablo.
+- `detalle` conserva la lista de campos con diferencia literal (lo que antes era la lista).
+- No cuentan como contenido: `version_motor`, `version_registro`, `escrito_en`, `vigencia`,
+  `motivo_vigencia`, `misma_corrida`, `reclasificado_a`.
+- La primera versión de una corrida trae `{"solo_forma": false, "campos_contenido": [], "detalle": []}`.
+
+## 16. Invalidaciones: tres estados y cierres revocables (2026-09-21) — AVISO A VETA
+
+**Qué pasó.** PUMP apareció públicamente con la tesis ROTA el 21-sep. La medición diaria leía
+`defillama:/summary/fees/pumpswap?dataType=dailyHoldersRevenue`, que devuelve 0 porque DeFiLlama
+atribuye todo el revenue a holders al producto `pump.fun`, mientras el umbral de 24.881.207 USD
+se construyó sobre la entidad completa. CAKE tenía el mismo fallo con nueve productos. Los dos
+cierres quedaron revocados.
+
+**Lo que cambia para la web:**
+
+1. `seguimiento_diario` lleva cuatro campos nuevos: `dato_confiable` (bool), `motivo_no_confiable`
+   (texto), `pendiente_confirmacion` (bool) y `lecturas_que_cruzan` (entero).
+2. Una lectura tiene **tres** estados, no dos. Puede cruzar el umbral y NO activar la
+   invalidación: porque el dato no es confiable (cero contra un umbral positivo, dato ausente,
+   caída de más del 80 % en un día) o porque falta la segunda lectura que lo confirme. La web
+   sigue leyendo `invalidacion_activada` para decir "tesis rota"; `pendiente_confirmacion` y
+   `dato_confiable: false` se pueden mostrar, pero **no** son una tesis rota.
+3. Los cierres del `ledger` (`id` que empieza con `cierre:`) llevan `revertido` (bool) y
+   `motivo_revocacion` (texto). **Un cierre con `revertido: true` no cuenta como cerrado**: la
+   web no lo muestra como tesis rota ni cierra el seguimiento.
+4. Ya revocados, con su motivo en el registro: `cierre:PUMP-20260919-205724` y
+   `cierre:CAKE-20260919-182420`.
+
+**Regla del motor.** Una invalidación se activa sólo con el dato confirmado en dos lecturas de
+días distintos, y nunca con un dato que el motor declaró no confiable. Una lectura descartada se
+reintenta en el acto y sale como alerta `dato_no_confiable` en `/operacion/alertas`; un cruce sin
+confirmar sale como `invalidacion_pendiente_confirmacion`. Nada se calla: una invalidación
+posible se avisa aunque no se active.
+
+## 17. Tesis retirada del seguimiento público (2026-09-21) — AVISO A VETA
+
+`estado_seguimiento` admite un valor más: **`retirado`**, con `motivo_retiro` (texto) y
+`retirada_en` (fecha ISO). Una gema retirada **sale del track record y del marcador públicos**
+y sigue visible en admin. No se borra nada: el informe, su historial y sus mediciones quedan en
+la base, y el cron deja de medirla.
+
+| estado_seguimiento | la web la muestra en… |
+|---|---|
+| `en_seguimiento` | track record público, marcador y admin |
+| `sin_seguimiento` | admin (nunca entró al seguimiento: sin tesis o no apta) |
+| `retirado` | **sólo admin**, con `motivo_retiro` a la vista |
+
+**Primera retirada, decisión de Pablo del 21-sep:** `PUMP-20260919-205724`, con motivo «regla de
+invalidación sin margen: el umbral era igual al valor al publicar; defecto del Redactor
+corregido antes del lanzamiento». El track record público empieza con el lanzamiento y PUMP
+queda como calibración previa.
+
+## 18. Tesis publicada: no se toca. Y el umbral tiene margen (2026-09-21) — AVISO A VETA
+
+**Regla cerrada, desde el lanzamiento: una tesis publicada no se modifica.** Ni el umbral de
+invalidación, ni el plazo, ni el texto de la condición. Si la lectura cambia, se publica un
+análisis nuevo con su propio `id`; el anterior se retira (§17) o se cierra, y las dos versiones
+quedan en el historial. El motor no reescribe una tesis viva, y la web tampoco debe ofrecerlo.
+
+**Margen del umbral.** Una condición de invalidación tiene que quedar FUERA de la banda que la
+métrica recorrió de verdad. La banda se observa, no se inventa: son los valores que la métrica
+tomó día a día en los últimos 30 días, medidos con la misma ventana con la que se compara. El
+motor lo comprueba antes de publicar y **bloquea el informe** si el umbral cae dentro de la
+banda. El registro lo dice en `invalidacion.margen`:
+
+| campo | qué trae |
+|---|---|
+| `comprobado` | si el motor pudo medir la banda |
+| `cumple` | si el umbral queda fuera de la banda |
+| `banda_observada` | `{min, max, n_dias, fuente, ventana_dias}` |
+| `margen` | distancia relativa entre el umbral y el extremo de la banda |
+| `como_se_fijo` | la frase que explica cómo se fijó, para mostrar en el informe |
+| `motivo` | por qué no cumple, cuando no cumple |
+
+**Nombres de sección.** Cada sección de `niveles` trae `titulo_cliente` además de `seccion`. La
+clave `seccion` no cambia nunca (es el identificador del contrato); **el título que se muestra
+al cliente es `titulo_cliente`**. En particular `varas` se muestra como **«Dos referencias»**.
+Los otros: escenarios → «Escenarios», asimetria → «Riesgo y recompensa», riesgo → «Riesgo de
+caída», microestructura → «Cómo se mueve el precio», onchain → «Quién tiene el token»,
+fundamentales → «El negocio», combustible → «Posiciones apalancadas».
+
+**Múltiplos.** Los múltiplos de los escenarios («2,62x – 3,10x») salen del texto de cliente y de
+`informe_cliente`. Siguen en los campos de admin: `escenarios[].rango_min/rango_max` del registro
+y `niveles.escenarios.avanzado`.
+
+## 19. Conflicto de interés y visibilidad solo-admin (2026-09-21) — AVISO A VETA
+
+Dos campos nuevos en `gema`/`analisis`:
+
+| campo | forma | qué significa |
+|---|---|---|
+| `conflicto_interes` | `{hay, quien, declarado_en, texto}` | tenencia declarada del operador en esa moneda. Con `hay: true`, **el texto de la declaración tiene que mostrarse junto al informe, siempre** |
+| `solo_admin` | bool | `true` cuando el informe está bloqueado por el Verificador **o** hay conflicto de interés. **La web no lo muestra a clientes en ninguna forma**; en la bandeja de admin sí, con la declaración a la vista |
+
+La lista de monedas con tenencia declarada vive en `config/conflictos_interes.yaml` y la aplica
+el motor al escribir el registro: un registro con `conflicto_interes.hay` y sin `texto`, o sin
+`solo_admin`, **es rechazado por el contrato**. No depende de que nadie se acuerde.
+
+`visuales` también trae `solo_admin` y `conflicto_interes`, con el mismo criterio.
+
+**Primera moneda declarada:** SYN, tenencia del operador, declarada el 21-sep-2026.
+
+## 20. Estados de un pedido e integridad del informe (2026-09-26) — AVISO A VETA
+
+Escrito por el motor según la especificación de lanzamiento aprobada (§A.2, §A.3, §I.2). Reemplaza
+lo que §5 decía de `bloqueado` y de los códigos de `fallido`.
+
+### 20.1 Estados
+
+| estado | cuándo | qué trae | cupo |
+|---|---|---|---|
+| `en_cola` | espera: tope de gasto (lo pone la web), cuota de la ventana, sesión del CLI, fuente de infraestructura caída o reintento | `inicio_estimado` (ISO o `null` si no hay estimación honesta), `puesto` (1 = el próximo), `motivo_cola` en llano, `requiere_admin` | reservado |
+| `en_curso` | corriendo | `etapa`, `detalle`, `avance` como en §5 | reservado |
+| `listo` | entregado, con sus huecos declarados | `resultado` (registro completo, con `integridad`) | se consume |
+| `no_analizable` | ninguna fuente da precio; se detecta antes de gastar | `motivo_no_analizable` en llano | se devuelve |
+| `fallido` | **sólo** cancelación | `fallo: {codigo: "cancelado", texto}` | se devuelve |
+
+- **`bloqueado` no se emite nunca más.** El verificador corrige y el informe se entrega.
+- **El reloj es del motor.** Un pedido sin latido 15 min o con más de 3 h vuelve a `en_cola` y se
+  relanza una vez; si vuelve a fallar queda `en_cola` con `requiere_admin: true` (el cliente lo
+  ve en cola, sin hora estimada) y admin recibe la alerta. La web no cierra pedidos por tiempo.
+- **Cancelar:** `POST /cancelar/:id`. Sólo se cancela lo que no terminó (409 si ya terminó).
+- **`/progreso/:id`** devuelve sólo los campos públicos: `solicitud_id, estado, etapa, avance,
+  detalle, etapas_hechas, iniciado, actualizado, terminado, costo_real_usd, resultado, fallo,
+  verificador, inicio_estimado, puesto, requiere_admin, motivo_cola, motivo_no_analizable`. Con el
+  token de operación, además, lo interno.
+
+### 20.2 Integridad
+
+Cada registro `gema`/`analisis` trae:
+
+```json
+"integridad": {
+  "no_disponibles": [{"que": "GPUs en la red", "motivo_cliente": "no pudimos confirmar este dato en su fuente original, así que no lo usamos"}],
+  "retiradas":      [{"que": "…frase…", "seccion": "advertencias", "cifra": "12.400", "motivo_interno": "…"}],
+  "sin_verificar":  [{"que": "calendario de desbloqueos", "fuente": "obtenido de docs.x.io, sin verificar", "seccion": "tokenomics", "cifra": "15 %"}]
+}
+```
+
+- **`retiradas` es sólo de admin.** El texto de cliente ya no contiene esas frases; la web no las
+  muestra al cliente. Si la cifra retirada era un dato, el mismo dato aparece en
+  `no_disponibles` con su `motivo_cliente`, y eso sí se puede mostrar.
+- **`sin_verificar` es sólo para datos sin API** (desbloqueos, tokenomics, asignaciones) que el
+  buscador trajo y cuya página no se pudo leer. En la prosa van con la marca `⟦sv:<índice>⟧`, que
+  la web convierte en nota («obtenido de [fuente], sin verificar»).
+- **Sin tesis:** si una cifra que sostenía la tesis se retira, o la invalidación no deja un umbral
+  válido, el registro sale con `tesis: null` y `motivo_sin_tesis_cliente`; una gema baja a
+  `analisis`. `verificador.estado` es `pasa`, `corregido` o (en registros viejos) `bloqueado`.
+- El detalle interno de cada corrección (`correcciones`) queda en `verificador.json` del informe,
+  no en el registro.
+
+## 21. Ficha determinista de cualquier moneda: `POST /ficha` (2026-09-26) — AVISO A VETA
+
+La foto de una moneda en cinco bloques, sin agentes, sin tesis y sin veredicto: lo que «Analiza tu
+moneda» muestra gratis. Funciona para **cualquier moneda que se pueda resolver**, esté o no en el
+universo: no lee `reports/`. Cumple lo pedido en el §4 de la especificación de VETA y lo aprobado en
+§I.2 de la del motor. Código: `engine/ficha.py`; forma: `contrato/forma.py`
+(`FORMA_FICHA`, `validar_dato_ficha`, `validar_ficha`); ruta: `servicio/rutas.py::ficha`.
+
+### 21.1 Entradas
+
+```
+POST /ficha   { "consulta": "pepe" | "PEPEUSDT" | "0x6982…" | "Bz9…" }
+POST /ficha   { "simbolo"?: "PEPE", "id_coingecko"?: "pepe", "contrato"?: "0x6982…", "cadena"?: "ethereum" }
+```
+
+- **Con `consulta`**, la ficha pasa por `/resolver` (§9.1) y toma la candidata más probable (mayor
+  capitalización). Las demás viajan en `resolucion.otras_candidatas` para que la web ofrezca
+  cambiar. Por ticker o por nombre identifica el `id_coingecko`; por contrato, el contrato.
+- **Con campos**, basta uno. El que identifica sin ambigüedad es `id_coingecko` (o `contrato`, con
+  `cadena` si se sabe). `simbolo` solo se desempata por capitalización. `cadena` acepta el id de
+  plataforma de CoinGecko (`ethereum`, `binance-smart-chain`) o su nombre (`Ethereum`, `BNB Chain`).
+- **Respuestas:** `200` ficha · `400 {error: "falta_moneda"}` sin nada que buscar ·
+  `404 {error: "sin_cobertura", texto}` si no existe o si es una moneda con tenencia declarada
+  (§19) y quien pregunta no es admin · `502 {error: "fuente_caida", texto}` si la fuente de
+  identidad no respondió. Nunca `503`.
+- **Tenencia declarada:** se comprueba antes y después de resolver. Pedida por un contrato o un id
+  que no están en la lista, la moneda resuelta puede ser la declarada, y entonces también es `404`.
+  Con el token de operación (admin), la ficha sale entera.
+
+### 21.2 Forma de cada dato
+
+```json
+{ "clave": "libro_2pct", "etiqueta": "Profundidad del libro a ±2 %",
+  "valor": 516223, "unidad": "USD", "estado": "medido" | "estimado" | "no_disponible",
+  "fuente": "Binance · contado", "medido_en": "2026-09-26T08:00:00+00:00",
+  "nota_estimado": null, "motivo_cliente": null }
+```
+
+Todas las claves están siempre. Reglas, validadas por `validar_dato_ficha` en cada ficha:
+
+| regla | |
+|---|---|
+| `valor` es `null` | **si y sólo si** `estado = no_disponible` |
+| `nota_estimado` (texto) | **si y sólo si** `estado = estimado`; si no, `null` |
+| `motivo_cliente` (texto) | **si y sólo si** `estado = no_disponible`; si no, `null` |
+| `fuente` y `medido_en` | obligatorios salvo en `no_disponible`, donde van `null` |
+| `unidad` | `USD`, `%` (ya multiplicado por 100), `×`, `p` o `null` (número suelto, p. ej. tenedores) |
+
+- `valor` es siempre un número sin redondear para mostrar: la web lo formatea con la tabla de §23.
+- `fuente` y `nota_estimado` están escritos para el cliente («CoinGecko», «Binance · contado»,
+  «Futuros · Binance, OKX»). La fuente técnica de cada dato queda en `solo_admin.fuentes_internas`.
+- `motivo_cliente` es la frase para la línea final de no disponibles («No tiene mercado de futuros
+  activo en los exchanges que consultamos.»). Si la fuente no respondió a tiempo, lo dice: «La
+  fuente tardó demasiado en responder; vuelve a intentarlo en unos minutos.»
+- El estado lo decide el código, no se declara a mano: sin valor ⇒ `no_disponible`; con nota ⇒
+  `estimado`; un valor sin fuente o sin fecha no se publica.
+
+### 21.3 La ficha
+
+```json
+{
+  "nivel": "ficha", "version_ficha": 1,
+  "simbolo": "PENDLE", "nombre": "Pendle", "cadena": "ethereum",
+  "contrato": "0x8085…", "id_coingecko": "pendle",
+  "fecha_datos": "…", "calculada_en": "…", "cache_hasta": "…", "desde_cache": false,
+  "precio_usd": {dato}, "var_24h": {dato}, "var_7d": {dato}, "mcap_usd": {dato},
+  "bloques": {
+    "demanda":       { "titulo": "Qué mueve el precio", "lectura": "demanda_real" | null,
+                       "lecturas_posibles": ["demanda_real", "mixta", "apalancamiento"], "datos": [{dato}, …] },
+    "riesgo_cola":   { "titulo": "Caídas", … },
+    "concentracion": { "titulo": "Quién la tiene", … },
+    "tokenomics":    { "titulo": "Si el token cobra", … },
+    "liquidez":      { "titulo": "Salida", … }
+  },
+  "analizable": true | false | null, "motivo_no_analizable": "…" | null,
+  "resolucion": { "consulta": "", "interpretada_como": "", "otras_candidatas": [] }
+}
+```
+
+- **Cabecera:** `precio_usd`, `var_24h`, `var_7d`, `mcap_usd` (datos con la forma de 21.2),
+  `cadena` (id de plataforma de CoinGecko; `""` en una moneda nativa), `contrato` (`""` en una
+  nativa) y `fecha_datos` (la hora del precio). Sin precio de CoinGecko, `precio_usd` toma el
+  último del par de contado de Binance, con esa fuente.
+- **Cierre:** `analizable` y `motivo_no_analizable`, en lenguaje de cliente. «No analizable» sólo
+  sin precio reciente en ninguna fuente (§G.2, `engine/analizabilidad.py`); lo demás que falte
+  sale como dato no disponible, no como bloqueo.
+- `resolucion` va vacía cuando la entrada fue por campos.
+
+### 21.4 Los cinco bloques
+
+| bloque (`clave`) | título | datos, en este orden | lectura | la decide |
+|---|---|---|---|---|
+| `demanda` | Qué mueve el precio | `futuros_sobre_contado` (×), `financiacion` (%, anualizada), `oi_total` (USD), `oi_cambio_7d` (%) | `demanda_real · mixta · apalancamiento` | futuros sobre contado |
+| `riesgo_cola` | Caídas | `cvar_7d` (%, peor semana de cada 20), `caida_max_90d` (%) | `contenida · alta · extrema` | CVaR de 7 días |
+| `concentracion` | Quién la tiene | `top10_neto` (%, sin exchanges ni contratos), `n_tenedores` | `dispersa · concentrada · muy_concentrada` | top-10 neto |
+| `tokenomics` | Si el token cobra | `ingresos_30d` (USD), `parte_al_token` (%), `tvl` (USD) | `captura_verificada · captura_declarada · captura_citada · sin_captura` | ingresos de 30 días |
+| `liquidez` | Salida | `libro_2pct` (USD), `volumen_24h` (USD) | `profunda · suficiente · fina` | libro a ±2 % |
+
+- **`lectura: null` cuando falta el dato que la decide.** Nunca la lectura cómoda por descarte: un
+  dato ausente no cuenta a favor. Sin ingresos medidos, `tokenomics` es `null`, no `sin_captura`.
+- Los umbrales son los de §4 (`engine/determinista.UMBRALES`): la web sólo muestra la palabra.
+- `captura_citada` no sale nunca en la ficha: exige un mecanismo documentado por un analista, y la
+  ficha no tiene agentes. Una captura cuyos datos reporta el propio proyecto sale como
+  `captura_declarada`.
+- `tvl` no está en la tabla del §4 de VETA: viaja en `tokenomics` como contexto del negocio.
+- Casos que salen `estimado`, con su nota: el libro que suma pools descentralizados (su
+  equivalente se calcula a partir de la liquidez del pool); futuros sobre contado medido con
+  futuros de varios mercados sobre el contado de Binance; interés abierto o financiación a los que
+  les falta algún mercado con futuros; cambio del interés abierto medido en un solo mercado cuando
+  hay varios; CVaR o caída máxima con menos de 90 días de historia; top-10 sobre el suministro
+  total porque la fuente no publica el circulante.
+- **Tenedores de Blockscout:** si sólo respondió Blockscout, `top10_neto` y `n_tenedores` salen
+  `no_disponible` para el cliente (sus términos dicen «internal use only»; lo decide Pablo con
+  `indexador.blockscout_publicable`). Admin ve el HHI igual.
+
+### 21.5 Bloque `solo_admin`
+
+Sólo viaja con el token de operación. Para cualquier otro, **la respuesta de la API no lo trae**
+(no es un filtro de la web: el motor lo quita). Lleva la marca `solo_admin: true` y:
+
+| clave | qué |
+|---|---|
+| `adv_30d` | {dato} volumen diario medio de 30 días (CoinGecko, todos los mercados) |
+| `hhi` | {dato} concentración HHI con su alcance en `etiqueta` |
+| `derivados_por_venue` | `{venue: {oi_usd, volumen_24h_usd, funding_actual, funding_anualizado, precio, intervalo_funding_h}}` |
+| `costo` | `{proveedores: {prov: {llamadas, creditos, lecturas_de_cache, errores}}, llamadas_total, agentes: 0, desde_cache, nota}` |
+| `tiempo_s`, `tiempos_por_tarea` | lo que tardó la consulta y cada proveedor |
+| `fuentes_internas` | la fuente técnica de cada dato (endpoint y parámetros) |
+| `analizabilidad` | el chequeo completo, con lo que se midió |
+| `errores` | fuentes que fallaron o no llegaron a tiempo, y avisos |
+| `combustible` | la lectura de combustible (§D.20), con la misma forma que `combustible` del registro (§15): cuánta posición apalancada está expuesta y de qué lado, desde el mismo mapa de liquidación proyectada que el análisis completo. Indica volatilidad, no dirección, y no produce magnitud. `estado` es `estimado` (es un modelo, nunca `medido`) o `no_disponible`, y en ese caso `motivo_ausencia` dice por qué: sin perpetuo en los venues consultados, venues de derivados fuera de plazo, venues sin respuesta o mapa sin datos. No toca los cinco bloques del cliente |
+
+Con la ficha servida desde la caché, `costo` es cero y `costo_calculo` guarda el de cuando se calculó.
+
+### 21.6 Caché, costo y tiempos
+
+- **Caché por moneda**, en disco (`cache/ficha/`). La ficha entera vive **15 minutos** (lo que vive
+  su dato más corto, el precio y los derivados). Las fuentes guardan cada una su plazo: tenedores
+  **6 h**, ingresos y TVL **24 h**; rehacer una ficha vencida no vuelve a pedirlos. Dos claves por
+  ficha: la de la entrada tal como llegó y la del `id_coingecko`, así que `BTC`, `bitcoin` y un
+  contrato comparten la misma ficha. Una ficha a la que le faltó una fuente (error o tardanza) vive
+  **60 s**, para que la siguiente consulta la complete.
+- **Costo por consulta** en `solo_admin.costo`: llamadas a la red y créditos por proveedor
+  (CoinGecko, GoldRush, Helius, DefiLlama, venues…), cero agentes. En frío, CoinGecko gasta dos
+  llamadas por moneda (`/coins/{id}` con `market_data`, reutilizada por la resolución, el precio y
+  la capitalización, y `market_chart` de 365 días; una más para desempatar un ticker con homónimos).
+- **Tiempo:** objetivo p95 ≤ 8 s en frío y ≤ 1 s con caché. Los proveedores van en paralelo; lo que
+  no llegó en 7 s sale `no_disponible` con su motivo y su hilo termina solo, dejando la respuesta en
+  la caché de la fuente. `/coins/list`, `/asset_platforms`, `/protocols`, `/lite/protocols2`,
+  `/v2/chains`, los catálogos de `/overview/fees` por tipo de dato, `exchangeInfo` y los catálogos
+  de los venues de derivados los precarga el cron diario
+  (`engine.ficha.precargar`, 06:30 UTC). Medido en modo mock con las respuestas guardadas en la
+  caché (sin latencia de red), 20 monedas: mediana 0,68 s y p95 1,28 s en frío; 0,1 ms y 0,2 ms con
+  caché. En el servidor, con red, el suelo lo pone el limitador de CoinGecko (2,4 s entre llamadas):
+  queda por medir en el banco (§E).
+
+### 21.7 Lo que no cambia
+
+`/determinista` y `/analizable` responden como hasta ahora. La forma de los registros `gema` y
+`analisis` (§15) no cambia.
+
+### 21.x `/determinista` desde la ficha (2026-09-26) — AVISO A VETA
+
+`POST /determinista` responde ahora para **cualquier** moneda que la ficha pueda identificar, con
+datos frescos, y ya no sólo para las que tienen un análisis guardado. La forma es la de §4, sin
+cambios; `origen_motor` vale `ficha`. Si la ficha no puede (moneda no identificable o fuente
+caída), responde como antes desde el último análisis guardado, y 404 si tampoco lo hay.
+
+---
+
+# Acuses de VETA (21-sep)
+
+Lo que la web hizo con cada aviso del motor de §15 a §18. Se conserva tal cual se escribió
+el 21-sep; lo que ha cambiado desde entonces lo fijan §20 a §23.
+
+## A.15 Forma única de cada campo  ·  acuse
 
 El motor añadió esta sección el 21-sep-2026 con siete cambios. Aquí queda **qué
 hizo la web con cada uno**, para que ninguno se dé por aplicado sin estarlo.
@@ -607,7 +1502,7 @@ degradaban solas: `null` es falso igual que ausente, y cada sección cae a su
 dato de ficha. Un informe sin narrado enseña tesis, niveles e invalidación en
 vez de cinco cajas vacías.
 
-### 15.1 Lo que la web pide al motor  ·  ABIERTO
+### A.15.1 Lo que la web pedía al motor (resuelto en §15.1 y §20–§23)
 
 1. **El decimal y el signo de porcentaje.** En texto de cliente van con coma
    decimal y espacio duro antes del signo: «+1,2 %», no «+1.2%». Afecta al
@@ -625,7 +1520,7 @@ vez de cinco cajas vacías.
    aprobar. Basta un campo en `cambios_respecto_version_anterior` que diga que
    el cambio fue de forma y no de contenido.
 
-## 15.1 · 16 · 17  ·  ACUSE DE RECIBO (21-sep, noche)
+## A.16 Acuse de §15.1, §16, §17 y §18 (21-sep, noche)
 
 | Sección | Lo que fija el motor | Lo que hizo la web |
 |---|---|---|
@@ -656,3 +1551,80 @@ en oro.
    múltiplo de escenario, así que no lo he tocado, pero es la misma familia y
    conviene decidir si también se va a admin.
 2. **`titulo_cliente`** todavía no llega en ninguna de las ocho secciones.
+
+---
+
+## 22. Qué está publicado: `publicados-web.json` (2026-09-26) — AVISO AL MOTOR
+
+Escrito por la web según las dos especificaciones de lanzamiento aprobadas (web §7, motor §C.15).
+**La bandeja de VETA es la única autoridad sobre qué está publicado.** La web la escribe; el motor
+la lee; nadie más la escribe.
+
+### 22.1 Dónde y cómo
+
+- Ruta: `/opt/veta/gem-pipeline/base_contenido/publicados-web.json` (en local,
+  `$VETA_BASE_CONTENIDO/publicados-web.json`).
+- Lo escribe `veta-web` (usuario `veta`) **de forma atómica**: escribe `publicados-web.json.tmp`
+  en el mismo directorio y hace `rename`. Nunca hay un fichero a medias.
+- Se reescribe **entero** en cada decisión de la bandeja (aprobar, rechazar, pedir más,
+  despublicar), en cada despublicación o devolución de una noticia y al arrancar la API.
+- Permisos: `veta:veta`, `0644`. El motor sólo lo lee.
+
+### 22.2 Forma
+
+```json
+{ "version": 1,
+  "generado": "2026-09-26T08:00:00.000Z",
+  "secuencia": 57,
+  "informes": [
+    { "id": "CELO-20260919-183951", "tipo": "analisis", "estado": "publicado",
+      "version_registro": 4, "decidido": "2026-09-21T15:00:00.000Z", "por": "admin" } ],
+  "noticias_despublicadas": [ "not-20260922-1233-6e9641" ] }
+```
+
+| campo | significado |
+|---|---|
+| `secuencia` | entero que crece con cada escritura. Si el motor lee uno menor que el último que vio, alerta |
+| `informes[]` | **sólo lo publicado hoy**. Lo que no está no está publicado, sea cual sea su estado en la bandeja |
+| `informes[].id` + `tipo` | la clave: un mismo `id` puede existir como gema y como análisis (§12.3) |
+| `informes[].version_registro` | la versión que estaba vigente cuando se aprobó (informativa: la aprobación va por `id`, §15.1) |
+| `informes[].por` | siempre `"admin"`: el correo de quien decidió no sale de la web |
+| `noticias_despublicadas[]` | ids de piezas que Pablo retiró; el resto de `publicable: true` sigue publicado |
+
+### 22.3 Reglas para el motor
+
+1. Se lee en cada uso (agenda, noticias, seguimiento, alertas). Es un fichero local: no hay caché
+   ni «demasiado viejo», porque sólo cambia con una decisión.
+2. **Si no existe, nada está publicado.** Nunca se cae a `ledger.veredicto_bandeja`.
+3. `ledger.veredicto_bandeja` y `base_contenido/publicacion.jsonl` quedan congelados como
+   histórico y ya no se leen. La web deja de escribir `publicacion.jsonl`.
+4. Una moneda con tenencia declarada (§19) no cuenta como publicada aunque apareciera en el
+   fichero: la exclusión del motor manda.
+
+## 23. Tabla de formato de cifras para el cliente (2026-09-26) — AVISO AL MOTOR
+
+Escrito por la web. Es la regla con la que la web pinta **toda cifra que ve un cliente**, y con la
+que la prueba de contrato comprueba cada pantalla. El motor manda los valores **sin redondear**
+(§21.2); si escribe cifras dentro de la prosa, las escribe con esta misma tabla.
+
+**Separadores:** coma decimal; miles con espacio fino duro (U+202F); el mismo espacio entre la
+cifra y su unidad (`%`, `USD`, `días`). El signo negativo es «−» (U+2212), nunca el guion.
+
+| unidad (`unidad` del contrato) | cómo llega | cómo se pinta | ejemplo |
+|---|---|---|---|
+| `USD`, precio de una moneda | número | decimales según magnitud: ≥ 100 → 0; ≥ 1 → 2; ≥ 0,01 → 4; menor → 6 | `0,3010 USD` · `2,31 USD` · `64 210 USD` |
+| `USD`, cantidad (volumen, libro, TVL, ingresos, capitalización) | número | sin decimales | `516 223 USD` |
+| `%` | ya multiplicado por 100 (§4, §21.2) | una decimal | `33,8 %` |
+| `%` de variación (`var_24h`, `var_7d`, `oi_cambio_7d`, cambios) | ya ×100 | una decimal y **signo siempre**: «+» si > 0, «−» si < 0, sin signo si 0 | `+1,2 %` · `−4,8 %` |
+| `×` | número | dos decimales, sin espacio antes del signo | `2,76×` |
+| `p` (percentil) | número 0–100 | sin decimales, prefijo «p» | `p90` |
+| sin unidad (tenedores, días, conteos) | número | sin decimales | `12 408` |
+| fecha | ISO | `D mmm AAAA`, mes en minúscula de tres letras | `26 sep 2026` |
+| fecha y hora | ISO | `D mmm AAAA · HH:MM UTC` | `26 sep 2026 · 08:00 UTC` |
+| rango de escenario | `rango_min`, `rango_max` | si son iguales, un solo número; si no, `A – B` con guion largo y espacios | `1,14×` · `1,10× – 1,30×` |
+
+- Una fracción (0–1) nunca llega al cliente como tal: si un campo viaja como fracción, el contrato
+  lo dice y la web lo multiplica antes de aplicar la fila `%`.
+- Redondeo: al más cercano, mitades hacia arriba en valor absoluto (`toFixed`).
+- Un valor `null` no se pinta (§21.2, «lo que no hay, no se muestra»): nunca «—» en una pantalla
+  de cliente.
