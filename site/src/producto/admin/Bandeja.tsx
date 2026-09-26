@@ -75,7 +75,7 @@ export function Bandeja() {
         {filas.length === 0 && <div className="p-vacio"><EmptyState kind="vacio" title="No hay informes pendientes." detail="Cuando el motor termine una corrida nueva, aparece acá con su paquete." /></div>}
         <div className="a-lista">
           {filas.map((f) => (
-            <article key={f.id} className={`a-fila a-fila--${f.publicacion.estado} ${f.verificador.estado !== 'pasa' ? 'a-fila--bloqueada' : ''} ${f.vigente ? '' : 'a-fila--obsoleta'}`}>
+            <article key={f.id} className={`a-fila a-fila--${f.publicacion.estado} ${f.verificador.estado === 'bloqueado' ? 'a-fila--bloqueada' : ''} ${f.vigente ? '' : 'a-fila--obsoleta'}`}>
               <Link to={`/admin/bandeja/${f.id}`} className="a-fila__piedra" aria-hidden="true"><TierIcon tier={f.tier.toLowerCase() as 'bajo' | 'medio' | 'alto'} size={52} /></Link>
               <div className="a-fila__id">
                 <Link to={`/admin/bandeja/${f.id}`} className="a-fila__sym display">{f.simbolo}</Link>

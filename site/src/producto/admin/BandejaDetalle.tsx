@@ -47,7 +47,8 @@ export function BandejaDetalle() {
   if (!d) return <div className="shell p-cargando"><Loader size={72} label="Cargando el informe" /></div>
   const { informe: inf, fila } = d
   const esAnalisis = inf.tipo === 'analisis'
-  const bloqueado = fila.verificador.estado !== 'pasa'
+  // `corregido` (§20.2) no es un bloqueo: el informe se entregó con sus correcciones anotadas.
+  const bloqueado = fila.verificador.estado === 'bloqueado'
 
   return (
     <div className="a-rev">
@@ -122,7 +123,7 @@ export function BandejaDetalle() {
           )}
         </div>
 
-        <BarraDecision fila={fila} bloqueado={bloqueado} onHecho={async () => { invalidarDatos(); await cargar(); setPestana('historial') }} />
+        <BarraDecision fila={fila} bloqueado={bloqueado} integridad={(inf as unknown as { integridad?: IntegridadAdmin | null }).integridad ?? null} onHecho={async () => { invalidarDatos(); await cargar(); setPestana('historial') }} />
       </div>
     </div>
   )
@@ -154,7 +155,7 @@ function ProsaVsMotor({ inf }: { inf: Informe }) {
 }
 
 /* ---------- decisión ---------- */
-function BarraDecision({ fila, bloqueado, onHecho }: { fila: FilaBandeja; bloqueado: boolean; onHecho: () => Promise<void> }) {
+function BarraDecision({ fila, bloqueado, onHecho, integridad }: { fila: FilaBandeja; bloqueado: boolean; onHecho: () => Promise<void>; integridad?: IntegridadAdmin | null }) {
   const [motivo, setMotivo] = useState('')
   const [vioBloqueo, setVioBloqueo] = useState(false)
   const [ocupado, setOcupado] = useState<string | null>(null)
@@ -184,9 +185,15 @@ function BarraDecision({ fila, bloqueado, onHecho }: { fila: FilaBandeja; bloque
       {p.ultima && <span className="a-dec__quien mono">{p.ultima.accion} · {p.ultima.admin_email} · {fechaHora(p.ultima.fecha)}</span>}
       {p.estado === 'nueva_version' && <p className="a-dec__aviso">Se aprobó la v{p.version_aprobada}; el motor escribió la v{fila.version_registro}. Hasta que la apruebes, la gema no se ve.</p>}
 
+      {!!(integridad?.retiradas?.length || integridad?.sin_verificar?.length) && (
+        <p className="a-dec__aviso">
+          Antes de aprobar: el verificador corrigió {integridad?.retiradas?.length ?? 0} {integridad?.retiradas?.length === 1 ? 'cifra' : 'cifras'}
+          {integridad?.sin_verificar?.length ? ` y hay ${integridad.sin_verificar.length} sin verificar` : ''}. El detalle está en la pestaña Verificador; el cliente sólo ve las sin verificar y la línea de no disponibles.
+        </p>
+      )}
       <div className={`a-dec__ver ${bloqueado ? 'is-bloqueado' : ''}`}>
         <span className="mono">Verificador</span>
-        <strong>{bloqueado ? fila.verificador.estado : 'pasa'}</strong>
+        <strong>{fila.verificador.estado || 'pasa'}</strong>
         {bloqueado && fila.verificador.motivo_bloqueo && <p>{fila.verificador.motivo_bloqueo}</p>}
         {bloqueado && (
           <label className="a-dec__check">
@@ -241,11 +248,31 @@ function Esceptico({ inf }: { inf: Informe }) {
 }
 
 /* ---------- verificador ---------- */
+interface IntegridadAdmin {
+  retiradas?: { que: string; seccion?: string; cifra?: string; motivo_interno?: string }[]
+  sin_verificar?: { que: string; fuente: string; seccion?: string; cifra?: string }[]
+  no_disponibles?: { que: string; motivo_cliente?: string }[]
+}
+
 function Verificador({ inf, bruto }: { inf: Informe; bruto: Record<string, unknown> | null }) {
   const v = inf.verificador
-  const pasa = v.estado === 'pasa'
+  const pasa = v.estado !== 'bloqueado'
+  const ig = (inf as unknown as { integridad?: IntegridadAdmin | null }).integridad ?? null
   return (
     <section className="a-sec">
+      {ig && (ig.retiradas?.length || ig.sin_verificar?.length || ig.no_disponibles?.length) ? (
+        <div className="a-sec__grupo" style={{ marginBottom: 16 }}>
+          <span className="mono a-sec__k">integridad · retiradas {ig.retiradas?.length ?? 0} · sin verificar {ig.sin_verificar?.length ?? 0} · no disponibles {ig.no_disponibles?.length ?? 0}</span>
+          <div className="p-tabla-wrap"><table className="p-tabla">
+            <thead><tr><th>Tipo</th><th>Qué</th><th>Sección</th><th>Cifra</th><th>Motivo</th></tr></thead>
+            <tbody>
+              {(ig.retiradas ?? []).map((r, i) => <tr key={`r${i}`} className="is-ausente"><td className="mono">retirada</td><td>{r.que}</td><td className="mono">{r.seccion}</td><td>{r.cifra}</td><td>{r.motivo_interno}</td></tr>)}
+              {(ig.sin_verificar ?? []).map((r, i) => <tr key={`s${i}`}><td className="mono">sin verificar</td><td>{r.que}</td><td className="mono">{r.seccion}</td><td>{r.cifra}</td><td>{r.fuente}</td></tr>)}
+              {(ig.no_disponibles ?? []).map((r, i) => <tr key={`n${i}`}><td className="mono">no disponible</td><td>{r.que}</td><td /><td /><td>{r.motivo_cliente}</td></tr>)}
+            </tbody>
+          </table></div>
+        </div>
+      ) : null}
       <div className={`a-dec__ver ${pasa ? '' : 'is-bloqueado'}`} style={{ marginBottom: 16 }}>
         <span className="mono">Estado</span><strong>{v.estado}</strong>
         {v.motivo_bloqueo && <p>{v.motivo_bloqueo}</p>}

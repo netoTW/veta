@@ -107,10 +107,15 @@ export const tieneCriterioInterno = (t?: string | null) => !!t && CRITERIO_INTER
 /** Quita de un texto del informe las frases escritas para control interno: criterios, mínimos,
     listas de descartes, conteos de comparables. Corta por punto y por " · ", que es como el
     informe separa ideas. Si no queda nada legible, devuelve cadena vacía y no se muestra. */
+/* Un identificador de código («creator_fee_share_rate», «curve_params») no es texto de
+   cliente: la frase que lo lleva se cae entera, igual que las de criterio interno. Salía en los
+   catalizadores de STONK copiados de un changelog. El arreglo de verdad es del motor. */
+const CODIGO = /\b[a-z][a-z0-9]*(?:_[a-z0-9]+)+\b/
+
 export function limpiarProsa(t?: string | null): string {
   if (!t) return ''
   const trozos = t.split(/(?<=\.)\s+|\s+·\s+/)
-  const buenos = trozos.filter((x) => x.trim() && !tieneCriterioInterno(x))
+  const buenos = trozos.filter((x) => x.trim() && !tieneCriterioInterno(x) && !CODIGO.test(x))
   const out = buenos.join(' ').replace(/\s{2,}/g, ' ').trim()
   return /[a-záéíóúñ]/i.test(out) ? sinMarcaRepetida(out) : ''
 }
@@ -366,4 +371,5 @@ export function delCatalogo(campo: string, codigo?: string | null): string {
 /** El único filtro para la prosa que llega del motor y se muestra a un cliente.
     Traduce, quita identificadores, pasa a tuteo y descarta las frases de taller.
     Antes esto estaba repartido en cinco archivos y cada uno se dejaba algo. */
-export const prosaDeCliente = (t?: string | null): string => limpiarProsa(llano(t ?? ''))
+/** La marca ⟦sv:i⟧ (contrato §20.2) nunca sale cruda: donde no se convierte en nota, se quita. */
+export const prosaDeCliente = (t?: string | null): string => limpiarProsa(llano((t ?? '').replace(/⟦sv:\d+⟧/g, '')))

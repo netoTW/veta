@@ -4,7 +4,7 @@ import { TierIcon } from '../ui/TierIcon'
 import { Loader } from '../ui/Loader'
 import { EmptyState } from '../ui/EmptyState'
 import { planMinimo, puede, useRol, type Rol, type Seccion, PLAN_LABEL, ROL_LABEL } from '../lib/acceso'
-import { ESTADO_TESIS_LABEL, TIER_LABEL, SEVERIDAD_CORTA, TIPO_ADV_LABEL, fechaHora } from '../lib/formato'
+import { ESTADO_TESIS_LABEL, TIER_LABEL, SEVERIDAD_CORTA, TIPO_ADV_LABEL, CAMPO_LABEL, fechaHora } from '../lib/formato'
 import type { Estado } from '../lib/datos'
 import { SEVERIDADES, type Advertencia, type Fuente, type Severidad, type Tier } from '../lib/contrato'
 import { tieneCriterioInterno, prosaDeCliente } from '../lib/lenguaje'
@@ -228,27 +228,35 @@ export function FuenteChip({ fuente, timestamp, calidad }: { fuente?: string; ti
   )
 }
 
+/* Las fuentes, plegadas al pie. El cliente ve fuente, fecha y si el dato se verificó:
+   nunca «ausente» ni «parcial» (lo que no hay no se enseña; va a la línea de no disponibles),
+   y el campo con su nombre de todos los días. Admin ve la calidad cruda del motor. */
+const CALIDAD_CLIENTE: Record<string, string> = { ok: 'verificada', parcial: 'sin verificar' }
 export function TablaFuentes({ fuentes, detalle = true }: { fuentes: Fuente[]; detalle?: boolean }) {
   const [open, setOpen] = useState(false)
+  const { rol } = useRol()
+  const admin = rol === 'admin'
+  const filas = admin ? fuentes : fuentes.filter((f) => f.calidad !== 'ausente')
   const ausentes = fuentes.filter((f) => f.calidad === 'ausente').length
+  if (!filas.length) return null
   return (
     <div className="p-fuentes">
       <button type="button" className="p-fuentes__head" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
         <span className="mono">Fuentes consultadas, con fecha</span>
-        <span className="num">{detalle ? `${fuentes.length} campos · ${ausentes} ausentes` : `${fuentes.length}`}</span>
+        <span className="num">{admin && detalle ? `${fuentes.length} campos · ${ausentes} ausentes` : `${filas.length}`}</span>
         <span aria-hidden="true">{open ? '−' : '+'}</span>
       </button>
       {open && (
         <div className="p-tabla-wrap">
           <table className="p-tabla p-tabla--fuentes">
-            <thead><tr><th>Campo</th><th>Fuente</th><th>Timestamp</th><th>Calidad</th></tr></thead>
+            <thead><tr><th>Dato</th><th>Fuente</th><th>Fecha</th><th>{admin ? 'Calidad' : 'Estado'}</th></tr></thead>
             <tbody>
-              {fuentes.map((f) => (
-                <tr key={f.campo} className={`is-${f.calidad}`}>
-                  <td className="mono">{f.campo}</td>
-                  <td>{f.fuente}</td>
+              {filas.map((f) => (
+                <tr key={f.campo} className={admin ? `is-${f.calidad}` : ''}>
+                  <td className={admin ? 'mono' : ''}>{admin ? f.campo : (CAMPO_LABEL[f.campo] ?? f.campo.replace(/_/g, ' '))}</td>
+                  <td>{admin ? f.fuente : prosaDeCliente(f.fuente)}</td>
                   <td className="num">{fechaHora(f.timestamp)}</td>
-                  <td className="mono">{f.calidad}</td>
+                  <td className="mono">{admin ? f.calidad : CALIDAD_CLIENTE[f.calidad] ?? 'sin verificar'}</td>
                 </tr>
               ))}
             </tbody>

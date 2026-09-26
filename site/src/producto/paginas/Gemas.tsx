@@ -20,7 +20,7 @@ const TIERS: Tier[] = ['BAJO', 'MEDIO', 'ALTO']
 const TIER_DESC: Record<Tier, string> = {
   BAJO: 'Cumple las condiciones de riesgo bajo.',
   MEDIO: 'Incumple alguna condición sin extremos.',
-  ALTO: 'Incumple varias condiciones o hay datos ausentes que cuentan en contra.',
+  ALTO: 'Incumple varias condiciones o hay datos que cuentan en contra.',
 }
 
 function TarjetaGema({ g }: { g: Informe }) {

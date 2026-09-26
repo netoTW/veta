@@ -70,7 +70,6 @@ export const ESTADO_TESIS_LABEL: Record<string, string> = {
   EN_REVISION: 'Dato en revisión',
 }
 export const TIER_LABEL: Record<string, string> = { BAJO: 'Riesgo bajo', MEDIO: 'Riesgo medio', ALTO: 'Riesgo alto' }
-export const CALIDAD_LABEL: Record<string, string> = { ok: 'ok', parcial: 'parcial', ausente: 'ausente' }
 
 /** Las notas del motor vienen con " · " como separador de frases. */
 export const frases = (s: string | null | undefined) =>

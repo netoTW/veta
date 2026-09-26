@@ -201,7 +201,17 @@ export async function anticipadasPara(rol: Rol) {
 }
 /** filter asíncrono. */
 async function filtrar<T>(xs: T[], f: (x: T) => Promise<boolean>) { const ok = await Promise.all(xs.map(f)); return xs.filter((_, i) => ok[i]) }
-const conPublicacion = async (r: Registro, rol: Rol) => (rol === 'admin' ? { ...r, publicacion: await estadoPublicacion(r) } : r)
+const conPublicacion = async (r: Registro, rol: Rol) => (rol === 'admin' ? { ...r, publicacion: await estadoPublicacion(r) } : paraCliente(r))
+
+/* Contrato §20.2: lo que el control de calidad corrigió o quitó (`integridad.retiradas`)
+   es de la mesa. No se esconde en pantalla: no sale del servidor hacia quien no es admin. */
+export function paraCliente(r: Registro): Registro {
+  const ig = r.integridad as { retiradas?: unknown } | undefined
+  if (!ig || !('retiradas' in ig)) return r
+  const { retiradas: _fuera, ...resto } = ig as Record<string, unknown>
+  void _fuera
+  return { ...r, integridad: resto }
+}
 
 /* ---------- recortes por rol ---------- */
 const CAMPOS_TITULAR = ['id', 'tipo', 'version_motor', 'version_registro', 'escrito_en', 'simbolo', 'nombre', 'cadena',

@@ -844,3 +844,11 @@
 /* Informe sin tesis (contrato §20.2): se dice arriba, en el mismo tono que el resto. */
 .p-det__sintesis { margin: 14px 0 0; max-width: 62ch; color: var(--ceniza); font-size: 0.95rem; line-height: 1.5; }
 .p-det__sintesis .mono { display: block; margin-bottom: 4px; color: var(--oro); font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; }
+
+/* «Sobre los datos de este informe» (§6): sobrio, dentro del informe, sin rojo. */
+.p-sobredatos { margin-top: 22px; padding: 14px 16px; border-left: 1px solid var(--hairline); display: flex; flex-direction: column; gap: 6px; max-width: 70ch; }
+.p-sobredatos__k { color: var(--ceniza-2); font-size: 0.64rem; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 2px; }
+.p-sobredatos__l { margin: 0; color: var(--ceniza); font-size: 0.88rem; line-height: 1.5; }
+.p-sobredatos__l--fuera { color: var(--ceniza-2); }
+/* La cifra sin verificar: un asterisco discreto con la nota al pasar el ratón o al tocar. */
+.p-sv { color: var(--oro); text-decoration: none; cursor: help; margin-left: 1px; border-bottom: 1px dotted var(--oro); }

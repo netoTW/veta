@@ -9,6 +9,9 @@ const PROHIBIDAS = /\b(escéptico|verificador|redactor|umbral|observable|criteri
 /* Texto de máquina que se cuela en pantallas de cliente: nombres de campo en
    snake_case, cadenas de llamada a una fuente, URL sueltas y jerga de índice.
    Es la familia que sacó "revenue_holders_30d" y "binance:spot/klines · equal-weight". */
+/* §6 (A6.3): lo que no hay no se enseña, y lo que se corrigió no se le cuenta al cliente.
+   Lo único que puede decir un informe es «sin verificar» y «No entra en este informe: …». */
+const INCOMPLETO = /\b(ausentes?|parcial(es)?|retirad[oa]s?|corregid[oa]s?|no disponibles?)\b/gi
 const MAQUINA = /\b[a-z]+(?:_[a-z0-9]+){1,}\b|\b(?:binance|defillama|coingecko|okx|arkham):[\w\/]+|dataType=|equal-weight|long-only|https?:\/\/[^\s)]+/g
 /* Lo que sí puede aparecer: palabras compuestas nuestras y direcciones públicas. */
 const PERDONADAS = /^(veta_|utm_|no_|sin_)|^(e_?mail|on_?chain)$|vetalab\.io|bls\.gov|federalreserve\.gov|whop\.com/i
@@ -16,14 +19,23 @@ const b = await puppeteer.launch({ executablePath:'/Applications/Google Chrome.a
 const p = await b.newPage(); await p.setViewport({width:1440,height:1000})
 await p.goto('http://localhost:5310/gemas',{waitUntil:'networkidle0'})
 await p.evaluate(async (pw)=>{await fetch('/api/auth/sign-in/email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:'pro@veta.local',password:pw}),credentials:'same-origin'})}, env.VETA_DEMO_PASSWORD)
-const rutas = ['/','/gemas','/gemas/RAY-20260912-012647','/seguimiento','/analisis','/analisis/MORPHO-20260918-053222','/watchlist','/analizar','/votacion','/cuenta',
+// El detalle de TODO lo publicado, no de uno fijo: un texto del motor que se cuela en un informe
+// que nadie abrió en la prueba es igual de visible para el cliente.
+const publicados = await p.evaluate(async () => {
+  const a = await fetch('/api/contenido/analisis').then((r) => r.json()).catch(() => [])
+  const g = await fetch('/api/contenido/gemas').then((r) => r.json()).catch(() => ({ gemas: [] }))
+  return [...a.map((x) => '/analisis/' + x.id), ...(g.gemas ?? []).map((x) => '/gemas/' + x.id)]
+})
+const rutas = [...publicados, '/','/gemas','/seguimiento','/analisis','/watchlist','/analizar','/votacion','/cuenta',
   // Las páginas públicas y las nuevas: son las que más texto de venta llevan.
   '/metodologia','/nosotros','/precios','/noticias','/gracias','/terminos','/privacidad','/contacto','/entrar','/registro','/recuperar']
 let total = 0
 for (const r of rutas) {
   await p.goto('http://localhost:5310'+r,{waitUntil:'networkidle0'}); await new Promise(x=>setTimeout(x,1800))
   const t = await p.evaluate(()=>document.body.innerText)
-  const hits = [...new Set((t.match(PROHIBIDAS)||[]).map(s=>s.toLowerCase()))]
+  // La regla de §6 es para informes y sus listas: en una noticia, «se había retirado» es castellano.
+  const esInforme = /^\/(analisis|gemas|analizar|seguimiento)(\/|$)/.test(r)
+  const hits = [...new Set([...(t.match(PROHIBIDAS)||[]), ...(esInforme ? (t.match(INCOMPLETO)||[]) : [])].map(s=>s.toLowerCase()))]
   for (const m of new Set(t.match(MAQUINA)||[])) if (!PERDONADAS.test(m)) hits.push(m.slice(0,48))
   total += hits.length
   console.log('  '+(hits.length?'⚠ ':'✓ ')+r.padEnd(38)+(hits.join(', ')||'limpio'))

@@ -21,7 +21,7 @@ import { rolDe, puede, planMinimo, type Rol } from '../src/lib/matriz.ts'
 import { motor, type Solicitud, type Progreso, type EstadoSolicitud } from './motor.ts'
 import { cupoDe, reservar, devolver, hayMargen, gastoMes, fijarTope, type Cupo } from './cupo.ts'
 import { esContrato } from './resolver.ts'
-import { olvidarAPedido } from './contenido.ts'
+import { olvidarAPedido, paraCliente } from './contenido.ts'
 
 type Vars = { sesion: Sesion | null; rol: Rol }
 export const analizarApp = new Hono<{ Variables: Vars }>()
@@ -69,7 +69,7 @@ async function vistaSolicitud(f: FilaSolicitud, conResultado = true, admin = fal
     inicio_estimado: cola?.requiere_admin ? null : cola?.inicio_estimado ?? null,
     puesto: cola?.puesto ?? null,
     ...(admin ? { requiere_admin: !!cola?.requiere_admin, motivo_cola: cola?.motivo_cola ?? null, motor_actualizado: f.motor_actualizado, alerta_admin_en: f.alerta_admin_en } : {}),
-    resultado: conResultado && f.resultado ? JSON.parse(f.resultado) : null,
+    resultado: conResultado && f.resultado ? (admin ? JSON.parse(f.resultado) : paraCliente(JSON.parse(f.resultado))) : null,
     tier: f.resultado ? (JSON.parse(f.resultado) as { tier?: string }).tier ?? null : null,
     enviada: !!f.enviada,
     posicion_cola: f.estado === 'en_cola' ? (await bd.uno("SELECT COUNT(*) AS n FROM solicitud WHERE nivel = 'profundo' AND estado = 'en_cola' AND creada <= ?", [f.creada]) as { n: number }).n : null,

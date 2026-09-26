@@ -15,6 +15,7 @@ import { etiquetadasDe } from '../../lib/contrato'
 import { EmptyState } from '../../ui/EmptyState'
 import { Cifras, Prosa, RiesgoLlano } from '../cifras'
 import { estadoEconomicoLlano, tieneCriterioInterno, llano, delCatalogo, prosaDeCliente } from '../../lib/lenguaje'
+import { SobreLosDatos, ProsaConNotas, type Integridad } from '../integridad'
 
 /* ============================================================================
    Informe — el detalle de una gema (o de un análisis sin tesis).
@@ -412,6 +413,7 @@ export function Cuerpo({ inf, esAnalisis }: { inf: Informe; esAnalisis: boolean 
   /* Contrato §20.2: si una cifra que sostenía la tesis se retiró, o la invalidación no dejó un umbral
      válido, el informe llega sin tesis y con el motivo para el cliente. Se dice arriba, y no se pintan
      ni la invalidación ni los escenarios: sin tesis no hay nada que invalidar. */
+  const ig = (inf as unknown as { integridad?: Integridad | null }).integridad ?? null
   const sinTesis = prosaDeCliente(String((inf as unknown as { motivo_sin_tesis_cliente?: string | null }).motivo_sin_tesis_cliente ?? ''))
 
   return (
@@ -463,7 +465,7 @@ export function Cuerpo({ inf, esAnalisis }: { inf: Informe; esAnalisis: boolean 
       {/* ---- 1 · Qué pasó. La escribe el motor; mientras no llegue, no se muestra. ---- */}
       {ic?.que_paso?.titular && (
         <SeccionCliente n="1" k="Qué pasó" titulo={llano(ic.que_paso.titular)}>
-          {(ic.que_paso.parrafos ?? []).map((t, i) => <p key={i} className="p-cli__p">{prosaDeCliente(t)}</p>)}
+          {(ic.que_paso.parrafos ?? []).map((t, i) => <p key={i} className="p-cli__p"><ProsaConNotas t={t} integridad={ig} /></p>)}
         </SeccionCliente>
       )}
 
@@ -476,7 +478,7 @@ export function Cuerpo({ inf, esAnalisis }: { inf: Informe; esAnalisis: boolean 
           </p>
         )}
         {ic?.lectura?.parrafos?.length
-          ? ic.lectura.parrafos.map((t, i) => <p key={i} className="p-cli__p p-cli__p--grande">{prosaDeCliente(t)}</p>)
+          ? ic.lectura.parrafos.map((t, i) => <p key={i} className="p-cli__p p-cli__p--grande"><ProsaConNotas t={t} integridad={ig} /></p>)
           : <Prosa inf={inf} campo="ficha_esencial.tesis_una_linea" texto={f.tesis_una_linea} className="p-cli__p p-cli__p--grande" />}
         <Cifras inf={inf} />
       </SeccionCliente>
@@ -490,7 +492,7 @@ export function Cuerpo({ inf, esAnalisis }: { inf: Informe; esAnalisis: boolean 
             {hs.map((h, i) => (
               <div key={i} className="p-cli__hallazgo">
                 {hs.length > 1 && <h3 className="p-cli__ht display">{llano(h.titular!)}</h3>}
-                {(h.parrafos ?? []).map((t, j) => <p key={j}>{prosaDeCliente(t)}</p>)}
+                {(h.parrafos ?? []).map((t, j) => <p key={j}><ProsaConNotas t={t} integridad={ig} /></p>)}
                 {h.por_que_no_se_ve && <p className="p-cli__porque">{prosaDeCliente(h.por_que_no_se_ve)}</p>}
               </div>
             ))}
@@ -501,10 +503,10 @@ export function Cuerpo({ inf, esAnalisis }: { inf: Informe; esAnalisis: boolean 
       {/* ---- 4 · Niveles ---- */}
       <Niveles inf={sinTesis ? { ...inf, escenarios: [] } : inf} nc={sinTesis && ic?.niveles ? { ...ic.niveles, escenarios: [] } : ic?.niveles ?? null} />
 
-      {/* ---- 5 · Qué vigilar y qué invalida ---- (sin tesis, no hay nada que invalidar) */}
-      {!sinTesis && (<>
-      <SeccionCliente n="5" k="Qué vigilar y qué invalida">
-        <div className="p-cli__vigilar">
+      {/* ---- 5 · Qué vigilar y qué invalida ----
+           Sin tesis no hay nada que vigilar ni que invalidar, pero lo que podría salir mal sigue. */}
+      <SeccionCliente n="5" k={sinTesis ? 'El riesgo' : 'Qué vigilar y qué invalida'}>
+        {!sinTesis && <div className="p-cli__vigilar">
           {ic?.vigilar?.senal && (
             <div>
               <span className="mono p-cli__et">Qué vigilar</span>
@@ -518,17 +520,17 @@ export function Cuerpo({ inf, esAnalisis }: { inf: Informe; esAnalisis: boolean 
               ? <InvalidacionEstructurada inv={inf.invalidacion} />
               : <p>{prosaDeCliente(ic?.invalida?.condicion || f.que_la_invalidaria || '')}</p>}
           </div>
-        </div>
+        </div>}
         {ic?.riesgos?.length ? (
           <div className="p-advs">
             <div className="p-advs__head"><span className="mono">Lo que podría salir mal</span></div>
             <ul className="p-advs__lista">
-              {ic.riesgos.map((t, i) => <li key={i} className="p-adv"><span className="p-adv__texto">{prosaDeCliente(t)}</span></li>)}
+              {ic.riesgos.map((t, i) => <li key={i} className="p-adv"><span className="p-adv__texto"><ProsaConNotas t={t} integridad={ig} /></span></li>)}
             </ul>
           </div>
         ) : <Advertencias items={f.advertencias} />}
+        <SobreLosDatos inf={inf} />
       </SeccionCliente>
-      </>)}
 
       <div className="shell">
         <details className="p-avz">

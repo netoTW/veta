@@ -71,15 +71,15 @@ export function EstadoPublicacion({ p, conFecha = true }: { p: Publicacion; conF
   )
 }
 
-/** El sello del Verificador: pasa (esmeralda) o bloqueado (rojo). Un sello, no un chip. */
+/** El sello del Verificador: pasa o corregido (esmeralda) o bloqueado (rojo, sólo registros viejos). Un sello, no un chip. */
 export function SelloVerificador({ estado, hallazgos, grande = false }: { estado: string; hallazgos?: number; grande?: boolean }) {
-  const pasa = estado === 'pasa'
+  const pasa = estado !== 'bloqueado'
   return (
     <span className={`a-sello ${pasa ? 'a-sello--pasa' : 'a-sello--bloqueado'} ${grande ? 'a-sello--grande' : ''}`} title="Estado del Verificador">
       <span className="a-sello__gema" aria-hidden="true" />
       <span className="a-sello__t mono">
         <span className="a-sello__k">Verificador</span>
-        <span className="a-sello__v">{pasa ? 'pasa' : estado}{hallazgos ? ` · ${hallazgos} hallazgos` : ''}</span>
+        <span className="a-sello__v">{estado || 'pasa'}{hallazgos ? ` · ${hallazgos} hallazgos` : ''}</span>
       </span>
     </span>
   )
