@@ -371,5 +371,26 @@ export function delCatalogo(campo: string, codigo?: string | null): string {
 /** El único filtro para la prosa que llega del motor y se muestra a un cliente.
     Traduce, quita identificadores, pasa a tuteo y descarta las frases de taller.
     Antes esto estaba repartido en cinco archivos y cada uno se dejaba algo. */
+/* ---------- los números de la prosa, a la tabla de §23 ----------
+   El motor ya escribe coma decimal, pero los miles con punto («17.676.632 USD»), el
+   porcentaje pegado («17,3%») o con espacio normal, y alguna fecha ISO se cuelan en la
+   prosa. Se corrigen aquí, sin tocar números de versión («0.32.1», «1.0.2»). */
+const FINO = '\u202F'
+const MESES_CORTOS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
+export function numerosDeProsa(t: string): string {
+  return t
+    // fechas ISO sueltas → «26 sep 2026»
+    .replace(/(?<![\d-])(\d{4})-(\d{2})-(\d{2})(?![\d-])/g, (m, a, me, d) => (Number(me) >= 1 && Number(me) <= 12 ? `${Number(d)} ${MESES_CORTOS[Number(me) - 1]} ${a}` : m))
+    // miles con punto: 1.425.000.000 → 1 425 000 000 (nunca si empieza por 0 ni si es una versión)
+    .replace(/(?<![\d.,])([1-9]\d{0,2})((?:\.\d{3})+)(?![\d.])/g, (_m, a, resto) => a + resto.replace(/\./g, FINO))
+    // decimal con punto: 1.5 → 1,5 (no versiones: ni antes ni después otro punto)
+    .replace(/(?<![\d.])(\d+)\.(\d{1,2})(?![\d.])/g, '$1,$2')
+    // negativo con guion → «−»
+    .replace(/(^|[\s(])-(?=\d)/g, '$1−')
+    // espacio fino duro antes de % y de USD
+    .replace(/(\d)[ \u00A0]?%/g, `$1${FINO}%`)
+    .replace(/(\d)[ \u00A0]USD\b/g, `$1${FINO}USD`)
+}
+
 /** La marca ⟦sv:i⟧ (contrato §20.2) nunca sale cruda: donde no se convierte en nota, se quita. */
-export const prosaDeCliente = (t?: string | null): string => limpiarProsa(llano((t ?? '').replace(/⟦sv:\d+⟧/g, '')))
+export const prosaDeCliente = (t?: string | null): string => numerosDeProsa(limpiarProsa(llano((t ?? '').replace(/⟦sv:\d+⟧/g, ''))))

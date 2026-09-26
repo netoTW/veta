@@ -5,6 +5,7 @@ import { Footer } from '../components/Footer'
 import { api } from '../lib/datos'
 import { useSesion } from '../lib/sesion'
 import { origenComoConsulta } from '../lib/origen'
+import { usd } from '../lib/formato'
 
 /* ============================================================================
    Planes. Precios y cupos vienen del servidor, no del código del cliente:
@@ -57,7 +58,7 @@ export function Precios() {
   const precio = (k: string) => {
     const p = plan(k)
     if (!p) return '—'
-    return p.precio_usd > 0 ? `${p.precio_usd} USD` : '0'
+    return p.precio_usd > 0 ? usd(p.precio_usd, p.precio_usd % 1 ? 2 : 0) : '0'
   }
   const correo = (k: string) => {
     const c = cat?.contacto

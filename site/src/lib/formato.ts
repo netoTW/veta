@@ -113,3 +113,27 @@ export function conUnidad(v: number | null | undefined, unidad: string): string 
   const dec = Math.abs(v) >= 1000 ? 0 : Math.abs(v) >= 1 ? 2 : 4
   return num(v, dec) + (unidad ? NBSP + unidad : '')
 }
+
+/* ---------- contrato §23: el formateador único de cifras de cliente ----------
+   Toda cifra que ve un cliente sale de aquí, con su unidad del contrato. La prueba
+   de contrato (scripts/probar-contrato.mjs) lo compara con una implementación
+   independiente escrita desde la tabla de §23: si alguien cambia un redondeo
+   aquí, la prueba lo dice con el campo exacto. */
+export type ContextoCifra = 'precio' | 'cantidad' | 'variacion' | 'normal'
+
+export function cifraCliente(v: number | null | undefined, unidad: string | null | undefined, contexto: ContextoCifra = 'normal'): string {
+  if (v === null || v === undefined || Number.isNaN(v)) return ''
+  const u = (unidad ?? '').trim()
+  const signo = (s: string) => (contexto === 'variacion' && v > 0 ? '+' + s : s)
+  if (u === 'USD') return contexto === 'precio' ? precio(v) : usd(v, 0)
+  if (u === '%') return signo(num(v, 1) + NBSP + '%')
+  if (u === '×') return num(v, 2) + '×'
+  if (u === 'p') return 'p' + num(v, 0)
+  return signo(num(v, 0))
+}
+
+/** Un rango de escenario: un solo número si mínimo y máximo coinciden (§23). */
+export function rangoCliente(min: number | null | undefined, max: number | null | undefined, unidad: string, contexto: ContextoCifra = 'normal'): string {
+  const a = cifraCliente(min, unidad, contexto), b = cifraCliente(max, unidad, contexto)
+  return !a || !b || a === b ? a || b : `${a} – ${b}`
+}

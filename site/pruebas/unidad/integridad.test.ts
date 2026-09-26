@@ -5,7 +5,7 @@ import { lineasDeIntegridad, partirSinVerificar } from '../../src/producto/integ
 
 test('sin verificar: una línea por dato, con su fuente y su cifra', () => {
   const l = lineasDeIntegridad({ fuentes: [], integridad: { sin_verificar: [{ que: 'desbloqueo del equipo en marzo de 2027', fuente: 'obtenido de docs.x.io, sin verificar', cifra: '15 %' }] } })
-  assert.deepEqual(l.sinVerificar, ['Obtenido de docs.x.io, sin verificar: desbloqueo del equipo en marzo de 2027 (15 %).'])
+  assert.deepEqual(l.sinVerificar, ['Obtenido de docs.x.io, sin verificar: desbloqueo del equipo en marzo de 2027 (15\u202F%).'])
 })
 test('una fuente sin la coletilla se completa', () => {
   const l = lineasDeIntegridad({ fuentes: [], integridad: { sin_verificar: [{ que: 'ingresos de 30 días', fuente: 'Token Terminal' }] } })

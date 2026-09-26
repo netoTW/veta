@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import type { Informe } from '../lib/contrato'
 import { CAMPO_LABEL } from '../lib/formato'
-import { prosaDeCliente } from '../lib/lenguaje'
+import { numerosDeProsa, prosaDeCliente } from '../lib/lenguaje'
 
 /* ============================================================================
    Datos incompletos, dichos al cliente (ESPECIFICACION-LANZAMIENTO.md §6,
@@ -36,7 +36,7 @@ const trasDosPuntos = (x: string) => (/^[A-ZÁÉÍÓÚÑ][a-záéíóúñ]/.test
 export function lineasDeIntegridad(inf: Pick<Informe, 'fuentes'> & { integridad?: Integridad | null }): { sinVerificar: string[]; noDisponibles: string[] } {
   const ig = inf.integridad
   const sinVerificar = (ig?.sin_verificar ?? [])
-    .map((d) => { const que = trasDosPuntos(prosaDeCliente(d.que).trim()); return que ? `${deFuente(d.fuente)}: ${que}${d.cifra ? ` (${d.cifra.trim()})` : ''}.` : '' })
+    .map((d) => { const que = trasDosPuntos(prosaDeCliente(d.que).trim()); return que ? `${deFuente(d.fuente)}: ${que}${d.cifra ? ` (${numerosDeProsa(d.cifra.trim())})` : ''}.` : '' })
     .filter(Boolean)
   let noDisponibles: string[]
   if (ig) noDisponibles = (ig.no_disponibles ?? []).map((d) => trasDosPuntos(enLlano(prosaDeCliente(d.que)))).filter(Boolean)

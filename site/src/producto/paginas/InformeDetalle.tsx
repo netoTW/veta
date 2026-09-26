@@ -16,6 +16,7 @@ import { EmptyState } from '../../ui/EmptyState'
 import { Cifras, Prosa, RiesgoLlano } from '../cifras'
 import { estadoEconomicoLlano, tieneCriterioInterno, llano, delCatalogo, prosaDeCliente } from '../../lib/lenguaje'
 import { SobreLosDatos, ProsaConNotas, type Integridad } from '../integridad'
+import { Cifra } from '../Cifra'
 
 /* ============================================================================
    Informe — el detalle de una gema (o de un análisis sin tesis).
@@ -39,7 +40,7 @@ function Escala({ rangos }: { rangos: { tipo: string; min: number; max: number }
         <span key={i} className={`p-escala__rango p-escala__rango--${r.tipo}`} style={{ left: `${pos(r.min)}%`, width: `${Math.max(0.6, pos(r.max) - pos(r.min))}%` }} title={`${r.tipo}: ${mult(r.min)} – ${mult(r.max)}`} />
       ))}
       <span className="p-escala__ticks">
-        {[0.5, 2, 4, 8, 16].map((t) => <span key={t} style={{ left: `${pos(t)}%` }}>{t}×</span>)}
+        {[0.5, 2, 4, 8, 16].map((t) => <span key={t} style={{ left: `${pos(t)}%` }}>{mult(t, t % 1 ? 1 : 0)}</span>)}
       </span>
     </div>
   )
@@ -149,11 +150,11 @@ function EscenarioFila({ e }: { e: Escenario }) {
       <div className="p-escenario__cuerpo">
         <div>
           <span className="mono">Catalizador {e.catalizador_datado ? '· con fecha' : <span style={{ color: 'var(--oro-luz)' }}>· ◆ sin fecha</span>}</span>
-          {e.catalizador}
+          {prosaDeCliente(e.catalizador)}
         </div>
         <div>
           <span className="mono" style={{ color: 'var(--rojo-luz)' }}>Invalidación</span>
-          {e.invalidacion}
+          {prosaDeCliente(e.invalidacion)}
         </div>
         {nivel === 'avanzado' && (
           <>
@@ -430,7 +431,7 @@ export function Cuerpo({ inf, esAnalisis }: { inf: Informe; esAnalisis: boolean 
             {sinTesis && <p className="p-det__sintesis"><span className="mono">Sin tesis</span>{sinTesis}</p>}
           </div>
           <div className="p-det__precio">
-            <Dato k="precio de referencia" v={precio(f.precio_y_fecha_referencia.precio_usd)} sub={<>{fecha(f.precio_y_fecha_referencia.fecha)} · {esAnalisis ? 'analizada' : 'publicada'} {fecha(inf.fecha_publicacion)}</>} />
+            <Dato k="precio de referencia" v={<Cifra campo="ficha_esencial.precio_y_fecha_referencia.precio_usd" v={f.precio_y_fecha_referencia.precio_usd} u="USD" c="precio" />} sub={<>{fecha(f.precio_y_fecha_referencia.fecha)} · {esAnalisis ? 'analizada' : 'publicada'} {fecha(inf.fecha_publicacion)}</>} />
           </div>
         </div>
 

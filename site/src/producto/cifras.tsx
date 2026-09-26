@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react'
+import { useRol } from '../lib/acceso'
 import type { Informe } from '../lib/contrato'
-import { dias, fecha, mult, pct, precio, usd } from '../lib/formato'
+import { dias, fecha, mult, pct } from '../lib/formato'
+import { Cifra as CifraMarcada } from './Cifra'
 import { estadoEconomicoLlano, traducirFactor, TIER_LLANO, prosaDeCliente } from '../lib/lenguaje'
 import { contradiccionesDelRegistro } from '../lib/contradicciones'
 
@@ -19,7 +21,9 @@ export interface Cifra { k: string; v: ReactNode; sub?: ReactNode; tono: 'esm' |
 
 
 /** Las cifras de una gema (o análisis), en el orden en que venden. */
-export function cifrasDe(inf: Informe): Cifra[] {
+/** `admin`: el escenario en múltiplos sólo lo ve la mesa (§18: un múltiplo de escenario se lee
+    como una promesa de retorno). Se colaba a todos en esta tarjeta: «12,24× – 118,85×» en CELO. */
+export function cifrasDe(inf: Informe, admin = false): Cifra[] {
   const out: Cifra[] = []
   const a = inf.asimetria
   const bull = inf.escenarios.find((e) => e.tipo === 'bull') ?? inf.escenarios.find((e) => e.tipo === 'bull_reflexivo')
@@ -30,7 +34,7 @@ export function cifrasDe(inf: Informe): Cifra[] {
   if (typeof a.ratio === 'number' && typeof a.riesgo === 'number' && typeof a.recompensa === 'number') {
     out.push({ k: 'asimetría · premio por unidad de riesgo', v: <>{mult(a.ratio)}</>, sub: <>arriesgas {pct(a.riesgo, 0)} para ganar {pct(a.recompensa, 0)}{a.horizonte ? <> en {dias(a.horizonte)}</> : null}</>, tono: 'esm' })
   }
-  if (bull) {
+  if (bull && admin) {
     out.push({
       k: bull.tipo === 'bull_reflexivo' ? 'escenario alcista · por historial propio' : 'escenario alcista · por fundamentales',
       v: <>{mult(bull.rango_min)} <small>–</small> {mult(bull.rango_max)}</>,
@@ -39,13 +43,13 @@ export function cifrasDe(inf: Informe): Cifra[] {
     })
   }
   if (rf?.fraccion_del_maximo) {
-    out.push({ k: 'de su máximo histórico', v: <>{rf.fraccion_del_maximo}</>, sub: <>máximo {precio(rf.maximo_valor)} el {fecha(rf.maximo_fecha)}</>, tono: 'esm' })
+    out.push({ k: 'de su máximo histórico', v: <>{rf.fraccion_del_maximo}</>, sub: <>máximo <CifraMarcada campo="varas.reflexiva.maximo_valor" v={rf.maximo_valor} u="USD" c="precio" /> el {fecha(rf.maximo_fecha)}</>, tono: 'esm' })
   }
   if (fu && typeof fu.revenue_protocolo_30d === 'number') {
     out.push({
       k: `ingresos del protocolo · 30 días${inf.captura_verificada ? ' · verificado' : ''}`,
-      v: <>{usd(fu.revenue_protocolo_30d)}</>,
-      sub: <>{typeof fu.revenue_a_holders === 'number' ? <>{usd(fu.revenue_a_holders)} llegan al token · </> : null}{typeof fu.revenue_sobre_mcap === 'number' ? <>{pct(fu.revenue_sobre_mcap, 1)} sobre capitalización</> : null}</>,
+      v: <CifraMarcada campo="fundamentales.revenue_protocolo_30d" v={fu.revenue_protocolo_30d} u="USD" c="cantidad" />,
+      sub: <>{typeof fu.revenue_a_holders === 'number' ? <><CifraMarcada campo="fundamentales.revenue_a_holders" v={fu.revenue_a_holders} u="USD" c="cantidad" /> llegan al token · </> : null}{typeof fu.revenue_sobre_mcap === 'number' ? <>{pct(fu.revenue_sobre_mcap, 1)} sobre capitalización</> : null}</>,
       tono: 'oro',
     })
   }
@@ -56,7 +60,8 @@ export function cifrasDe(inf: Informe): Cifra[] {
 }
 
 export function Cifras({ inf, card = false, max }: { inf: Informe; card?: boolean; max?: number }) {
-  const lista = cifrasDe(inf).slice(0, max ?? 99)
+  const { rol } = useRol()
+  const lista = cifrasDe(inf, rol === 'admin').slice(0, max ?? 99)
   if (!lista.length) return null
   return (
     <div className={`p-cifras ${card ? 'p-cifras--card' : ''}`} aria-label="Cifras de la tesis">
