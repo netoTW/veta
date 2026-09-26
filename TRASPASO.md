@@ -8,6 +8,9 @@ Lo que este archivo no repite: `ESTADO-WEB.md` cuenta cómo funciona cada parte 
 dentro, `DESPLIEGUE.md` cómo se instala, `SISTEMA-VISUAL.md` la paleta y las piezas.
 Aquí va sólo lo que hace falta para **seguir trabajando**.
 
+**Desde el 26-sep manda `ESPECIFICACION-LANZAMIENTO.md`** (pendiente de aprobación); lo que
+no está ahí vive en `BACKLOG.md`.
+
 ---
 
 ## 1. Reglas de coordinación  ·  LO PRIMERO
@@ -127,8 +130,8 @@ Todo desplegado y verificado en producción. El último despliegue es del **26-s
    `cambios_respecto_version_anterior` sigue siendo lista y no hay `misma_corrida`.
    Cuando pase: confirmar que las 4 aprobaciones sobreviven y que los que cambien de
    contenido salen en la bandeja con el aviso en oro.
-6. **Términos y Privacidad, escritos y sin desplegar.** Esperan el visto bueno de
-   Pablo. Falta decidir si llevan nombre y RUT en «Quién presta el servicio».
+6. **Términos y Privacidad ya están en producción** (desde `13afbe1`, 20-sep). Sólo
+   faltan el nombre y el RUT de Pablo en «Quién presta el servicio» y en Privacidad.
 7. **DefiLlama falla mucho**: 81 errores de 231 llamadas este mes (35 %). Es la
    fuente que provocó la invalidación falsa de PUMP.
 
@@ -244,7 +247,7 @@ Ambas tienen que salir en **0**. La última pasada completa dio 0 y 0 sobre 216 
 ## 9. Estado de producción al cerrar
 
 Servicio activo y estable desde el 25-sep 12:19 CEST. Cero avisos en `/api/fallo`
-desde el 21-sep. El sitio responde 200 entre 0,2 y 0,6 s.
+desde el 21-sep. La portada responde en 0,2–0,6 s; las rutas de la API nunca estuvieron ahí (ver `ESPECIFICACION-LANZAMIENTO.md` §3).
 
 **Publicado:** 3 análisis (CELO, STONK, SYN) y 1 gema (PUMP, retirada del
 seguimiento por el motor: «regla de invalidación sin margen»). El **track record
