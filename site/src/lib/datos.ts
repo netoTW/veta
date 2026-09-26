@@ -66,6 +66,8 @@ export function useGemas(): Estado<Informe[]> {
   return st.estado === 'ok' ? { estado: 'ok', datos: st.datos.gemas } : st
 }
 export const useAnalisis = () => useDatos<Informe[]>('/api/contenido/analisis')
+/** Un análisis entero. La lista trae sólo lo que pinta la lista (server/contenido.ts › resumenDeLista). */
+export const useAnalisisUno = (id: string, activo = true) => useDatos<Informe>(`/api/contenido/analisis/${encodeURIComponent(id)}`, activo)
 export const useWatchlist = (activo = true) => useDatos<Watch[]>('/api/contenido/watchlist', activo)
 export const useSeguimiento = (activo = true) => useDatos<{ ultimo: SeguimientoDiario[]; historial: SeguimientoDiario[] }>('/api/contenido/seguimiento', activo)
 export const useBenchmark = (activo = true) => useDatos<BenchmarkDef>('/api/contenido/benchmark', activo)

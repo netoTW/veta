@@ -21,6 +21,7 @@ import { rolDe, puede, planMinimo, type Rol } from '../src/lib/matriz.ts'
 import { motor, type Solicitud, type Progreso, type EstadoSolicitud } from './motor.ts'
 import { cupoDe, reservar, devolver, hayMargen, gastoMes, fijarTope, type Cupo } from './cupo.ts'
 import { esContrato } from './resolver.ts'
+import { olvidarAPedido } from './contenido.ts'
 
 type Vars = { sesion: Sesion | null; rol: Rol }
 export const analizarApp = new Hono<{ Variables: Vars }>()
@@ -61,6 +62,7 @@ async function aplicarProgreso(f: FilaSolicitud, p: Progreso) {
   await bd.ejecutar(`UPDATE solicitud SET estado = ?, etapa = ?, avance = ?, detalle = ?, etapas_hechas = ?, resultado = ?, fallo = ?, verificador = ?, costo_real_usd = ?, iniciada = COALESCE(iniciada, ?), terminada = ?, actualizada = ? WHERE id = ?`, [p.estado, p.etapa, p.avance, p.detalle, JSON.stringify(p.etapas_hechas), p.resultado ? JSON.stringify(p.resultado) : null, p.fallo ? JSON.stringify(p.fallo) : null, p.verificador ? JSON.stringify(p.verificador) : null, p.costo_real_usd ?? 0, p.iniciado, p.terminado, ahora(), f.id])
   if (termina && !terminaba) {
     // consumo real y cupo: sólo el que termina bien lo consume (spec §5.6)
+    if (p.estado === 'listo') olvidarAPedido() // el resultado entra a la lista de análisis
     const consumio = p.estado === 'listo' && !!f.consume_cupo
     if (!consumio && f.consume_cupo && f.usuario_id && f.cupo_periodo) await devolver(f.usuario_id, f.cupo_periodo)
     await bd.ejecutar('UPDATE uso_analisis SET consumio_cupo = ?, costo_real_usd = ?, resultado = ? WHERE usuario_id = ? AND simbolo = ? AND tipo = ? AND resultado = ?', [consumio ? 1 : 0, p.costo_real_usd ?? 0, p.estado, f.usuario_id ?? 'visitante', f.simbolo, f.nivel, `pendiente:${f.id}`])

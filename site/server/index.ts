@@ -143,7 +143,7 @@ app.get('/api/contenido/gemas/:id', async (c) => {
   if (g?.recorte === 'anticipada') return c.json({ error: 'anticipada', ...g }, 403)
   return g ? c.json(g) : c.json({ error: 'no_encontrado' }, 404)
 })
-app.get('/api/contenido/analisis', async (c) => c.json(await contenido.analisisPara(c.get('rol'))))
+app.get('/api/contenido/analisis', async (c) => c.json((await contenido.analisisPara(c.get('rol'))).map(contenido.resumenDeLista)))
 app.get('/api/contenido/analisis/:id', async (c) => {
   const a = await contenido.analisisUnoPara(c.req.param('id'), c.get('rol'))
   return a ? c.json(a) : c.json({ error: 'no_encontrado' }, 404)
@@ -194,7 +194,7 @@ app.post('/api/prediccion/:gemaId', async (c) => {
 
 app.get('/api/contenido/visuales/:id', async (c) => {
   const v = await contenido.visualesPara(c.req.param('id'), c.get('rol'))
-  return v ? c.json(v) : c.json({ error: 'no_encontrado' }, 404)
+  return v === undefined ? c.json({ error: 'no_encontrado' }, 404) : c.json(v)
 })
 /* Noticias: el recorte lo decide el servidor, no el cliente. */
 app.get('/api/contenido/noticias', async (c) => c.json(await noticiasPara(c.get('rol'))))

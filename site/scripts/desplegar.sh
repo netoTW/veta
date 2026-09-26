@@ -40,6 +40,6 @@ done
 if [ -n "$TEXTO" ]; then
   F=$(grep -l -- "$TEXTO" dist/assets/*.js | head -1 | xargs basename)
   N=$(curl -s "https://www.vetalab.io/assets/$F" | grep -c -- "$TEXTO" || true)
-  [ "$N" -gt 0 ] && echo "✓ «$TEXTO» está en el fragmento publicado $F" || { echo "✗ «$TEXTO» no aparece en $F publicado"; exit 1; }
+  [ "$N" -gt 0 ] && echo "✓ «${TEXTO}» está en el fragmento publicado $F" || { echo "✗ «${TEXTO}» no aparece en $F publicado"; exit 1; }
 fi
 echo "━━ desplegado y verificado ━━"

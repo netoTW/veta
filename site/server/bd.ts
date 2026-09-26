@@ -55,9 +55,13 @@ async function abrirPostgres(url: string): Promise<Bd> {
   pg.types.setTypeParser(20, (v: string) => parseInt(v, 10))
   pg.types.setTypeParser(1700, (v: string) => parseFloat(v))
   const local = /localhost|127\.0\.0\.1/.test(url)
-  const pool = new pg.Pool({ connectionString: url, max: 8, ssl: local ? undefined : { rejectUnauthorized: false }, idleTimeoutMillis: 30_000, connectionTimeoutMillis: 10_000 })
+  const pool = new pg.Pool({ connectionString: url, max: 8, ssl: local ? undefined : { rejectUnauthorized: false }, idleTimeoutMillis: 600_000, connectionTimeoutMillis: 10_000 })
   pool.on('error', (e) => console.error('[bd] postgres:', e.message))
   await esperarBase(pool)
+  /* Abrir una conexión con Supabase cuesta ~660 ms desde el VPS (está en us-east-1).
+     El pool cerraba las inactivas a los 30 s y la primera petición tras una pausa
+     pagaba ese precio. Ahora viven 10 min y un SELECT 1 cada 4 min mantiene una. */
+  setInterval(() => { pool.query('SELECT 1').catch((e) => console.warn('[bd] latido:', (e as Error).message)) }, 240_000).unref()
   return {
     motor: 'postgres', crudo: pool,
     async uno<T>(sql: string, params: unknown[] = []) { const r = await pool.query(posicional(sql), params); return r.rows[0] as T | undefined },

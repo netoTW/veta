@@ -125,10 +125,14 @@ export interface AvisoPublicados {
 let avisoPublicados: AvisoPublicados | null = null
 export const avisoDePublicados = () => avisoPublicados
 
+let primeraVigilancia = true
 export async function vigilarPublicados(): Promise<{ total: number; gemas: number; analisis: number }> {
   const contenido = await import('./contenido.ts')
   // Antes de contar: anotar lo que acaba de hacerse público como gema.
   await contenido.marcarGemasPublicas().catch((e) => console.warn('[track]', (e as Error).message))
+  // §22: el fichero que lee el motor, al día con lo que ve el público.
+  await contenido.escribirPublicados(primeraVigilancia ? 'arranque' : 'sincronizacion').catch((e) => console.error('[publicados-web]', (e as Error).message))
+  primeraVigilancia = false
   // Como los ve un suscriptor base: lo aprobado y nada más.
   const [gemas, analisis] = await Promise.all([contenido.gemasPara('base'), contenido.analisisPara('base')])
   const cuenta = { gemas: gemas.length, analisis: analisis.length, total: gemas.length + analisis.length }

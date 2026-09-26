@@ -3,7 +3,7 @@ import {
   Cargando, Puerta, TierBadge, Advertencias, Adv, Avanzado, ProveedorNivel, SelectorNivel,
   FuenteChip, TablaFuentes, Dato, Ausente, Volver, useNivel,
 } from '../piezas'
-import { useAnalisis, useGemas, useGemasTodo, useVisuales } from '../../lib/datos'
+import { useAnalisisUno, useGemas, useGemasTodo, useVisuales, type Estado } from '../../lib/datos'
 import { Heatmap, HeatmapAusente } from '../charts/Heatmap'
 import { PrecioMaximos, RevenueDiario, TvlComparado, Concentracion } from '../charts/Series'
 import { MarcadorDeGema, PrediccionGema } from '../marcador'
@@ -799,7 +799,10 @@ export function InformeDetalle({ tipo }: { tipo: 'gema' | 'analisis' }) {
   const { rol } = useRol()
   const gemas = useGemas()
   const todo = useGemasTodo()
-  const analisis = useAnalisis()
+  // El análisis se pide entero por su ruta: la lista sólo trae lo que pinta la lista.
+  const uno = useAnalisisUno(id ?? '', tipo === 'analisis')
+  const analisis: Estado<Informe[]> = uno.estado === 'ok' ? { estado: 'ok', datos: [uno.datos] }
+    : uno.estado === 'error' && uno.status === 404 ? { estado: 'ok', datos: [] } : uno
   const st = tipo === 'gema' ? gemas : analisis
   const anticipada = tipo === 'gema' && todo.estado === 'ok' ? todo.datos.anticipadas.find((a) => a.id === id) : undefined
   const volver = tipo === 'gema' ? '/gemas' : '/analisis'

@@ -8,15 +8,13 @@
    Cada mutación queda en `acciones_admin` (quién, qué, cuándo).
    ========================================================================== */
 import { Hono } from 'hono'
-import { appendFileSync, mkdirSync } from 'node:fs'
-import { resolve } from 'node:path'
 import { auth, sesionDe, type Sesion } from './auth.ts'
 import { bd, ahora, asignarPlan, olvidarPlan, registrarAccion } from './db.ts'
 import { cupoDe } from './cupo.ts'
-import { ENV } from './entorno.ts'
 import { rolDe, PLANES } from '../src/lib/matriz.ts'
 import * as contenido from './contenido.ts'
 import { contradiccionesDelRegistro } from '../src/lib/contradicciones.ts'
+import { publicacionCambio } from './publicacion.ts'
 
 type Vars = { sesion: Sesion; admin: { id: string; email: string } }
 export const adminApp = new Hono<{ Variables: Vars }>()
@@ -157,11 +155,8 @@ adminApp.post('/bandeja/:id/decision', async (c) => {
   }
   await bd.ejecutar(`INSERT INTO publicacion (informe_id, tipo, version_registro, accion, motivo, verificador_estado, bloqueo_confirmado, admin_id, admin_email, fecha)
               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [fila.informe_id, fila.tipo, fila.version_registro, fila.accion, fila.motivo, fila.verificador_estado, fila.bloqueo_confirmado, fila.admin_id, fila.admin_email, fila.fecha])
-  // Lo único que la plataforma escribe hacia el motor: el estado de publicación, append-only.
-  try {
-    mkdirSync(ENV.BASE_CONTENIDO, { recursive: true })
-    appendFileSync(resolve(ENV.BASE_CONTENIDO, 'publicacion.jsonl'), JSON.stringify({ ...fila, bloqueo_confirmado: !!fila.bloqueo_confirmado, escrito_por: 'veta-web' }) + '\n')
-  } catch (e) { console.warn('[bandeja] no se pudo escribir publicacion.jsonl:', (e as Error).message) }
+  // Avisa a la memoria de publicación, y con ella a publicados-web.json: así se entera el motor (contrato §22).
+  publicacionCambio()
   await log(c, `bandeja.${accion}`, r.tipo, id, { version_registro: r.version_registro, motivo: motivo || null, verificador_estado: verEstado, bloqueo_confirmado: !!fila.bloqueo_confirmado })
   return c.json({ ok: true, publicacion: await contenido.estadoPublicacion(r) })
 })

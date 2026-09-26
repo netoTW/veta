@@ -25,6 +25,7 @@ import { ENV } from './entorno.ts'
 import { puede, type Rol } from '../src/lib/matriz.ts'
 import * as contenido from './contenido.ts'
 import type { Sesion } from './auth.ts'
+import { noticiasDespublicadas, publicacionCambio } from './publicacion.ts'
 
 const CARPETA = () => resolve(ENV.BASE_CONTENIDO, 'noticias')
 
@@ -67,14 +68,9 @@ const leerJson = <T>(nombre: string): T | null =>
   leerArchivo<T | null>(nombre, (t) => JSON.parse(t) as T, null)
 
 /* ---------- despublicadas ---------- */
-/** La última decisión de admin sobre cada pieza. 'despublicar' la esconde para todos menos admin. */
-async function despublicadas(): Promise<Set<string>> {
-  const filas = await bd.todos<{ informe_id: string; accion: string }>(
-    `SELECT informe_id, accion FROM publicacion WHERE tipo = 'noticia' ORDER BY id ASC`)
-  const ultima = new Map<string, string>()
-  for (const f of filas) ultima.set(f.informe_id, f.accion)
-  return new Set([...ultima].filter(([, a]) => a === 'despublicar').map(([id]) => id))
-}
+/** La última decisión de admin sobre cada pieza. 'despublicar' la esconde para todos menos admin.
+    Sale de la memoria compartida de publicación (server/publicacion.ts), no de una consulta por petición. */
+const despublicadas = noticiasDespublicadas
 
 /* ---------- recorte para quien no tiene plan ---------- */
 /** La primera frase de la entradilla. Lo suficiente para saber si te interesa, no para leerla. */
@@ -176,6 +172,7 @@ noticiasAdmin.post('/:id/:accion', async (c) => {
     `INSERT INTO publicacion (informe_id, tipo, version_registro, accion, motivo, verificador_estado, bloqueo_confirmado, admin_id, admin_email, fecha)
      VALUES (?, 'noticia', 1, ?, ?, NULL, 0, ?, ?, ?)`,
     [id, accion === 'despublicar' ? 'despublicar' : 'aprobar', motivo ?? null, s.user.id, s.user.email, ahora()])
+  publicacionCambio()
   await registrarAccion({
     admin_id: s.user.id, admin_email: s.user.email,
     accion: `noticia.${accion}`, objetivo_tipo: 'noticia', objetivo_id: id, detalle: { motivo: motivo ?? null },
