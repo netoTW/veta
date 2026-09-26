@@ -68,8 +68,9 @@ firma.
 
 ## 3. Qué está hecho
 
-Todo desplegado y verificado en producción. El último commit es del **21-sep 17:02**;
-desde entonces no se ha tocado nada.
+Todo desplegado y verificado en producción. Lo último que está en el servidor es del
+**21-sep 17:02** (`5a55e32`). Lo posterior está sólo en el Mac y sin subir: los dos
+commits de `TRASPASO.md` y `4ce99f0` (la espera a Supabase, ver pendiente 2).
 
 - **Cobro con Whop** encendido. `POST /api/pagos/whop` (firma obligatoria,
   idempotente por id de mensaje, avisos desordenados que no pisan a uno nuevo) y
@@ -99,11 +100,18 @@ desde entonces no se ha tocado nada.
    análisis no pasa la verificación». **No hay rastro de ninguno** — cero commits, y
    no aparecen en el historial de la sesión del 21-sep. Hay que pedirle que los
    repita antes de tocar nada.
-2. **El arranque muere si la base no responde.** El 25-sep, entre las 12:00 y las
-   12:19 CEST, el servicio cayó y volvió **41 veces**: `Connection terminated due to
-   connection timeout` contra Supabase, en la creación de tablas de `db.ts:17`. Se
-   recuperó solo. La red de seguridad de `index.ts` no cubre esto porque ocurre en
-   un `await` de nivel superior, antes. Necesita reintento con espera al arrancar.
+2. **El arranque muere si la base no responde · ARREGLADO, SIN DESPLEGAR.** El 25-sep,
+   entre las 12:00 y las 12:19 CEST, el servicio cayó y volvió **41 veces**:
+   `Connection terminated due to connection timeout` contra Supabase, siempre en la
+   primera conexión. `4ce99f0` (26-sep, sesión ya cerrada) añade `esperarBase()` en
+   `server/bd.ts`: `SELECT 1` con espera creciente (1 s → 30 s) durante ~5 min antes
+   de soltar `bd`, así que cubre las tablas de `db.ts` y todo lo que cuelga detrás.
+   **Revisado el 26-sep:** compila, y probado en local contra una base que nunca
+   contesta (reintenta 1, 2, 4 s…) y contra una que arranca tarde (entra al quinto
+   intento y consulta bien). Límites conocidos, aceptables: sólo protege la primera
+   conexión (un corte justo después sigue tumbando el proceso y systemd lo levanta
+   en 5 s), y mientras espera la API no escucha, así que Caddy da 502 como antes.
+   **Falta:** `git push`, desplegar y verificar en producción que `veta-web` arranca.
 3. **El respaldo fuera del servidor no ha funcionado nunca.** `veta-backup` en
    `failed` desde el primer día: las credenciales de R2 en `/opt/veta/.env` siguen
    siendo marcadores `<ACCOUNT_ID>`. **No hay copia externa de nada.**

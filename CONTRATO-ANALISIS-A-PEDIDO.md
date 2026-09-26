@@ -612,10 +612,12 @@ vez de cinco cajas vacías.
 1. **El decimal y el signo de porcentaje.** En texto de cliente van con coma
    decimal y espacio duro antes del signo: «+1,2 %», no «+1.2%». Afecta al
    escenario condicional de la agenda, al informe del narrador y a cualquier
-   prosa con cifras. Hay un cambio preparado en el repositorio del motor,
-   pendiente de que esa sesión lo revise y lo commitee: formateador único,
-   80 porcentajes convertidos, y la batería de tests sin regresiones (10
-   fallos antes, 10 después, 1222 pasan).
+   prosa con cifras. **Commiteado por el motor en `b301733`**: formateador
+   único, 80 porcentajes convertidos, mismos separadores en `plano()` y en
+   `engine/formato`, y la batería de tests sin regresiones (10 fallos antes,
+   10 después, 1222 pasan). Falta comprobar en producción que el escenario de
+   la agenda sale con coma decimal, cuando el motor lo despliegue y corra el
+   noticiero.
 2. **Un aviso cuando una reexportación suba la versión de un informe ya
    aprobado.** Hoy la web no distingue «versión nueva porque cambió el
    análisis» de «versión nueva porque se reexportó con otra forma», y en las
