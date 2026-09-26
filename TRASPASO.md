@@ -68,9 +68,8 @@ firma.
 
 ## 3. Qué está hecho
 
-Todo desplegado y verificado en producción. Lo último que está en el servidor es del
-**21-sep 17:02** (`5a55e32`). Lo posterior está sólo en el Mac y sin subir: los dos
-commits de `TRASPASO.md` y `4ce99f0` (la espera a Supabase, ver pendiente 2).
+Todo desplegado y verificado en producción. El último despliegue es del **26-sep
+07:25 CEST** (`5f4ab30`, la espera a Supabase, ver pendiente 2).
 
 - **Cobro con Whop** encendido. `POST /api/pagos/whop` (firma obligatoria,
   idempotente por id de mensaje, avisos desordenados que no pisan a uno nuevo) y
@@ -100,7 +99,7 @@ commits de `TRASPASO.md` y `4ce99f0` (la espera a Supabase, ver pendiente 2).
    análisis no pasa la verificación». **No hay rastro de ninguno** — cero commits, y
    no aparecen en el historial de la sesión del 21-sep. Hay que pedirle que los
    repita antes de tocar nada.
-2. **El arranque muere si la base no responde · ARREGLADO, SIN DESPLEGAR.** El 25-sep,
+2. **El arranque muere si la base no responde · ARREGLADO Y DESPLEGADO (26-sep).** El 25-sep,
    entre las 12:00 y las 12:19 CEST, el servicio cayó y volvió **41 veces**:
    `Connection terminated due to connection timeout` contra Supabase, siempre en la
    primera conexión. `4ce99f0` (26-sep, sesión ya cerrada) añade `esperarBase()` en
@@ -111,7 +110,10 @@ commits de `TRASPASO.md` y `4ce99f0` (la espera a Supabase, ver pendiente 2).
    intento y consulta bien). Límites conocidos, aceptables: sólo protege la primera
    conexión (un corte justo después sigue tumbando el proceso y systemd lo levanta
    en 5 s), y mientras espera la API no escucha, así que Caddy da 502 como antes.
-   **Falta:** `git push`, desplegar y verificar en producción que `veta-web` arranca.
+   **Desplegado el 26-sep 07:25 CEST** (`5f4ab30`): arrancó a la primera, sin
+   errores, con los mismos 3 publicados que antes, y la API responde 200 desde fuera.
+   Queda por ver en la próxima caída de Supabase que aparezcan los reintentos
+   `[bd] postgres no responde` en lugar de reinicios. Se puede quitar de la lista.
 3. **El respaldo fuera del servidor no ha funcionado nunca.** `veta-backup` en
    `failed` desde el primer día: las credenciales de R2 en `/opt/veta/.env` siguen
    siendo marcadores `<ACCOUNT_ID>`. **No hay copia externa de nada.**
