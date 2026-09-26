@@ -19,8 +19,14 @@ if [ -n "$(git status --porcelain)" ]; then
 fi
 if [ "$(git rev-parse --abbrev-ref HEAD)" != "main" ]; then echo "✗ Sólo se despliega desde main."; exit 1; fi
 
+HEAD_PROBADO=$(git rev-parse HEAD)
 npm run -s invariantes
 
+# La marca certifica el árbol que se probó: si alguien hizo commit mientras corrían los
+# invariantes, HEAD ya no es ese árbol y no se marca nada.
+if [ "$(git rev-parse HEAD)" != "$HEAD_PROBADO" ] || [ -n "$(git status --porcelain)" ]; then
+  echo "✗ El árbol cambió mientras corrían los invariantes: no se marca ni se despliega."; exit 1
+fi
 ARBOL=$(git rev-parse 'HEAD^{tree}')
 git commit -q --allow-empty -m "Despliegue: invariantes en verde" -m "Invariantes-ok: $ARBOL"
 git push -q origin main

@@ -22,7 +22,7 @@ export const adminApp = new Hono<{ Variables: Vars }>()
 adminApp.use('*', async (c, next) => {
   const s = await sesionDe(c.req.raw.headers)
   if (!s) return c.json({ error: 'sin_sesion' }, 401)
-  if (s.session.impersonatedBy) return c.json({ error: 'impersonando', detalle: 'Salí de la impersonación para administrar.' }, 403)
+  if (s.session.impersonatedBy) return c.json({ error: 'impersonando', detalle: 'Sal de la impersonación para administrar.' }, 403)
   if (rolDe(s.user) !== 'admin') return c.json({ error: 'sin_acceso', seccion: 'bandeja' }, 403)
   c.set('sesion', s); c.set('admin', { id: s.user.id, email: s.user.email })
   await next()
