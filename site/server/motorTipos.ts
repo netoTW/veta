@@ -86,8 +86,31 @@ export interface LecturaDeterminista {
 /** El motor tiene la moneda en el universo pero todavía no guardó datos: el profundo la crea. */
 export interface SinDatos { sin_datos: true; codigo: string; texto: string }
 
+/* ---------- contrato §21: la ficha determinista de cualquier moneda ---------- */
+export type EstadoDato = 'medido' | 'estimado' | 'no_disponible'
+export interface DatoFicha {
+  clave: string; etiqueta: string; valor: number | null; unidad: 'USD' | '%' | '×' | 'p' | null; estado: EstadoDato
+  fuente: string | null; medido_en: string | null; nota_estimado: string | null; motivo_cliente: string | null
+}
+export interface BloqueFicha { titulo: string; lectura: string | null; lecturas_posibles: string[]; datos: DatoFicha[] }
+export interface Ficha {
+  nivel: 'ficha'; version_ficha: number
+  simbolo: string; nombre: string; cadena: string; contrato: string; id_coingecko: string
+  fecha_datos: string | null; calculada_en: string; cache_hasta?: string; desde_cache?: boolean
+  precio_usd: DatoFicha; var_24h: DatoFicha; var_7d: DatoFicha; mcap_usd: DatoFicha
+  bloques: Record<'demanda' | 'riesgo_cola' | 'concentracion' | 'tokenomics' | 'liquidez', BloqueFicha>
+  analizable: boolean | null; motivo_no_analizable: string | null
+  resolucion?: { consulta: string; interpretada_como: string; otras_candidatas: unknown[] }
+  /** §21.5: sólo con el token de operación. La web no lo usa y lo quita si llegara. */
+  solo_admin?: unknown
+}
+export type EntradaFicha = { consulta?: string; simbolo?: string; id_coingecko?: string; contrato?: string; cadena?: string }
+export type RespuestaFicha = { ficha: Ficha } | { error: 'sin_cobertura' | 'fuente_caida' | 'falta_moneda'; texto?: string }
+
 export interface Motor {
   nombre: 'simulador' | 'motor'
+  /** §21. `null` si el motor no respondió (o todavía no tiene /ficha). */
+  ficha(e: EntradaFicha): Promise<RespuestaFicha | null>
   universo(): Promise<Moneda[]>
   /** §9.1. Devuelve las monedas que pueden ser lo que el usuario escribió. */
   resolver(consulta: string): Promise<Resolucion>

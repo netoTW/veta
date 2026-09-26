@@ -185,6 +185,18 @@ await bd.columna('solicitud', 'contrato', 'TEXT')
 await bd.columna('solicitud', 'cadena', 'TEXT')
 // Contrato §20: lo que el motor dice de la cola (hora estimada, puesto, si la mesa tiene que
 // intervenir), cuándo informó por última vez y si ya se avisó a admin de un pedido parado.
+// §4: cada ficha gratis consultada, para el límite por usuario y por IP. La IP va con hash:
+// basta para contar, no sirve para saber quién es.
+await bd.exec(`CREATE TABLE IF NOT EXISTS consulta_ficha (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  dia TEXT NOT NULL,
+  ip_hash TEXT NOT NULL,
+  usuario_id TEXT,
+  simbolo TEXT,
+  creada TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS consulta_ficha_dia ON consulta_ficha (dia, ip_hash);
+CREATE INDEX IF NOT EXISTS consulta_ficha_usuario ON consulta_ficha (dia, usuario_id);`)
 await bd.columna('solicitud', 'cola', 'TEXT')
 await bd.columna('solicitud', 'motor_actualizado', 'TEXT')
 await bd.columna('solicitud', 'alerta_admin_en', 'TEXT')

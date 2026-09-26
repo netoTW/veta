@@ -11,6 +11,7 @@ import { EmptyState } from '../../ui/EmptyState'
 import { Loader } from '../../ui/Loader'
 import type { Informe } from '../../lib/contrato'
 import { textoDeEstado } from '../analizar/estados'
+import { FichaCliente, type Ficha } from '../analizar/ficha'
 import {
   LecturaDeterminista, SinDatosAun, Decidir, EscenaAnalisis, Etapas, Transcurrido, BotonAviso, CupoChip, Nota, useCupo, useUniverso,
   FormatoAceptado, Candidatas, SinCoincidencia, NoAnalizable, NoDaParaAnalisis, PuedeAnalizarse, InformeNarrado, narradoDe,
@@ -39,7 +40,9 @@ export function Analizar() {
   const universo = useUniverso()
   const cupoSt = useCupo()
   const [q, setQ] = useState(params.get('m') ?? '')
-  const [lectura, setLectura] = useState<{ l: Lectura | null; sin_datos: { codigo: string; texto: string } | null; moneda: Moneda | null; cupo: Cupo | null; puede_profundo: boolean; fuera: Fuera | null } | null>(null)
+  const [lectura, setLectura] = useState<{ l: Lectura | null; sin_datos: { codigo: string; texto: string } | null; moneda: Moneda | null; cupo: Cupo | null; puede_profundo: boolean; fuera: Fuera | null; ficha?: Ficha | null } | null>(null)
+  /** §4: el límite de fichas del día (o la ráfaga), con su texto. */
+  const [limite, setLimite] = useState<{ texto: string; puede_registrarse: boolean } | null>(null)
   const [resol, setResol] = useState<Resolucion | null>(null)
   const [noAnalizable, setNoAnalizable] = useState<Moneda | null>(null)
   const [elegida, setElegida] = useState<Elegida | null>(null)
@@ -80,7 +83,22 @@ export function Analizar() {
     const sym = simbolo.trim().toUpperCase(); if (!sym) return
     setElegida(ref ?? null)
     cargadoDeUrl.current = sym
-    setBuscando(true); setError(null); setLectura(null); setErrorPedido(null); setResol(null); setNoAnalizable(null); setVeredicto(null)
+    setBuscando(true); setError(null); setLectura(null); setErrorPedido(null); setResol(null); setNoAnalizable(null); setVeredicto(null); setLimite(null)
+    // §4 · contrato §21: primero la ficha, que sirve para cualquier moneda. Si el motor no la da, la lectura de siempre.
+    try {
+      const fr = await api<{ ficha: Ficha; cupo: Cupo | null; puede_profundo: boolean }>('/api/analizar/ficha',
+        { cuerpo: { simbolo: sym, contrato: ref?.contrato ?? undefined, cadena: ref?.cadena ?? undefined, id_coingecko: ref?.id_coingecko ?? undefined } })
+      setLectura({ l: null, sin_datos: null, moneda: { simbolo: fr.ficha.simbolo, nombre: fr.ficha.nombre, cadena: fr.ficha.cadena, con_informe: false }, cupo: fr.cupo, puede_profundo: fr.puede_profundo, fuera: null, ficha: fr.ficha })
+      setQ(sym); setParams({ m: sym }, { replace: true }); setBuscando(false)
+      return
+    } catch (e) {
+      if (e instanceof ErrorApi && e.status === 429) {
+        setLimite({ texto: String(e.cuerpo.texto ?? 'Has usado tus fichas de hoy.'), puede_registrarse: !!e.cuerpo.puede_registrarse }); setBuscando(false)
+        return
+      }
+      if (e instanceof ErrorApi && e.status === 404) { setError(String(e.cuerpo.texto ?? 'No encontramos esa moneda.')); setBuscando(false); return }
+      /* 503/502 o un motor sin /ficha: se cae a la lectura guardada, como antes. */
+    }
     try {
       const r = await api<{ lectura: Lectura | null; sin_datos: { codigo: string; texto: string } | null; moneda: Moneda | null; cupo: Cupo | null; puede_profundo: boolean; fuera_universo?: Fuera; pedir_veredicto?: boolean }>('/api/analizar/determinista',
         { cuerpo: { simbolo: sym, contrato: ref?.contrato ?? undefined, cadena: ref?.cadena ?? undefined, id_coingecko: ref?.id_coingecko ?? undefined, nombre: ref?.nombre ?? undefined } })
@@ -135,7 +153,7 @@ export function Analizar() {
   }
   const otra = () => { setResol(null); setNoAnalizable(null); setLectura(null); setError(null); setQ(''); setParams({}, { replace: true }); inputRef.current?.focus() }
   const cupo = lectura?.cupo ?? (cupoSt.estado === 'ok' ? cupoSt.datos.cupo : null)
-  const simboloActual = lectura?.l?.simbolo ?? lectura?.moneda?.simbolo ?? ''
+  const simboloActual = lectura?.ficha?.simbolo ?? lectura?.l?.simbolo ?? lectura?.moneda?.simbolo ?? ''
   /* El motor guarda los informes por símbolo, así que con monedas homónimas puede devolver
      una distinta de la elegida. Cuando pasa, se dice; no se hace pasar una por otra. */
   const norm = (t?: string | null) => (t ?? '').trim().toLowerCase()
@@ -182,6 +200,10 @@ export function Analizar() {
         </form>
 
         {buscando && <div className="p-cargando"><Loader size={72} label="Leyendo" /></div>}
+        {limite && !buscando && (
+          <EmptyState kind="vacio" title={limite.texto}
+            action={limite.puede_registrarse ? <Link to="/registro" className="btn">Crear mi cuenta gratis</Link> : <Link to="/precios" className="btn btn--ghost">Ver los planes</Link>} />
+        )}
         {resol && !buscando && (resol.candidatas.length ? <Candidatas r={resol} onElegir={elegir} onOtra={otra} /> : <SinCoincidencia r={resol} onOtra={otra} />)}
         {noAnalizable && !buscando && <NoAnalizable moneda={noAnalizable} onOtra={otra} />}
         {error && <EmptyState kind="sin-datos" title="No la encontramos" detail={error} action={<button type="button" className="btn btn--ghost" onClick={() => { setError(null); inputRef.current?.focus() }}>Probar otra</button>} />}
@@ -195,13 +217,14 @@ export function Analizar() {
               const m = lectura.moneda && elegida
                 ? { ...lectura.moneda, nombre: elegida.nombre || lectura.moneda.nombre, cadena: elegida.cadena ?? lectura.moneda.cadena }
                 : lectura.moneda
+              if (lectura.ficha) return <FichaCliente f={lectura.ficha} />
               if (lectura.l) return <LecturaDeterminista l={lectura.l} />
               if (v && !v.analizable && m) return <NoDaParaAnalisis moneda={m} motivos={v.motivos} onOtra={otra} />
               if (v && m) return <PuedeAnalizarse moneda={m} medidas={v.medidas} />
               if (m && lectura.sin_datos) return <SinDatosAun moneda={m} texto={lectura.sin_datos.texto} />
               return null
             })()}
-            {!((lectura.fuera ?? veredicto) && !(lectura.fuera ?? veredicto)!.analizable) && (
+            {lectura.ficha?.analizable !== false && !((lectura.fuera ?? veredicto) && !(lectura.fuera ?? veredicto)!.analizable) && (
               <Decidir simbolo={simboloActual} cupo={lectura.cupo} puedeProfundo={lectura.puede_profundo} onPedir={pedir} ocupado={pidiendo} error={errorPedido} />
             )}
             {lectura.l?.origen_motor === 'simulador' && <Nota tono="mudo">Lectura simulada: los números salen de la última pasada que VETA hizo sobre esta moneda; el análisis en vivo todavía no está conectado.</Nota>}

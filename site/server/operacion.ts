@@ -18,6 +18,7 @@ import { bd, ahora, registrarAccion } from './db.ts'
 import { ENV, RAIZ_SITE } from './entorno.ts'
 import { sesionDe, type Sesion } from './auth.ts'
 import { rolDe } from '../src/lib/matriz.ts'
+import { limites, fijarLimites, LIMITES_POR_DEFECTO, type Limites } from './limite.ts'
 
 /* ---------- sincronización ---------- */
 interface Sync { cuando: string | null; ok: boolean | null; duracion_s: number | null; salida: string; en_curso: boolean; proxima: string | null }
@@ -166,6 +167,22 @@ operacionAdmin.get('/resumen', async (c) => {
     tanda: tandaLocal(),
   })
 })
+/* §4: los límites de la ficha gratis, cambiables sin desplegar. */
+operacionAdmin.get('/limites', async (c) => c.json({ limites: await limites(), por_defecto: LIMITES_POR_DEFECTO }))
+operacionAdmin.patch('/limites', async (c) => {
+  const b = await c.req.json().catch(() => ({})) as Partial<Limites>
+  const actual = await limites()
+  const nuevo = { ...actual } as Limites
+  for (const k of Object.keys(LIMITES_POR_DEFECTO) as (keyof Limites)[]) {
+    const x = b[k]; if (!x) continue
+    const dia = Math.round(Number(x.dia)), rafaga_s = Math.round(Number(x.rafaga_s))
+    if (!(dia >= 0 && dia <= 10_000 && rafaga_s >= 0 && rafaga_s <= 3600)) return c.json({ error: 'limite_invalido', perfil: k }, 400)
+    nuevo[k] = { dia, rafaga_s }
+  }
+  await fijarLimites(nuevo)
+  return c.json({ ok: true, limites: nuevo })
+})
+
 operacionAdmin.get('/estado', async (c) => { const r = await motor('/operacion/estado'); return c.json(r.cuerpo, (r.status || 502) as 200) })
 operacionAdmin.get('/hits', async (c) => { const r = await motor(`/operacion/hits?limite=${Number(c.req.query('limite') ?? 100) || 100}`); return c.json(r.cuerpo, (r.status || 502) as 200) })
 operacionAdmin.get('/cola', async (c) => { const r = await motor('/operacion/cola'); return c.json(r.cuerpo, (r.status || 502) as 200) })

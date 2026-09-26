@@ -18,7 +18,7 @@ import { randomBytes } from 'node:crypto'
 import { ENV } from './entorno.ts'
 import * as contenido from './contenido.ts'
 import { rankingScanner } from './votacion.ts'
-import { ETAPAS, type Motor, type Moneda, type LecturaDeterminista, type Solicitud, type Progreso, type Etapa, type Bloque, type Resolucion } from './motorTipos.ts'
+import { ETAPAS, type Motor, type Moneda, type LecturaDeterminista, type Solicitud, type Progreso, type Etapa, type Bloque, type Resolucion, type Ficha, type DatoFicha } from './motorTipos.ts'
 import { resolverEnUniverso } from './resolver.ts'
 
 type Reg = Record<string, unknown>
@@ -173,6 +173,14 @@ export const motor: Motor = {
     const hay = (await this.universo()).some((m) => m.simbolo === simbolo.toUpperCase())
     return { simbolo: simbolo.toUpperCase(), analizable: hay, faltantes: hay ? [] : [{ codigo: 'SIN_SIMULACION', cliente: 'El simulador sólo conoce las monedas con informe guardado.' }] }
   },
+  /** La ficha simulada sale de la lectura determinista de un informe guardado: sólo para
+      probar la pantalla en local. Cada cifra del bloque es un dato «medido» con la fuente del bloque. */
+  async ficha(e) {
+    const sym = (e.simbolo ?? e.consulta ?? '').toUpperCase()
+    const r = informeDe(sym)
+    if (!r) return { error: 'sin_cobertura', texto: 'El simulador sólo conoce las monedas con informe guardado.' }
+    return { ficha: fichaDeLectura(deterministaDeInforme(r)) }
+  },
   async determinista(simbolo) {
     const sym = simbolo.toUpperCase()
     const r = informeDe(sym); if (r) return deterministaDeInforme(r)
@@ -199,4 +207,28 @@ export const motor: Motor = {
     if (t.p.estado === 'fallido' && t.p.fallo?.codigo === 'fuente_caida' && t.s.simbolo.toUpperCase() !== 'STG') t.p.fallo = { codigo: 'sin_cobertura', texto: 'Simulación: sólo se reproducen análisis ya hechos (RAY, ORCA, SSV); esta moneda sólo pasó por el escaneo.' }
     return JSON.parse(JSON.stringify(t.p)) as Progreso
   },
+}
+
+/* ---------- ficha simulada (contrato §21) a partir de una lectura determinista ---------- */
+const UNIDAD_FICHA: Record<string, DatoFicha['unidad']> = { '%': '%', USD: 'USD', '×': '×', p: 'p' }
+function datoDe(clave: string, etiqueta: string, v: number | string | null | undefined, unidad: string | undefined, fuente: string | null, en: string): DatoFicha {
+  const valor = typeof v === 'number' && Number.isFinite(v) ? v : null
+  return valor === null
+    ? { clave, etiqueta, valor: null, unidad: UNIDAD_FICHA[unidad ?? ''] ?? null, estado: 'no_disponible', fuente: null, medido_en: null, nota_estimado: null, motivo_cliente: 'Este dato no está en la última pasada guardada.' }
+    : { clave, etiqueta, valor, unidad: UNIDAD_FICHA[unidad ?? ''] ?? null, estado: 'medido', fuente: fuente ?? 'VETA', medido_en: en, nota_estimado: null, motivo_cliente: null }
+}
+function fichaDeLectura(l: LecturaDeterminista): Ficha {
+  const TIT = { demanda: 'Qué mueve el precio', riesgo_cola: 'Caídas', concentracion: 'Quién la tiene', tokenomics: 'Si el token cobra', liquidez: 'Salida' } as const
+  const bloques = {} as Ficha['bloques']
+  for (const k of Object.keys(TIT) as (keyof typeof TIT)[]) {
+    const b = l[k]
+    bloques[k] = { titulo: TIT[k], lectura: b.lectura === 'sin_dato' ? null : b.lectura, lecturas_posibles: [], datos: b.cifras.map((c, i) => datoDe(`${k}_${i}`, c.k, c.v, c.unidad, b.fuente, l.fecha_datos)) }
+  }
+  const vacio = (clave: string, etiqueta: string) => datoDe(clave, etiqueta, null, undefined, null, l.fecha_datos)
+  return {
+    nivel: 'ficha', version_ficha: 1, simbolo: l.simbolo, nombre: l.nombre, cadena: l.cadena ?? '', contrato: '', id_coingecko: l.id_coingecko ?? '',
+    fecha_datos: l.fecha_datos, calculada_en: l.fecha_datos,
+    precio_usd: datoDe('precio_usd', 'Precio', l.precio_usd, 'USD', 'VETA', l.fecha_datos), var_24h: vacio('var_24h', 'En 24 h'), var_7d: vacio('var_7d', 'En 7 días'), mcap_usd: vacio('mcap_usd', 'Capitalización'),
+    bloques, analizable: true, motivo_no_analizable: null,
+  }
 }

@@ -33,6 +33,7 @@ export const T = [
   ['POST', '/api/analizar/resolver', 'todos', 'escribe'],
   ['POST', '/api/analizar/analizable', 'todos', 'escribe'],
   ['POST', '/api/analizar/determinista', 'sec:analiza.determinista', 'escribe'],
+  ['POST', '/api/analizar/ficha', 'sec:analiza.determinista', 'escribe'],
   ['POST', '/api/analizar/profundo', 'sec:analiza.profundo+sesion', 'escribe'],
   ['GET', '/api/analizar/solicitudes', 'todos', 'lee'],   // sin sesión: lista vacía
   ['GET', '/api/analizar/solicitudes/:id', 'todos', 'lee'], // la lectura gratis se comparte por enlace; lo profundo ajeno da 404
@@ -66,6 +67,8 @@ export const T = [
   ['GET', '/api/admin/operacion/hits', 'admin', 'lee'],
   ['POST', '/api/admin/operacion/lanzar', 'admin', 'escribe'],
   ['POST', '/api/admin/operacion/sincronizar', 'admin', 'escribe'],
+  ['GET', '/api/admin/operacion/limites', 'admin', 'lee'],
+  ['PATCH', '/api/admin/operacion/limites', 'admin', 'escribe'],
   ['GET', '/api/admin/votacion', 'admin', 'lee'],
   ['GET', '/api/admin/votacion/ranking', 'admin', 'lee'],
   ['POST', '/api/admin/votacion', 'admin', 'escribe'],

@@ -22,6 +22,7 @@ import { motor, type Solicitud, type Progreso, type EstadoSolicitud } from './mo
 import { cupoDe, reservar, devolver, hayMargen, gastoMes, fijarTope, type Cupo } from './cupo.ts'
 import { esContrato } from './resolver.ts'
 import { olvidarAPedido, paraCliente } from './contenido.ts'
+import { permitirFicha, ipDe } from './limite.ts'
 
 type Vars = { sesion: Sesion | null; rol: Rol }
 export const analizarApp = new Hono<{ Variables: Vars }>()
@@ -188,6 +189,26 @@ analizarApp.post('/analizable', async (c) => {
   const an = await motor.analizable(sym, { contrato: contrato?.trim() || null, cadena: cadena?.trim() || null, id_coingecko: id_coingecko?.trim() || null }).catch(() => null)
   if (!an) return c.json({ error: 'motor_no_disponible', detalle: 'No pudimos comprobar esa moneda ahora mismo.' }, 503)
   return c.json({ analizable: an.analizable, medidas: an.medidas ?? null, motivos: an.faltantes?.map((x) => x.cliente).filter(Boolean) ?? [], motivo: an.cliente || '' })
+})
+
+/* §4 · contrato §21: la ficha gratis de cualquier moneda. Límite por usuario o por IP; no
+   escribe en solicitud ni en uso_analisis (un contador propio, consulta_ficha). */
+analizarApp.post('/ficha', async (c) => {
+  const b = await c.req.json().catch(() => ({})) as { consulta?: string; simbolo?: string; id_coingecko?: string; contrato?: string; cadena?: string }
+  const limpio = (x?: string) => (typeof x === 'string' ? x.trim().slice(0, 120) : '') || undefined
+  const e = { consulta: limpio(b.consulta), simbolo: limpio(b.simbolo)?.toUpperCase(), id_coingecko: limpio(b.id_coingecko), contrato: limpio(b.contrato), cadena: limpio(b.cadena) }
+  if (!e.consulta && !e.simbolo && !e.id_coingecko && !e.contrato) return c.json({ error: 'falta_moneda' }, 400)
+  const s = c.get('sesion'); const rol = c.get('rol')
+  const v = await permitirFicha(rol, !!s, s?.user.id ?? null, ipDe(c.req.raw.headers), e.simbolo ?? e.consulta ?? e.id_coingecko ?? e.contrato ?? '')
+  if (!v.ok) return c.json({ error: 'limite', texto: v.texto, reintentar_en: v.reintentar_en, tipo: v.clave, puede_registrarse: !s }, 429, { 'Retry-After': String(v.reintentar_en) })
+  const r = await motor.ficha(e)
+  const comun = { cupo: cupoSerializable(await cupoDeSesion(s, rol)), puede_profundo: puede(rol, 'analiza.profundo'), plan_minimo: planMinimo('analiza.profundo'), con_cuenta: !!s }
+  if (!r) return c.json({ error: 'motor_no_disponible', texto: 'No pudimos preparar la ficha ahora mismo. Prueba en un momento.' }, 503)
+  if ('error' in r) return c.json({ error: r.error, texto: r.error === 'sin_cobertura' ? 'No encontramos esa moneda.' : 'Una de las fuentes no respondió. Prueba en un momento.' }, r.error === 'sin_cobertura' ? 404 : r.error === 'falta_moneda' ? 400 : 502)
+  // §21.5: lo de admin no viaja nunca a un cliente, aunque el motor lo mandara.
+  const { solo_admin: _fuera, ...ficha } = r.ficha
+  void _fuera
+  return c.json({ ficha, ...comun })
 })
 
 analizarApp.post('/determinista', async (c) => {

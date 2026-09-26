@@ -11,7 +11,7 @@
      manual (pipeline/lanzar_pedidos.py). La web sólo espeja y explica.
    ========================================================================== */
 import { ENV } from './entorno.ts'
-import type { Motor, Moneda, LecturaDeterminista, SinDatos, Solicitud, Progreso, Resolucion, RefMoneda, Analizabilidad } from './motorTipos.ts'
+import type { Motor, Moneda, LecturaDeterminista, SinDatos, Solicitud, Progreso, Resolucion, RefMoneda, Analizabilidad, Ficha } from './motorTipos.ts'
 import { resolverEnUniverso } from './resolver.ts'
 
 const TIMEOUT_MS = 8000
@@ -74,6 +74,17 @@ export const motor: Motor = {
   async solicitarProfundo(s: Solicitud) {
     const r = await llamar<{ ok?: boolean; error?: string; motivos?: string[] }>('/profundo', { method: 'POST', body: JSON.stringify({ tipo: 'analisis_solicitado', ...s }) })
     if (r.status !== 202 && r.status !== 200) throw new Error(`motor rechazó el pedido (${r.status}): ${(r.cuerpo?.motivos ?? [r.cuerpo?.error ?? '']).join('; ')}`)
+  },
+  /** §21: la ficha. Hasta 15 s: en frío el motor tarda ~5 s y corta sus fuentes a los 7 s. */
+  async ficha(e) {
+    const r = await llamar<Ficha & { error?: string; texto?: string }>('/ficha', { method: 'POST', body: JSON.stringify(e) }, 15_000).catch((err) => {
+      console.warn('[motor] ficha:', (err as Error).message); return { status: 0, cuerpo: null }
+    })
+    if (r.status === 200 && r.cuerpo?.nivel === 'ficha') return { ficha: r.cuerpo }
+    if (r.status === 404) return { error: 'sin_cobertura', texto: r.cuerpo?.texto }
+    if (r.status === 400) return { error: 'falta_moneda' }
+    if (r.status === 502) return { error: 'fuente_caida', texto: r.cuerpo?.texto }
+    return null
   },
   async progreso(id) {
     const r = await llamar<Progreso>(`/progreso/${encodeURIComponent(id)}`)

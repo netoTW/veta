@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { AuthEscena, type EstadoEscena } from '../../auth/AuthEscena'
 import { controlInicial, type Control } from '../../three/control'
-import { Dato, Advertencias, PlanBadge, Puerta } from '../piezas'
+import { Dato, Advertencias, PlanBadge } from '../piezas'
 import { fecha, fechaHora, mult, num, precio, usd } from '../../lib/formato'
 import { llano, LECTURA_LABEL, prosaDeCliente } from '../../lib/lenguaje'
 export { LECTURA_LABEL }
@@ -10,6 +10,7 @@ export { llano }
 
 /** Texto del motor sin sus referencias internas: «· motor §4.1», «§8 S7», «(§3)». */
 import { useDatos } from '../../lib/datos'
+import { useSesion } from '../../lib/sesion'
 import type { Advertencia, Tier } from '../../lib/contrato'
 
 /* ============================================================================
@@ -312,12 +313,13 @@ export function NoDaParaAnalisis({ moneda, motivos, onOtra }: { moneda: Moneda; 
 /* ---------- decidir gastar cupo ---------- */
 export function Decidir({ simbolo, cupo, puedeProfundo, onPedir, ocupado, error }: { simbolo: string; cupo: Cupo | null; puedeProfundo: boolean; onPedir: () => void; ocupado: boolean; error: string | null }) {
   const [confirmando, setConfirmando] = useState(false)
+  const conCuenta = !!useSesion().yo?.usuario
   const agotado = !!cupo && !cupo.ilimitado && (cupo.restantes ?? 0) <= 0
   return (
     <section className={`an-decidir ${agotado ? 'is-agotado' : ''}`} aria-labelledby="an-decidir-t">
       <span className="an-decidir__linea" aria-hidden="true" />
       <div className="an-decidir__texto">
-        <span className="an-decidir__k mono">Análisis profundo</span>
+        <span className="an-decidir__k mono">Análisis completo</span>
         <h3 id="an-decidir-t" className="display">Lo que la lectura no dice: la tesis, y quién la ataca</h3>
         <ul className="an-decidir__lista">
           <li>Una tesis en una línea y qué la invalidaría, con número</li>
@@ -325,23 +327,26 @@ export function Decidir({ simbolo, cupo, puedeProfundo, onPedir, ocupado, error 
           <li>La lectura contraria, buscada a propósito antes de escribir</li>
           <li>Cada cifra verificada contra su fuente</li>
         </ul>
-        <p className="an-decidir__regla">Tarda unos minutos. Puedes irte: te avisamos cuando esté listo. Si falla o no pasa la verificación, no se descuenta.</p>
+        <p className="an-decidir__regla">Tarda unos minutos. Puedes irte: te avisamos cuando esté listo. Si no se completa, no se descuenta.</p>
       </div>
       <div className="an-decidir__accion">
         {!puedeProfundo ? (
-          <Puerta seccion="analiza.profundo" que={`El análisis profundo de ${simbolo} es del plan Base: dos al mes. Pro tiene seis.`} compacta />
+          // §4: quien no tiene cuenta, a crearla; quien la tiene gratis, al plan Base.
+          conCuenta
+            ? <div className="an-decidir__cta"><PlanBadge rol="base" compacto /><Link to="/precios" className="btn an-decidir__btn">Pasa a Base: 2 análisis completos al mes</Link></div>
+            : <div className="an-decidir__cta"><Link to={`/registro?volver=${encodeURIComponent(`/analizar?m=${simbolo}`)}`} className="btn an-decidir__btn">Crea tu cuenta y pide el análisis completo</Link></div>
         ) : agotado ? (
           <div className="an-agotado">
             <CupoChip cupo={cupo} />
             <p>Usaste los {cupo!.incluidos} de este ciclo. Se reinician el <b>{fechaHora(cupo!.fecha_reinicio)}</b>; no se acumulan.</p>
             {cupo!.plan === 'base'
-              ? <p className="an-agotado__plan"><PlanBadge rol="pro" compacto /><span>seis al mes</span><Link to="/cuenta#plan" className="btn">Pasar a Pro</Link></p>
+              ? <p className="an-agotado__plan"><PlanBadge rol="pro" compacto /><span>Te quedan 0 este mes · pasa a Pro: seis al mes</span><Link to="/precios" className="btn">Pasar a Pro</Link></p>
               : <p className="an-agotado__plan"><span className="mono body-muted">Tu cupo ya es el mayor.</span></p>}
           </div>
         ) : !confirmando ? (
           <>
             <CupoChip cupo={cupo} />
-            <button type="button" className="btn an-decidir__btn" onClick={() => setConfirmando(true)}>Pedir el análisis profundo{cupo && !cupo.ilimitado ? ' · usa 1' : ''}</button>
+            <button type="button" className="btn an-decidir__btn" onClick={() => setConfirmando(true)}>Pedir el análisis completo{cupo && !cupo.ilimitado ? ' · usa 1' : ''}</button>
           </>
         ) : (
           <div className="an-confirma">

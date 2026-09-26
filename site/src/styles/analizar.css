@@ -274,3 +274,31 @@
 .an-estado__cuerpo { display: flex; flex-direction: column; gap: 8px; margin-top: 18px; max-width: 46ch; }
 .an-estado__lead { color: var(--hueso); font-size: 1.02rem; line-height: 1.5; margin: 0; }
 .an-estado__cuerpo .body-muted { margin: 0; font-size: 0.9rem; line-height: 1.5; }
+
+/* ---------- la ficha gratis (§4, contrato §21) ---------- */
+.an-ficha { border: 1px solid var(--hairline); background: rgba(255,255,255,0.015); padding: 22px 24px; display: flex; flex-direction: column; gap: 18px; margin-top: 8px; }
+.an-ficha__cab { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; border-bottom: 1px solid var(--hairline); padding-bottom: 16px; }
+.an-ficha__sym { font-size: clamp(1.8rem, 3vw, 2.4rem); line-height: 1; margin: 0; }
+.an-ficha__sym small { margin-left: 10px; font-family: var(--font-body); font-size: 0.95rem; color: var(--ceniza); letter-spacing: 0; }
+.an-ficha__precio { margin: 10px 0 0; display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; font-size: 1.25rem; color: var(--hueso); }
+.an-ficha__var { font-size: 0.78rem; color: var(--ceniza); }
+.an-ficha__fecha { font-size: 0.7rem; color: var(--ceniza-2); }
+.an-ficha__bloque { display: flex; flex-direction: column; gap: 8px; }
+.an-ficha__bcab { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.an-ficha__bt { font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ceniza); }
+.an-ficha__lectura { font-size: 0.92rem; color: var(--hueso); }
+.an-ficha__lectura.is-esm { color: var(--esmeralda-luz); } .an-ficha__lectura.is-oro { color: var(--oro); }
+.an-ficha__fila { display: grid; grid-template-columns: minmax(0, 1.4fr) auto minmax(0, 1fr); gap: 6px 18px; align-items: baseline; padding-left: 14px; }
+.an-ficha__et { color: var(--ceniza); font-size: 0.92rem; }
+.an-ficha__v { color: var(--hueso); text-align: right; font-size: 0.98rem; }
+.an-ficha__fila.is-estimado .an-ficha__v { color: var(--ceniza); }
+.an-ficha__fuente { font-size: 0.66rem; color: var(--ceniza-2); }
+.an-ficha__fila.is-estimado .an-ficha__fuente { cursor: help; text-decoration: underline dotted; text-underline-offset: 3px; }
+.an-ficha__fuera { margin: 0; font-size: 0.85rem; color: var(--ceniza-2); }
+.an-ficha__pitch { margin: 0; padding-top: 14px; border-top: 1px solid var(--hairline); color: var(--hueso); font-size: 1rem; line-height: 1.5; max-width: 62ch; }
+.an-decidir__cta { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+@media (max-width: 640px) {
+  .an-ficha { padding: 16px; }
+  .an-ficha__fila { grid-template-columns: 1fr auto; padding-left: 0; }
+  .an-ficha__fuente { grid-column: 1 / -1; }
+}

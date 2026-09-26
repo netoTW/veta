@@ -151,8 +151,38 @@ export function Operacion() {
             </>
           ) : <p className="a-dec__msg a-dec__msg--error">{d.hits?.error ?? 'sin respuesta'}</p>}
         </section>
+
+        <LimitesFicha />
       </div>
     </>
+  )
+}
+
+/* ---------- límites de la ficha gratis (§4), sin desplegar ---------- */
+type Lim = Record<'visitante' | 'gratis' | 'base' | 'pro', { dia: number; rafaga_s: number }>
+function LimitesFicha() {
+  const [l, setL] = useState<Lim | null>(null)
+  const [msg, setMsg] = useState<string | null>(null)
+  useEffect(() => { api<{ limites: Lim }>('/api/admin/operacion/limites').then((r) => setL(r.limites), (e) => setMsg(e instanceof ErrorApi ? e.message : String(e))) }, [])
+  if (!l) return msg ? <p className="a-dec__msg a-dec__msg--error">{msg}</p> : null
+  const cambiar = (k: keyof Lim, campo: 'dia' | 'rafaga_s', v: string) => setL({ ...l, [k]: { ...l[k], [campo]: Number(v) } })
+  const guardar = async () => {
+    try { const r = await api<{ limites: Lim }>('/api/admin/operacion/limites', { metodo: 'PATCH', cuerpo: l }); setL(r.limites); setMsg('Guardado. Vale desde la próxima consulta.') } catch (e) { setMsg(e instanceof ErrorApi ? e.message : String(e)) }
+  }
+  return (
+    <section className="a-vot__sec" aria-label="Límites de la ficha gratis">
+      <h2 className="display a-vot__h2">Límites de la ficha gratis</h2>
+      <p className="body-muted a-op__nota">Por día y ráfaga mínima entre consultas. El visitante cuenta por IP; quien tiene cuenta, por usuario. Admin no tiene límite.</p>
+      <div className="a-vot__scroll"><table className="a-vot__tabla">
+        <thead><tr><th className="mono">Perfil</th><th className="mono">Fichas al día</th><th className="mono">Segundos entre fichas</th></tr></thead>
+        <tbody>{(Object.keys(l) as (keyof Lim)[]).map((k) => (
+          <tr key={k}><td className="mono">{k}</td>
+            <td><input type="number" min={0} value={l[k].dia} onChange={(e) => cambiar(k, 'dia', e.target.value)} className="mono" style={{ width: 90 }} /></td>
+            <td><input type="number" min={0} value={l[k].rafaga_s} onChange={(e) => cambiar(k, 'rafaga_s', e.target.value)} className="mono" style={{ width: 90 }} /></td></tr>
+        ))}</tbody>
+      </table></div>
+      <p style={{ marginTop: 12 }}><button type="button" className="btn btn--ghost" onClick={guardar}>Guardar límites</button> {msg && <span className="mono body-muted">{msg}</span>}</p>
+    </section>
   )
 }
 const peso = (s: string) => (s === 'alta' ? 0 : s === 'media' ? 1 : 2)

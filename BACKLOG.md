@@ -31,6 +31,11 @@ Nada de esto se toca hasta que el lanzamiento esté cerrado, salvo que lo pidas.
 
 ## Web, pequeño
 
+- **Límite de la ficha gratis por IP:** la IP sale de `X-Vercel-Forwarded-For`, porque Caddy
+  sustituye `X-Forwarded-For` por la IP de Vercel. Quien llame a `api.vetalab.io` saltándose
+  Vercel puede falsear esa cabecera y esquivar el límite de visitante (los registrados cuentan
+  por usuario). Cerrarlo: que Caddy sólo acepte tráfico de Vercel, o una cabecera secreta.
+
 - `/gemas` se desplaza de lado en móvil sólo con sesión de admin (122 px). Aparcado por ti.
 - `/piezas` y `/admin/operacion` desbordan en móvil.
 - Los múltiplos de la brecha de ingresos (`3×`) siguen a la vista del cliente en referencias.
