@@ -503,3 +503,4 @@
    desplazarse él, no empujar la página entera hacia el lado. */
 .a-vot__scroll { overflow-x: auto; max-width: 100%; }
 .a-vot__scroll > table { min-width: max-content; }
+

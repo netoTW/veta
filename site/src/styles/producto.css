@@ -852,3 +852,13 @@
 .p-sobredatos__l--fuera { color: var(--ceniza-2); }
 /* La cifra sin verificar: un asterisco discreto con la nota al pasar el ratón o al tocar. */
 .p-sv { color: var(--oro); text-decoration: none; cursor: help; margin-left: 1px; border-bottom: 1px dotted var(--oro); }
+
+/* Combustible (§10): sólo admin, con vocabulario real. Vive aquí porque el panel sale también en el detalle del informe. */
+.a-comb { margin: 18px 0; padding: 16px 18px; border: 1px dashed var(--hairline); display: flex; flex-direction: column; gap: 10px; }
+.a-comb__cab { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.a-comb__k { color: var(--oro); font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; }
+.a-comb__estado { color: var(--ceniza); font-size: 0.7rem; }
+.a-comb__kv { display: grid; grid-template-columns: max-content 1fr; gap: 4px 18px; margin: 0; font-size: 0.86rem; }
+.a-comb__kv dt { color: var(--ceniza); } .a-comb__kv dd { margin: 0; color: var(--hueso); }
+.a-comb__lectura { margin: 0; color: var(--ceniza); font-size: 0.86rem; line-height: 1.5; max-width: 80ch; }
+.a-comb__fuente { margin: 0; color: var(--ceniza-2); font-size: 0.64rem; }

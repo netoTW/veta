@@ -206,11 +206,34 @@ const conPublicacion = async (r: Registro, rol: Rol) => (rol === 'admin' ? { ...
 /* Contrato §20.2: lo que el control de calidad corrigió o quitó (`integridad.retiradas`)
    es de la mesa. No se esconde en pantalla: no sale del servidor hacia quien no es admin. */
 export function paraCliente(r: Registro): Registro {
+  let out: Registro = r
   const ig = r.integridad as { retiradas?: unknown } | undefined
-  if (!ig || !('retiradas' in ig)) return r
-  const { retiradas: _fuera, ...resto } = ig as Record<string, unknown>
-  void _fuera
-  return { ...r, integridad: resto }
+  if (ig && 'retiradas' in ig) {
+    const { retiradas: _fuera, ...resto } = ig as Record<string, unknown>
+    void _fuera
+    out = { ...out, integridad: resto }
+  }
+  /* §10: el combustible (posiciones apalancadas) es una lectura de la mesa: no calibrada,
+     indica volatilidad y no dirección. No sale hacia un cliente, ni en el registro ni en niveles. */
+  if ('combustible' in out || (out.niveles as Record<string, unknown> | undefined)?.combustible !== undefined) {
+    const { combustible: _c, ...sinC } = out as Record<string, unknown>
+    void _c
+    const niveles = { ...((out.niveles ?? {}) as Record<string, unknown>) }
+    delete niveles.combustible
+    out = { ...sinC, niveles } as unknown as Registro
+  }
+  // Y los avisos que hablan de él (advertencias con seccion o campo «combustible»), estén donde estén.
+  return sinSeccionCombustible(out) as Registro
+}
+const deCombustible = (x: unknown) => {
+  if (!x || typeof x !== 'object' || Array.isArray(x)) return false
+  const o = x as { seccion?: unknown; campo_afectado?: unknown }
+  return o.seccion === 'combustible' || (typeof o.campo_afectado === 'string' && o.campo_afectado.startsWith('combustible'))
+}
+function sinSeccionCombustible(v: unknown): unknown {
+  if (Array.isArray(v)) return v.filter((x) => !deCombustible(x)).map(sinSeccionCombustible)
+  if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, sinSeccionCombustible(x)]))
+  return v
 }
 
 /* ---------- recortes por rol ---------- */
@@ -264,6 +287,7 @@ export function resumenDeLista(r: Registro) {
   // De cada sección, sólo la frase esencial.
   const niveles: Record<string, unknown> = {}
   for (const [k, v] of Object.entries((r.niveles ?? {}) as Record<string, { esencial?: { texto?: unknown } } | null>)) {
+    if (k === 'combustible') continue // §10: sólo admin
     niveles[k] = v?.esencial?.texto !== undefined ? { esencial: { texto: v.esencial.texto } } : null
   }
   out.niveles = niveles

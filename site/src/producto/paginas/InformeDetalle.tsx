@@ -17,6 +17,7 @@ import { Cifras, Prosa, RiesgoLlano } from '../cifras'
 import { estadoEconomicoLlano, tieneCriterioInterno, llano, delCatalogo, prosaDeCliente } from '../../lib/lenguaje'
 import { SobreLosDatos, ProsaConNotas, type Integridad } from '../integridad'
 import { Cifra } from '../Cifra'
+import { PanelCombustible, type Combustible } from '../admin/Combustible'
 
 /* ============================================================================
    Informe — el detalle de una gema (o de un análisis sin tesis).
@@ -415,6 +416,7 @@ export function Cuerpo({ inf, esAnalisis }: { inf: Informe; esAnalisis: boolean 
      válido, el informe llega sin tesis y con el motivo para el cliente. Se dice arriba, y no se pintan
      ni la invalidación ni los escenarios: sin tesis no hay nada que invalidar. */
   const ig = (inf as unknown as { integridad?: Integridad | null }).integridad ?? null
+  const esAdmin = useRol().rol === 'admin'
   const sinTesis = prosaDeCliente(String((inf as unknown as { motivo_sin_tesis_cliente?: string | null }).motivo_sin_tesis_cliente ?? ''))
 
   return (
@@ -503,6 +505,7 @@ export function Cuerpo({ inf, esAnalisis }: { inf: Informe; esAnalisis: boolean 
 
       {/* ---- 4 · Niveles ---- */}
       <Niveles inf={sinTesis ? { ...inf, escenarios: [] } : inf} nc={sinTesis && ic?.niveles ? { ...ic.niveles, escenarios: [] } : ic?.niveles ?? null} />
+      {esAdmin && <div className="shell"><PanelCombustible c={(inf as unknown as { combustible?: Combustible }).combustible} /></div>}
 
       {/* ---- 5 · Qué vigilar y qué invalida ----
            Sin tesis no hay nada que vigilar ni que invalidar, pero lo que podría salir mal sigue. */}
