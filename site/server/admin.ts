@@ -8,7 +8,7 @@
    Cada mutación queda en `acciones_admin` (quién, qué, cuándo).
    ========================================================================== */
 import { Hono } from 'hono'
-import { auth, sesionDe, type Sesion } from './auth.ts'
+import { auth, sesionDe, olvidarSesiones, type Sesion } from './auth.ts'
 import { bd, ahora, asignarPlan, olvidarPlan, registrarAccion } from './db.ts'
 import { cupoDe } from './cupo.ts'
 import { rolDe, PLANES } from '../src/lib/matriz.ts'
@@ -125,7 +125,9 @@ adminApp.get('/bandeja/:id', async (c) => {
   return c.json({ informe: r, fila: await filaBandeja(r), historial, paquete: contenido.paqueteDe(id) })
 })
 
-const BLOQUEADO = (estado: string | undefined) => !!estado && estado !== 'pasa'
+/* §20.2: el verificador ya no bloquea, corrige. `corregido` es un informe entregado con sus
+   correcciones anotadas, no un bloqueo: sólo `bloqueado` (registros viejos) pide confirmación. */
+const BLOQUEADO = (estado: string | undefined) => estado === 'bloqueado'
 
 adminApp.post('/bandeja/:id/decision', async (c) => {
   const id = c.req.param('id')
@@ -226,6 +228,7 @@ adminApp.patch('/usuarios/:id/plan', async (c) => {
 })
 
 adminApp.patch('/usuarios/:id/rol', async (c) => {
+  olvidarSesiones() // la memoria de sesiones no puede sostener lo que admin acaba de cambiar
   const id = c.req.param('id')
   const { rol } = await c.req.json().catch(() => ({})) as { rol?: string }
   if (rol !== 'admin' && rol !== 'usuario') return c.json({ error: 'rol_invalido' }, 400)
@@ -236,6 +239,7 @@ adminApp.patch('/usuarios/:id/rol', async (c) => {
 })
 
 adminApp.patch('/usuarios/:id/estado', async (c) => {
+  olvidarSesiones() // la memoria de sesiones no puede sostener lo que admin acaba de cambiar
   const id = c.req.param('id')
   const { estado, motivo } = await c.req.json().catch(() => ({})) as { estado?: string; motivo?: string }
   if (id === c.get('admin').id) return c.json({ error: 'no_a_ti_mismo', detalle: 'No puedes suspender tu propia cuenta.' }, 400)
@@ -260,6 +264,7 @@ adminApp.patch('/usuarios/:id/estado', async (c) => {
 /* POST y no DELETE: el proxy de Vercel descarta el cuerpo de un DELETE, así que la
    confirmación no llegaba nunca y el borrado era imposible desde el navegador. */
 adminApp.post('/usuarios/:id/borrar', async (c) => {
+  olvidarSesiones() // la memoria de sesiones no puede sostener lo que admin acaba de cambiar
   const id = c.req.param('id')
   const admin = c.get('admin')
   if (id === admin.id) return c.json({ error: 'no_a_ti_mismo', detalle: 'No puedes borrar tu propia cuenta.' }, 400)
@@ -306,6 +311,7 @@ adminApp.patch('/usuarios/:id/cupo', async (c) => {
 
 /** Impersonar: la cookie la cambia better-auth; acá sólo queda registrado. */
 adminApp.post('/usuarios/:id/impersonar', async (c) => {
+  olvidarSesiones() // la memoria de sesiones no puede sostener lo que admin acaba de cambiar
   const id = c.req.param('id')
   const u = await bd.uno('SELECT email, role FROM "user" WHERE id = ?', [id]) as { email: string; role: string | null } | undefined
   if (!u) return c.json({ error: 'no_encontrado' }, 404)

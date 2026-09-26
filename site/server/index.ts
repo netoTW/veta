@@ -15,7 +15,7 @@ import { serveStatic } from '@hono/node-server/serve-static'
 import { accessSync, constants, existsSync, readdirSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { ENV, RAIZ_SITE } from './entorno.ts'
-import { auth, migrar, sesionDe, type Sesion } from './auth.ts'
+import { auth, migrar, sesionDe, olvidarSesiones, type Sesion } from './auth.ts'
 import { bd, planVigente } from './db.ts'
 import { rolDe, puede, type Rol, type Seccion } from '../src/lib/matriz.ts'
 import * as contenido from './contenido.ts'
@@ -34,7 +34,11 @@ type Vars = { sesion: Sesion | null; rol: Rol; rolReal: Rol; verComo: Rol | null
 const app = new Hono<{ Variables: Vars }>()
 
 /* ---------- auth ---------- */
-app.on(['GET', 'POST'], '/api/auth/*', (c) => auth.handler(c.req.raw))
+app.on(['GET', 'POST'], '/api/auth/*', (c) => {
+  // Cerrar sesión o cambiar la contraseña invalida sesiones: la memoria de sesionDe no las resucita.
+  if (/\/(sign-out|reset-password|change-password|revoke-sessions?|revoke-other-sessions)$/.test(c.req.path)) olvidarSesiones()
+  return auth.handler(c.req.raw)
+})
 
 /* ---------- sesión y rol efectivo en cada petición ---------- */
 app.onError((e, c) => {

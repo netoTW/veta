@@ -110,7 +110,22 @@ export interface SesionUsuario {
 export interface Sesion { user: SesionUsuario; session: { id: string; impersonatedBy?: string | null; expiresAt: Date | string } }
 
 /** Sesión a partir de las cabeceras de la petición (cookie). null si no hay. */
+/* La sesión se busca en Supabase (us-east-1, ~100 ms cada consulta) y better-auth sólo se
+   ahorra la consulta si llega su cookie de caché, que dura 5 min y sólo renueva
+   /api/auth/get-session: en la práctica casi toda petición con sesión pagaba ~200 ms.
+   Se recuerda 30 s por token. El plan y la suspensión no dependen de esto: los relee
+   planVigente (10 s). Cerrar sesión borra la cookie en el navegador al momento. */
+const SESIONES = new Map<string, { hasta: number; sesion: Sesion | null }>()
+const VIDA_SESION_MS = 30_000
 export async function sesionDe(headers: Headers): Promise<Sesion | null> {
-  const s = await auth.api.getSession({ headers })
-  return (s as unknown as Sesion | null) ?? null
+  const token = (headers.get('cookie') ?? '').match(/(?:^|;\s*)(?:__Secure-)?[\w.-]*session_token=([^;]+)/)?.[1]
+  if (!token) return null
+  const m = SESIONES.get(token)
+  if (m && m.hasta > Date.now()) return m.sesion ? { ...m.sesion, user: { ...m.sesion.user } } : null
+  const s = ((await auth.api.getSession({ headers })) as unknown as Sesion | null) ?? null
+  if (SESIONES.size > 5000) SESIONES.clear()
+  SESIONES.set(token, { hasta: Date.now() + VIDA_SESION_MS, sesion: s })
+  return s ? { ...s, user: { ...s.user } } : null
 }
+/** Al cerrar sesión o borrar una cuenta: que la memoria no la resucite. */
+export const olvidarSesiones = () => SESIONES.clear()
