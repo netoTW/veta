@@ -15,6 +15,9 @@ Nada de esto se toca hasta que el lanzamiento esté cerrado, salvo que lo pidas.
 - **DefiLlama falla el 35 %** (81 de 231 llamadas este mes). Provocó la invalidación falsa de
   PUMP y va a dejar huecos en la ficha gratis. Es del motor.
 
+- **Términos y Privacidad:** están publicados y se quedan como están. Nombre y RUT, fuera por
+  decisión de Pablo (26-sep); no se ponen ni se vuelven a pedir.
+
 ## Del motor (se pide por contrato cuando toque)
 
 - La reexportación de los 14 vigentes no ha ocurrido (`cambios_respecto_version_anterior` sigue
