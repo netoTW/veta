@@ -32,6 +32,23 @@ function ddlPg(sql: string) {
     .replace(/\bREAL\b/g, 'DOUBLE PRECISION')
 }
 
+/** Al arrancar, Supabase puede tardar en contestar (25-sep: 41 reinicios en 19
+    minutos por un timeout en el primer CREATE TABLE). Todo el arranque cuelga de
+    top-level awaits que no cubre la red de seguridad de index.ts, así que aquí se
+    espera a que la base responda, con espera creciente, antes de devolver `bd`.
+    Si tras ~5 minutos sigue sin contestar, se lanza y systemd reinicia. */
+async function esperarBase(pool: { query(sql: string): Promise<unknown> }) {
+  const inicio = Date.now()
+  for (let intento = 1, espera = 1_000; ; intento++, espera = Math.min(espera * 2, 30_000)) {
+    try { await pool.query('SELECT 1'); if (intento > 1) console.log(`[bd] postgres responde tras ${intento} intentos`); return }
+    catch (e) {
+      if (Date.now() - inicio > 300_000) throw e
+      console.error(`[bd] postgres no responde (intento ${intento}): ${(e as Error).message}; reintento en ${espera / 1000} s`)
+      await new Promise((r) => setTimeout(r, espera))
+    }
+  }
+}
+
 async function abrirPostgres(url: string): Promise<Bd> {
   const { default: pg } = await import('pg')
   // bigint (COUNT, SUM de enteros) y numeric llegan como texto: se quieren números
@@ -40,6 +57,7 @@ async function abrirPostgres(url: string): Promise<Bd> {
   const local = /localhost|127\.0\.0\.1/.test(url)
   const pool = new pg.Pool({ connectionString: url, max: 8, ssl: local ? undefined : { rejectUnauthorized: false }, idleTimeoutMillis: 30_000, connectionTimeoutMillis: 10_000 })
   pool.on('error', (e) => console.error('[bd] postgres:', e.message))
+  await esperarBase(pool)
   return {
     motor: 'postgres', crudo: pool,
     async uno<T>(sql: string, params: unknown[] = []) { const r = await pool.query(posicional(sql), params); return r.rows[0] as T | undefined },
