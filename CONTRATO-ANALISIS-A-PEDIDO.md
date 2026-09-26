@@ -1628,3 +1628,33 @@ cifra y su unidad (`%`, `USD`, `días`). El signo negativo es «−» (U+2212), 
 - Redondeo: al más cercano, mitades hacia arriba en valor absoluto (`toFixed`).
 - Un valor `null` no se pinta (§21.2, «lo que no hay, no se muestra»): nunca «—» en una pantalla
   de cliente.
+
+---
+
+## A.20 · A.21 Acuse de §20 y §21 (26-sep-2026)
+
+Lo que la web hizo con cada punto, y lo que le queda pidiendo al motor.
+
+| Sección | Lo que fija el motor | Lo que hizo la web |
+|---|---|---|
+| 20.1 | Estados `en_cola` (con `inicio_estimado`, `puesto`, `motivo_cola`, `requiere_admin`), `en_curso`, `listo`, `no_analizable`, `fallido` sólo cancelación; `bloqueado` no se emite más | Una pantalla por estado (`producto/analizar/estados.ts`). `no_analizable` se guarda como `fallido` con código y sale como su estado; cupo devuelto. `bloqueado` y `fallido` viejos caen a un respaldo genérico, sin motivo crudo. `requiere_admin`: el cliente lo ve en cola sin hora; admin recibe la alerta |
+| 20.1 | El reloj es del motor | La web ya no cierra pedidos (fuera el `fallido` por 404 de 60 s). Sin noticias en 30 min, una alerta en `/admin/consumo`; nada más |
+| 20.1 | `POST /cancelar/:id` | No se ofrece todavía al cliente: la pantalla de «Cancelaste este análisis» existe para cuando se ofrezca |
+| 20.2 | `integridad{no_disponibles, retiradas, sin_verificar}`, marca `⟦sv:i⟧`, `tesis: null` + `motivo_sin_tesis_cliente`, `verificador.estado` `pasa`/`corregido` | Bloque «Sobre los datos de este informe» (sin verificar y una línea de no disponibles); `retiradas` no sale del servidor hacia quien no es admin; la marca se vuelve nota y nunca sale cruda; «Sin tesis» arriba del informe, sin invalidación ni escenarios; `corregido` no cuenta como bloqueo en la bandeja |
+| 21 | `POST /ficha`, forma de dato, cinco bloques, `lectura: null`, `solo_admin` sólo con token | `/api/analizar/ficha` con límite por usuario e IP; la pantalla de la ficha; `solo_admin` se quita también en la web por si llegara. Si la ficha no responde, cae a `/determinista` |
+| 21.x | `/determinista` lee de la ficha | Sin cambios: sigue siendo el respaldo |
+
+### Lo que la web pide al motor (abierto)
+
+1. **`integridad.no_disponibles[].que` en lenguaje de cliente.** Llega «TVL ethena-usde y Δ30d»;
+   la web lo limpia a «fondos bloqueados y variación a 30 días», pero es un parche.
+2. **Prosa sin identificadores de código.** Los catalizadores de STONK traían
+   `creator_fee_share_rate` y `curve_params`: la web tira la frase entera.
+3. **Cifras de la prosa con la tabla de §23.** Llegan «17.676.632 USD», «17,3%» y «15 %» con
+   espacio normal; la web las corrige con `numerosDeProsa`, pero es un parche.
+4. **Ficha: tiempo.** Medido en producción con las 22 monedas del banco: mediana 8,9 s,
+   p95 10,8 s, máximo 11,3 s en frío. El objetivo del motor era 8 s.
+5. **El banco de 20 exportaciones.** `fixtures-contrato/` tiene hoy 3 registros en esta máquina
+   (4 en el servidor): la prueba de contrato corre sobre ellos. «Listo» (§E) pide los 20.
+6. **`catalizador` e `invalidacion` de `escenarios[]`** llegaban sin pasar por el filtro de
+   lenguaje de la web; ya pasan, pero conviene que salgan limpios de origen.

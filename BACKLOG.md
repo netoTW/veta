@@ -9,7 +9,8 @@ Nada de esto se toca hasta que el lanzamiento esté cerrado, salvo que lo pidas.
   primer día; las credenciales de R2 en `/opt/veta/.env` siguen siendo marcadores. Hoy no hay
   copia externa de la base ni de los datos. Lanzar con clientes pagando y sin copia es un riesgo
   real. Necesita tus credenciales de Cloudflare R2.
-- **Mover Supabase a Frankfurt (`eu-central-1`).** Hoy está en `us-east-1` y el VPS en Alemania:
+- **Mover Supabase a Frankfurt (`eu-central-1`).** Es lo único que queda de A3.1: la primera petición con sesión tras
+  una pausa tarda ~430 ms. Hoy está en `us-east-1` y el VPS en Alemania:
   100 ms por consulta, 660 ms por conexión nueva. La especificación deja el contenido público
   rápido con caché; esto arregla también sesión, cupo y admin. Toca servidor y base.
 - **DefiLlama falla el 35 %** (81 de 231 llamadas este mes). Provocó la invalidación falsa de

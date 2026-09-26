@@ -8,8 +8,8 @@ Lo que este archivo no repite: `ESTADO-WEB.md` cuenta cómo funciona cada parte 
 dentro, `DESPLIEGUE.md` cómo se instala, `SISTEMA-VISUAL.md` la paleta y las piezas.
 Aquí va sólo lo que hace falta para **seguir trabajando**.
 
-**Desde el 26-sep manda `ESPECIFICACION-LANZAMIENTO.md`** (pendiente de aprobación); lo que
-no está ahí vive en `BACKLOG.md`.
+**Desde el 26-sep manda `ESPECIFICACION-LANZAMIENTO.md`**, aprobada y construida: la evidencia de
+cada criterio está en `INFORME-LANZAMIENTO.md`. Lo que no está ahí vive en `BACKLOG.md`.
 
 ---
 
@@ -26,6 +26,13 @@ sesión del motor, en `b301733`. Su árbol está limpio: no queda nada mío ahí
 
 **Un arreglo, un commit, un despliegue, una verificación.** Sin acumular. Se
 verifica **en producción**, no en local, antes de pasar al siguiente.
+
+**Se despliega sólo con `site/scripts/desplegar.sh`.** Corre los invariantes y, si
+pasan, marca el commit para que Vercel lo construya (un push normal no despliega:
+ver §7). **Nunca hagas commit mientras corre:** el script lo detecta y se para.
+
+**Cada escritura en la base de producción** se le enseña a Pablo como comando
+exacto y se ejecuta sólo cuando la aprueba en el momento.
 
 **Lo que no se hace sin que Pablo lo pida:** aprobar o despublicar informes, pedir
 análisis nuevos, hacer pagos, reescribir historia de git, borrar datos o cuentas.
@@ -54,6 +61,8 @@ bloquea el trabajo esperando.
 | `/opt/veta/gem-pipeline/` | el motor · `base_contenido/` 148 MB, `reports/` 30 MB |
 | `/opt/veta/gem-pipeline/base_contenido/noticias/` | piezas, agenda y tendencias del noticiero |
 | `/opt/veta/archivo/` | lo archivado de la calibración · 87 MB |
+| `/opt/veta/gem-pipeline/base_contenido/publicados-web.json` | lo publicado, para el motor (contrato §22) · lo escribe la web |
+| `/opt/veta/gem-pipeline/config/conflictos_interes.yaml` | monedas con tenencia declarada · la web lo lee |
 
 ### Servicios y temporizadores
 `veta-web` (la API, siempre activa) · `veta-servicio` (el motor por HTTP, :8787) ·
@@ -71,81 +80,51 @@ firma.
 
 ## 3. Qué está hecho
 
-Todo desplegado y verificado en producción. El último despliegue es del **26-sep
-07:25 CEST** (`5f4ab30`, la espera a Supabase, ver pendiente 2).
+Todo desplegado y verificado en producción. Lo del 26-sep (detalle y evidencia en
+`INFORME-LANZAMIENTO.md`):
 
-- **Cobro con Whop** encendido. `POST /api/pagos/whop` (firma obligatoria,
-  idempotente por id de mensaje, avisos desordenados que no pisan a uno nuevo) y
-  `GET /api/pagos/checkout/:plan`, que crea la sesión con el origen de la visita
-  dentro. Cinco eventos: `payment.succeeded` y `membership.activated` suben,
-  `membership.deactivated` es la **única** vía de baja, `payment.failed` y
-  `membership.cancel_at_period_end_changed` sólo se anotan.
-- **Enlaces cortos** `/ig`, `/tiktok`, `/x`, gobernados desde `/admin/enlaces` sin
-  desplegar. 302, y el origen de la visita se guarda 30 días en el navegador
-  (manda el primero, no el último).
-- **Noticias y agenda** en `/noticias`, del plan Base en adelante, con el recorte
-  decidido en el servidor.
-- **Sitio público** entero: portada, metodología, nosotros, precios, legales, gracias.
-- **Límite de error** en todas las rutas: ninguna pantalla se queda en blanco, y el
-  fallo se registra en `POST /api/fallo`.
-- **Archivado de la calibración**: 620 registros fuera de producción, con copia
-  verificada en el Mac. Quedaron 14 informes vigentes.
+- **Invariantes y despliegue** (`npm run invariantes`, `scripts/desplegar.sh`): tipos,
+  lint, navegaciones automáticas, pruebas unitarias, lenguaje, matriz de acceso en el
+  servidor, tenencia declarada, barrido y prueba de contrato. Vercel sólo construye
+  commits marcados.
+- **Recuperación de contraseña sin bucles:** guardia única de navegaciones
+  (`src/lib/guardaNavegacion.ts`); sin 3D en `/recuperar` y `/restablecer`.
+- **Tiempos:** publicación, sesión y resultados en memoria; pool caliente; lista de
+  análisis ligera. En el VPS, las rutas de contenido en p95 ≤ 13 ms.
+- **`publicados-web.json`** (contrato §22), que el motor ya lee.
+- **Estados del pedido** (contrato §20): una tabla de textos, el reloj es del motor,
+  alertas en `/admin/consumo`.
+- **Datos incompletos** (contrato §20.2): «Sobre los datos de este informe»; lo
+  corregido, sólo admin.
+- **Prueba de contrato** (§23) sobre `fixtures-contrato/`.
+- **Ficha gratis de cualquier moneda** (contrato §21) con límite por usuario e IP.
+- **Combustible**, sólo admin.
+- **Tenencia declarada** fuera de toda respuesta a clientes (`server/tenencia.ts`).
+
+Lo de antes sigue: cobro con Whop, enlaces cortos, noticias y agenda, sitio público,
+límite de error, archivado de la calibración.
 
 ---
 
 ## 4. Pendientes, por prioridad
 
 ### Alta
-
-1. **Dos encargos que no llegaron al código.** Pablo dio por hechos «el bucle en la
-   recuperación de contraseña» y «el detalle de las cifras que fallan cuando un
-   análisis no pasa la verificación». **No hay rastro de ninguno** — cero commits, y
-   no aparecen en el historial de la sesión del 21-sep. Hay que pedirle que los
-   repita antes de tocar nada.
-2. **El arranque muere si la base no responde · ARREGLADO Y DESPLEGADO (26-sep).** El 25-sep,
-   entre las 12:00 y las 12:19 CEST, el servicio cayó y volvió **41 veces**:
-   `Connection terminated due to connection timeout` contra Supabase, siempre en la
-   primera conexión. `4ce99f0` (26-sep, sesión ya cerrada) añade `esperarBase()` en
-   `server/bd.ts`: `SELECT 1` con espera creciente (1 s → 30 s) durante ~5 min antes
-   de soltar `bd`, así que cubre las tablas de `db.ts` y todo lo que cuelga detrás.
-   **Revisado el 26-sep:** compila, y probado en local contra una base que nunca
-   contesta (reintenta 1, 2, 4 s…) y contra una que arranca tarde (entra al quinto
-   intento y consulta bien). Límites conocidos, aceptables: sólo protege la primera
-   conexión (un corte justo después sigue tumbando el proceso y systemd lo levanta
-   en 5 s), y mientras espera la API no escucha, así que Caddy da 502 como antes.
-   **Desplegado el 26-sep 07:25 CEST** (`5f4ab30`): arrancó a la primera, sin
-   errores, con los mismos 3 publicados que antes, y la API responde 200 desde fuera.
-   Queda por ver en la próxima caída de Supabase que aparezcan los reintentos
-   `[bd] postgres no responde` en lugar de reinicios. Se puede quitar de la lista.
-3. **El respaldo fuera del servidor no ha funcionado nunca.** `veta-backup` en
-   `failed` desde el primer día: las credenciales de R2 en `/opt/veta/.env` siguen
-   siendo marcadores `<ACCOUNT_ID>`. **No hay copia externa de nada.**
+1. **El banco de 20 informes del motor** en `fixtures-contrato/`: sin él, «listo»
+   (§13 de la especificación) no está completo. Es del motor.
+2. **El respaldo fuera del servidor no ha funcionado nunca** (`veta-backup` en
+   `failed`, credenciales R2 de marcador). Necesita las credenciales de Pablo.
+3. **Borrar la cuenta de prueba de producción** `prueba-base-20260926@vetalab.io`
+   (comando en el informe, espera aprobación).
 
 ### Media
-
-4. **El pago real nunca se hizo.** La tabla `pago_evento` está vacía: no ha llegado
-   ni un aviso. Falta comprobar el último tramo, que Whop devuelva el metadato con
-   el origen en el webhook.
-5. **La reexportación de los 14 vigentes no ha ocurrido.**
-   `cambios_respecto_version_anterior` sigue siendo lista y no hay `misma_corrida`.
-   Cuando pase: confirmar que las 4 aprobaciones sobreviven y que los que cambien de
-   contenido salen en la bandeja con el aviso en oro.
-6. **Términos y Privacidad ya están en producción** (desde `13afbe1`, 20-sep). Sólo
-   faltan el nombre y el RUT de Pablo en «Quién presta el servicio» y en Privacidad.
-7. **DefiLlama falla mucho**: 81 errores de 231 llamadas este mes (35 %). Es la
-   fuente que provocó la invalidación falsa de PUMP.
+4. **A1.2 en producción:** abrir el correo de recuperación que salió a la cuenta de
+   prueba (Resend `01a0dedc…`) y completar el cambio.
+5. **El pago real de Base** (lo hace Pablo) y comprobar `pago_evento`.
+6. **Ficha lenta:** p95 10,8 s en frío (objetivo del motor, 8 s). Pedido en el contrato.
+7. **DefiLlama falla mucho** (35 %): fichas flacas en algunas monedas.
 
 ### Baja
-
-8. `/gemas` se desplaza de lado en móvil **sólo con sesión de admin** (122 px).
-   Ningún cliente lo sufre. Aparcado por decisión de Pablo. Perseguido con cuatro
-   métodos sin aislar la causa: ningún elemento sobresale, no es transitorio, no son
-   márgenes ni `min-width`.
-9. `/piezas` y `/admin/operacion` también desbordan en móvil.
-10. **Los múltiplos de la brecha de ingresos** (`3×`) siguen a la vista del cliente
-    en la sección de referencias. No son múltiplos de escenario —ésos ya están sólo
-    en admin— pero son la misma familia. Pendiente de decisión.
-11. `test1@gmail.com` (plan pro, creada el 20-sep) sigue sin decidir si se borra.
+8. Todo lo de `BACKLOG.md`.
 
 ---
 
@@ -164,22 +143,20 @@ Todo desplegado y verificado en producción. El último despliegue es del **26-s
 | **El enrutado de enlaces cortos va por lista positiva** | Primero las 21 pantallas por nombre, después lo que queda al resolvedor. Una expresión negativa mal puesta se lleva por delante el sitio entero. |
 | **Los múltiplos de escenario, sólo en admin** | Se parecen demasiado a una promesa de retorno. |
 | **Coma decimal y espacio duro antes del %** | Se arregla donde nace el número. Un reemplazo al final no distingue un decimal de un separador de miles. |
+| **El verificador corrige, no bloquea; el cliente no ve lo corregido** | Decisión de Pablo del 26-sep. Sólo «sin verificar» y una línea de no disponibles. |
+| **El reloj de un pedido es del motor** | La web cerraba pedidos que el motor todavía iba a entregar. Ahora sólo avisa a admin a los 30 min. |
+| **La tenencia declarada se filtra a la salida de toda la API** | Un filtro por ruta se olvida en la ruta nueva: la watchlist le enseñaba SYN a cualquier Base. |
+| **Lo de admin no sale del servidor** (retiradas, combustible, solo_admin) | Esconderlo en pantalla no basta: viajaba en la API. |
 
 ---
 
 ## 6. Lo que se le ha pedido al motor  ·  vive en el contrato
 
-Todo esto está escrito en `CONTRATO-ANALISIS-A-PEDIDO.md`, en los acuses de §15,
-§15.1/§16/§17/§18. Lo abierto hoy:
-
-- **El formato de decimales.** Revisado y commiteado por el motor en `b301733`
-  (formateador único, mismos separadores en `plano()` y en `engine/formato`).
-  Falta comprobar en producción que el escenario de la agenda ya sale con coma
-  decimal, cuando el motor lo despliegue y corra el noticiero.
-- **`titulo_cliente`** no llega todavía en ninguna de las ocho secciones. Mientras
-  tanto el informe usa «Las dos referencias».
-- **Un aviso cuando una reexportación suba la versión de un informe ya aprobado**,
-  para distinguir cambio de forma de cambio de contenido.
+En `CONTRATO-ANALISIS-A-PEDIDO.md`, acuse de §20 y §21 (al final). Lo abierto hoy:
+el banco de 20 exportaciones; la ficha más rápida; `no_disponibles[].que`,
+catalizadores y prosa en lenguaje de cliente y con la tabla de §23 (hoy la web lo
+limpia, pero es un parche); `titulo_cliente` por sección; el aviso de «versión nueva
+sólo de forma».
 
 ---
 
@@ -208,6 +185,16 @@ Cada una costó un incidente. Están aquí para no repetirlas.
 7. **El motor manda formas que el contrato no promete.** `entidades_etiquetadas`
    llegaba como `[]` en vez de objeto y dejó seis informes en blanco. Cuando el tipo
    diga la verdad, el compilador encuentra el resto de los sitios.
+8. **Un push a `main` no despliega el front.** Vercel sólo construye un commit con
+   `Invariantes-ok: <árbol>` (vercel.json › ignoreCommand). Usa `desplegar.sh`.
+9. **La IP del cliente llega en `X-Vercel-Forwarded-For`.** Caddy sustituye
+   `X-Forwarded-For` por la IP de Vercel: leer ésa junta a todos los visitantes.
+10. **`.p-datos` ya existía** (rejilla de cifras en cinco pantallas). Antes de crear
+    una clase, búscala.
+11. **El puerto 8799 del Mac lo tiene un `node /tmp/motor-stub.mjs` del 20-sep** que
+    no es de esta sesión. Las pruebas usan un puerto libre.
+12. **Un mismo id puede ser gema reclasificada (oculta) y análisis (visible).** Elige
+    el registro que el rol ve, no el primero: así se perdían los gráficos de STONK.
 
 ---
 
@@ -215,47 +202,30 @@ Cada una costó un incidente. Están aquí para no repetirlas.
 
 ```bash
 cd ~/Documents/VETA/site
-npx tsc -p tsconfig.app.json --noEmit && npx tsc -p tsconfig.server.json --noEmit
-npm run build
-git add -A && git commit && git push origin main        # Vercel publica el front solo
-ssh -i ~/.ssh/veta_vps root@144.91.123.49 \
-  'cd /opt/veta-web && git fetch -q origin && git reset -q --hard origin/main \
-   && systemctl restart veta-web && sleep 7 && systemctl is-active veta-web'
+git status                       # limpio: los invariantes se corren sobre lo que se despliega
+scripts/desplegar.sh "un texto nuevo que tenga que aparecer en el front"
 ```
+Corre `npm run invariantes` (~10 min), marca y empuja, despliega la API (fetch, reset,
+reinicio, espera a que responda) y espera a que Vercel sirva la build y el texto.
+Si algo falla, se para y no empuja nada.
 
-El front tarda un par de minutos en Vercel. **Para comprobar que el cambio está
-publicado de verdad**, no basta con que el despliegue diga que sí: hay que buscar el
-texto nuevo dentro del fragmento servido.
-
-```bash
-f=$(grep -l "el texto que cambié" dist/assets/*.js | head -1 | xargs basename)
-curl -s "https://www.vetalab.io/assets/$f" | grep -c "el texto que cambié"
-```
-
-**Herramientas de revisión** (necesitan la vista previa en `:5310`):
-
-```bash
-node scripts/auditar-lenguaje.mjs   # 21 rutas + los correos: voseo, jerga, texto de máquina
-node scripts/barrido.mjs            # 5 roles × 2 anchos: pantallas en blanco, consola,
-                                    # peticiones fallidas, aviso legal, desbordes
-```
-
-Ambas tienen que salir en **0**. La última pasada completa dio 0 y 0 sobre 216 páginas.
+Pruebas sueltas (con la vista previa o su propio servidor): `probar-recuperacion`,
+`probar-estados`, `probar-integridad`, `probar-contrato`, `probar-ficha local|produccion`,
+`probar-combustible`, `probar-planes`, `probar-publicados`, `medir`.
 
 ---
 
 ## 9. Estado de producción al cerrar
 
-Servicio activo y estable desde el 25-sep 12:19 CEST. Cero avisos en `/api/fallo`
-desde el 21-sep. La portada responde en 0,2–0,6 s; las rutas de la API nunca estuvieron ahí (ver `ESPECIFICACION-LANZAMIENTO.md` §3).
+Todo en `0fcb868` (web y API), desplegado con los invariantes en verde. Servicio
+activo, sin errores. `publicados-web.json` en secuencia creciente con CELO y STONK
+publicados y la noticia de SYN despublicada; el motor lo lee.
 
-**Publicado:** 3 análisis (CELO, STONK, SYN) y 1 gema (PUMP, retirada del
-seguimiento por el motor: «regla de invalidación sin margen»). El **track record
-público está vacío**, y es correcto: PUMP era la única que el público vio como
-gema. 4 decisiones de publicación en la base, 2 cuentas.
+**Publicado:** 2 análisis (CELO, STONK). SYN despublicado el 26-sep (tenencia
+declarada) y fuera de toda respuesta a clientes. Track record público vacío.
 
-**Alertas del motor (4, todas medias):** serie de tenedores parada desde el 22-sep,
-el respaldo fuera del servidor sin producir nunca (dos alertas) y el Vigía sin filas
-que vigilar.
+**Tiempos en el VPS:** rutas de contenido p95 ≤ 20 ms con y sin sesión; la primera
+petición con sesión tras una pausa, ~430 ms (Supabase en us-east-1).
 
-**Noticiero:** corrió el 25-sep a las 12:30, 6 piezas publicadas y 1 rechazada.
+**Cuenta de prueba en producción:** `prueba-base-20260926@vetalab.io` (Base), pendiente
+de borrar con aprobación de Pablo (comando en `INFORME-LANZAMIENTO.md`).
