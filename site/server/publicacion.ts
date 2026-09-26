@@ -25,6 +25,13 @@ const oyentes: (() => void)[] = []
 /** Última decisión de cada informe (y de cada noticia), por id. */
 export async function ultimasDecisiones() {
   if (decisiones && decisiones.hasta > Date.now()) return decisiones.porId
+  return cargar()
+}
+/* Se refresca sola antes de caducar: si esperara a caducar, la primera petición tras un
+   rato sin tráfico pagaba la consulta a Supabase (medido: 257 ms en /analisis). */
+setInterval(() => { cargar().catch((e) => console.warn('[publicacion] refresco:', (e as Error).message)) }, 45_000).unref()
+
+function cargar() {
   // Si varias peticiones llegan a la vez con la caché vacía, se hace UNA consulta.
   cargando ??= (async () => {
     const filas = await bd.todos<UltimaDecision & { informe_id: string; tipo: string }>(

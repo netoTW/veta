@@ -39,8 +39,8 @@ export const gemasTodas = () => leer<Registro[]>('gemas')
    (`olvidarAPedido`, desde analizar.ts) y, por si acaso, cada minuto. */
 let aPedido: { hasta: number; registros: Registro[] } | null = null
 export function olvidarAPedido() { aPedido = null }
-export async function resultadosAPedido(): Promise<Registro[]> {
-  if (aPedido && aPedido.hasta > Date.now()) return aPedido.registros
+export async function resultadosAPedido(forzar = false): Promise<Registro[]> {
+  if (!forzar && aPedido && aPedido.hasta > Date.now()) return aPedido.registros
   const filas = await bd.todos<{ resultado: string }>("SELECT resultado FROM solicitud WHERE nivel = 'profundo' AND estado = 'listo' AND resultado IS NOT NULL ORDER BY terminada DESC")
   aPedido = { hasta: Date.now() + 60_000, registros: filas.map((f) => JSON.parse(f.resultado) as Registro) }
   return aPedido.registros
@@ -346,8 +346,8 @@ export async function marcarGemasPublicas(): Promise<number> {
 /* Las marcadas cambian sólo en marcarGemasPublicas: se guardan en memoria y se
    olvidan allí, o al minuto. Era una consulta por cada petición del marcador. */
 let marcadasMem: { hasta: number; filas: { informe_id: string; reclasificada_en: string | null }[] } | null = null
-async function gemasMarcadas() {
-  if (marcadasMem && marcadasMem.hasta > Date.now()) return marcadasMem.filas
+async function gemasMarcadas(forzar = false) {
+  if (!forzar && marcadasMem && marcadasMem.hasta > Date.now()) return marcadasMem.filas
   const filas = await bd.todos<{ informe_id: string; reclasificada_en: string | null }>('SELECT informe_id, reclasificada_en FROM gema_publica')
   marcadasMem = { hasta: Date.now() + 60_000, filas }
   return filas
@@ -527,3 +527,10 @@ async function escribir(motivo: string): Promise<{ secuencia: number; informes: 
 }
 
 alCambiarPublicacion(() => { escribirPublicados('decision').catch((e) => console.error('[publicados-web]', (e as Error).message)) })
+
+/* Las memorias de arriba se refrescan solas antes de caducar: ninguna petición paga la
+   consulta a Supabase por llegar después de un rato sin tráfico (medido: 257 ms y 118 ms). */
+setInterval(() => {
+  resultadosAPedido(true).catch((e) => console.warn('[contenido] refresco a pedido:', (e as Error).message))
+  gemasMarcadas(true).catch((e) => console.warn('[contenido] refresco marcadas:', (e as Error).message))
+}, 45_000).unref()
