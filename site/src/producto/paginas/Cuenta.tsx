@@ -9,6 +9,7 @@ import { fechaHora } from '../../lib/formato'
 import { EmptyState } from '../../ui/EmptyState'
 import { rolDe } from '../../lib/matriz'
 import { MarcadorPersonal } from '../marcador'
+import { textoDeEstado } from '../analizar/estados'
 
 /* ============================================================================
    Mi cuenta: quién soy, qué plan tengo, mi cupo, cambiar contraseña, salir.
@@ -120,14 +121,13 @@ interface MiAnalisis { id: string; simbolo: string; nombre: string | null; nivel
 function cupoDe(a: MiAnalisis): { t: string; tono: string } {
   if (!a.consume_cupo) return { t: 'sin costo', tono: 'mudo' }
   if (a.estado === 'listo') return { t: 'usó 1', tono: 'hueso' }
-  if (a.estado === 'fallido' || a.estado === 'bloqueado') return { t: 'devuelto', tono: 'esm' }
+  if (a.estado === 'fallido' || a.estado === 'bloqueado' || a.estado === 'no_analizable') return { t: 'devuelto', tono: 'esm' }
   return { t: 'reservado', tono: 'mudo' }
 }
 
-const ESTADO_CUENTA: Record<string, { t: string; tono: string }> = {
-  en_cola: { t: 'En cola', tono: 'mudo' }, en_curso: { t: 'En marcha', tono: 'oro' }, listo: { t: 'Listo', tono: 'esm' },
-  fallido: { t: 'No terminó', tono: 'rojo' }, bloqueado: { t: 'No pasó la comprobación', tono: 'rojo' },
-}
+/* La etiqueta sale de la misma tabla que la pantalla del pedido (analizar/estados.ts). */
+const TONO_CUENTA: Record<string, string> = { en_cola: 'mudo', reservado: 'mudo', en_curso: 'oro', entregado: 'esm', sin_tesis: 'esm', no_analizable: 'mudo', cancelado: 'mudo', respaldo: 'mudo', desconocido: 'mudo' }
+const estadoCuenta = (a: MiAnalisis) => { const t = textoDeEstado(a); return { t: t.etiqueta.charAt(0).toUpperCase() + t.etiqueta.slice(1), tono: TONO_CUENTA[t.clave] } }
 
 function MisAnalisis() {
   const [lista, setLista] = useState<MiAnalisis[] | null>(null)
@@ -142,7 +142,7 @@ function MisAnalisis() {
         <>
           <ul className="a-mis__lista">
             {lista.map((a) => {
-              const e = ESTADO_CUENTA[a.estado] ?? { t: a.estado, tono: 'mudo' }
+              const e = estadoCuenta(a)
               return (
                 <li key={a.id}>
                   <Link to={`/analizar/s/${a.id}`} className="a-mis__fila">

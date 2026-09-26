@@ -409,6 +409,10 @@ export function Cuerpo({ inf, esAnalisis }: { inf: Informe; esAnalisis: boolean 
   const rv = inf.varas.revenue as VaraRevenue & { no_disponible_motivo?: string }
   const rf = inf.varas.reflexiva
   const ic = (inf as unknown as { informe_cliente?: InformeCliente }).informe_cliente ?? null
+  /* Contrato §20.2: si una cifra que sostenía la tesis se retiró, o la invalidación no dejó un umbral
+     válido, el informe llega sin tesis y con el motivo para el cliente. Se dice arriba, y no se pintan
+     ni la invalidación ni los escenarios: sin tesis no hay nada que invalidar. */
+  const sinTesis = prosaDeCliente(String((inf as unknown as { motivo_sin_tesis_cliente?: string | null }).motivo_sin_tesis_cliente ?? ''))
 
   return (
     <>
@@ -421,6 +425,7 @@ export function Cuerpo({ inf, esAnalisis }: { inf: Informe; esAnalisis: boolean 
               <TierBadge tier={inf.tier} size={22} />
               <span className="mono" style={{ color: 'var(--ceniza-2)' }}>{estadoEconomicoLlano(inf.estado_economico, inf.captura_verificada)}</span>
             </div>
+            {sinTesis && <p className="p-det__sintesis"><span className="mono">Sin tesis</span>{sinTesis}</p>}
           </div>
           <div className="p-det__precio">
             <Dato k="precio de referencia" v={precio(f.precio_y_fecha_referencia.precio_usd)} sub={<>{fecha(f.precio_y_fecha_referencia.fecha)} · {esAnalisis ? 'analizada' : 'publicada'} {fecha(inf.fecha_publicacion)}</>} />
@@ -436,10 +441,12 @@ export function Cuerpo({ inf, esAnalisis }: { inf: Informe; esAnalisis: boolean 
               <ul>{f.catalizadores.map((c, i) => <li key={i}>{prosaDeCliente(c)}</li>)}</ul>
             </div>
           )}
-          <div className="p-ficha__b p-ficha__b--inv">
-            <span className="mono">Qué la invalidaría</span>
-            {inf.invalidacion?.evaluable ? <InvalidacionEstructurada inv={inf.invalidacion} /> : f.que_la_invalidaria}
-          </div>
+          {!sinTesis && (
+            <div className="p-ficha__b p-ficha__b--inv">
+              <span className="mono">Qué la invalidaría</span>
+              {inf.invalidacion?.evaluable ? <InvalidacionEstructurada inv={inf.invalidacion} /> : f.que_la_invalidaria}
+            </div>
+          )}
           <div className="p-ficha__b">
             <NivelEsencial><RiesgoLlano inf={inf} /></NivelEsencial>
             <Avanzado>
@@ -492,9 +499,10 @@ export function Cuerpo({ inf, esAnalisis }: { inf: Informe; esAnalisis: boolean 
       })()}
 
       {/* ---- 4 · Niveles ---- */}
-      <Niveles inf={inf} nc={ic?.niveles ?? null} />
+      <Niveles inf={sinTesis ? { ...inf, escenarios: [] } : inf} nc={sinTesis && ic?.niveles ? { ...ic.niveles, escenarios: [] } : ic?.niveles ?? null} />
 
-      {/* ---- 5 · Qué vigilar y qué invalida ---- */}
+      {/* ---- 5 · Qué vigilar y qué invalida ---- (sin tesis, no hay nada que invalidar) */}
+      {!sinTesis && (<>
       <SeccionCliente n="5" k="Qué vigilar y qué invalida">
         <div className="p-cli__vigilar">
           {ic?.vigilar?.senal && (
@@ -520,6 +528,7 @@ export function Cuerpo({ inf, esAnalisis }: { inf: Informe; esAnalisis: boolean 
           </div>
         ) : <Advertencias items={f.advertencias} />}
       </SeccionCliente>
+      </>)}
 
       <div className="shell">
         <details className="p-avz">
@@ -575,7 +584,8 @@ export function Cuerpo({ inf, esAnalisis }: { inf: Informe; esAnalisis: boolean 
           </div>
         </Seccion>
 
-        {/* ------------ escenarios ------------ */}
+        {/* ------------ escenarios ------------ (no los hay sin tesis) */}
+        {!sinTesis && (<>
         <Seccion id="escenarios" titulo="Escenarios" esencial={prosaDeCliente(n.escenarios.esencial.texto)} advertencias={n.escenarios.esencial.advertencias}>
           {n.escenarios.disponible ? (
             <>
@@ -590,6 +600,7 @@ export function Cuerpo({ inf, esAnalisis }: { inf: Informe; esAnalisis: boolean 
             <div style={{ marginTop: 16 }}><Ausente motivo={n.escenarios.motivo_ausencia} /></div>
           )}
         </Seccion>
+        </>)}
 
         {/* ------------ asimetría ------------ */}
         <Seccion id="asimetria" titulo="Asimetría" esencial={prosaDeCliente(n.asimetria.esencial.texto)} advertencias={n.asimetria.esencial.advertencias}>

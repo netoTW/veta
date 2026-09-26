@@ -183,6 +183,11 @@ await bd.columna('solicitud', 'enviada', 'INTEGER NOT NULL DEFAULT 1')
    reconstruye desde esta fila, no desde el cuerpo de la petición. */
 await bd.columna('solicitud', 'contrato', 'TEXT')
 await bd.columna('solicitud', 'cadena', 'TEXT')
+// Contrato §20: lo que el motor dice de la cola (hora estimada, puesto, si la mesa tiene que
+// intervenir), cuándo informó por última vez y si ya se avisó a admin de un pedido parado.
+await bd.columna('solicitud', 'cola', 'TEXT')
+await bd.columna('solicitud', 'motor_actualizado', 'TEXT')
+await bd.columna('solicitud', 'alerta_admin_en', 'TEXT')
 /* Cobro con Whop. `cancela_al_final` es quien canceló y sigue con acceso hasta
    que termine el ciclo pagado: no baja de plan, pero el admin tiene que verlo.
    `pago_fallido_en` es el último cobro que no entró; tampoco baja de plan,

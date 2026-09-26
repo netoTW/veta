@@ -4,6 +4,7 @@ import { useSesion } from '../../lib/sesion'
 import { api } from '../../lib/datos'
 import { puede } from '../../lib/acceso'
 import { CupoChip, ETAPA_LABEL, type Cupo, type Solicitud } from './piezasAnalizar'
+import { textoDeEstado } from './estados'
 
 /* ============================================================================
    Lo que vive en la barra: el cupo (siempre visible, spec §5.4) y el aviso
@@ -55,10 +56,10 @@ export function AvisoAnalisis() {
       {lista.length > 0 && (
         <div className="an-toasts" role="status">
           {lista.slice(0, 2).map((s) => (
-            <div key={s.id} className={`an-toast an-toast--${s.estado}`}>
+            <div key={s.id} className={`an-toast an-toast--${textoDeEstado(s).clave}`}>
               <span className="an-toast__gema" aria-hidden="true" />
               <div className="an-toast__texto">
-                <b>{s.simbolo}</b> {s.estado === 'listo' ? 'está listo.' : s.estado === 'bloqueado' ? 'no pasó la verificación. No se descontó.' : 'no terminó. No se descontó.'}
+                {textoDeEstado(s).titular}.
               </div>
               <Link to={`/analizar/s/${s.id}`} className="an-toast__ver mono" onClick={() => setCerrados((c) => [...c, s.id])}>Ver</Link>
               <button type="button" className="an-toast__x mono" onClick={() => marcar(s)} aria-label="Cerrar">×</button>

@@ -840,3 +840,7 @@
 /* Con el menú de hamburguesa abierto la navegación es una columna: el
    desplegable se abre en el sitio, sin flotar sobre nada. */
 .p-top__links.is-open .p-admin-menu__lista { position: static; border: 0; background: transparent; padding: 0 0 0 12px; min-width: 0; }
+
+/* Informe sin tesis (contrato §20.2): se dice arriba, en el mismo tono que el resto. */
+.p-det__sintesis { margin: 14px 0 0; max-width: 62ch; color: var(--ceniza); font-size: 0.95rem; line-height: 1.5; }
+.p-det__sintesis .mono { display: block; margin-bottom: 4px; color: var(--oro); font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; }

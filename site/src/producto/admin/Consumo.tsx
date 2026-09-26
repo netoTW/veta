@@ -17,8 +17,8 @@ import type { Cupo, Solicitud } from '../analizar/piezasAnalizar'
 
 interface Mes { mes: string; real: number; en_curso: number; en_cola: number; comprometido: number; n: number; tope: number; estimado_por_analisis: number }
 interface FilaUsuario { usuario_id: string; usuario_email: string; plan: string | null; profundos: number; deterministas: number; listos: number; sin_terminar: number; costo_real_usd: number; ultimo: string; cupo: Cupo | null }
-interface Datos { mes: Mes; por_usuario: FilaUsuario[]; solicitudes: (Solicitud & { usuario_email: string | null; costo_real_usd: number })[]; cola: (Solicitud & { usuario_email: string | null })[]; visitantes_determinista: number; por_mes: { mes: string; n: number; costo: number }[]; motor: string; motor_url: string | null; costo_estimado: number }
-const ESTADO: Record<string, string> = { en_cola: 'en cola', en_curso: 'en marcha', listo: 'listo', fallido: 'falló', bloqueado: 'bloqueado' }
+interface Datos { mes: Mes; por_usuario: FilaUsuario[]; solicitudes: (Solicitud & { usuario_email: string | null; costo_real_usd: number })[]; cola: (Solicitud & { usuario_email: string | null })[]; alertas?: (Solicitud & { usuario_email: string | null; requiere_admin?: boolean; motivo_cola?: string | null; motor_actualizado?: string | null; alerta_admin_en?: string | null })[]; visitantes_determinista: number; por_mes: { mes: string; n: number; costo: number }[]; motor: string; motor_url: string | null; costo_estimado: number }
+const ESTADO: Record<string, string> = { en_cola: 'en cola', en_curso: 'en marcha', listo: 'listo', no_analizable: 'no analizable', fallido: 'cancelado / falló', bloqueado: 'bloqueado (registro viejo)' }
 const rolDePlan = (p: string | null): Rol => (p === 'pro' ? 'pro' : p === 'base' ? 'base' : 'visitante')
 
 export function Consumo() {
@@ -50,6 +50,23 @@ export function Consumo() {
       />
       <div className="shell a-vot">
         {error && <p className="a-dec__msg a-dec__msg--error">{error}</p>}
+        {!!d.alertas?.length && (
+          <section className="a-vot__activa a-cons__cola is-pendiente" aria-label="Pedidos que necesitan a la mesa">
+            <span className="a-sec__k mono">Alertas · pedidos vivos</span>
+            <h2 className="display a-vot__h2">{d.alertas.length} {d.alertas.length === 1 ? 'pedido necesita' : 'pedidos necesitan'} que lo mires</h2>
+            <p className="body-muted a-vot__lead">El reloj es del motor: la web no cierra ningún pedido. Aquí sale lo que el motor marcó con requiere_admin y lo que lleva más de 30 min sin informar. El cliente sigue viéndolo en cola o en marcha.</p>
+            <ol className="a-vot__recuento">
+              {d.alertas.map((s) => (
+                <li key={s.id} className="a-vot__fila a-cons__pedido">
+                  <div className="a-vot__id"><b className="display">{s.simbolo}</b><span>{s.usuario_email ?? '—'}</span>
+                    <span className="mono a-vot__sen">{s.requiere_admin ? `requiere_admin${s.motivo_cola ? ` · ${s.motivo_cola}` : ''}` : `sin noticias del motor desde ${fechaHora(s.motor_actualizado ?? s.iniciada ?? s.creada)}`} · alerta {fechaHora(s.alerta_admin_en ?? '')}</span></div>
+                  <span className="mono a-vot__n">{ESTADO[s.estado] ?? s.estado}</span>
+                  <Link to={`/analizar/s/${s.id}`} className="mono a-vot__quien">ver</Link>
+                </li>
+              ))}
+            </ol>
+          </section>
+        )}
         <section className={`a-vot__activa a-cons__cola ${d.cola.length ? 'is-pendiente' : ''}`}>
           <div className="a-vot__cab">
             <div>
@@ -86,7 +103,7 @@ export function Consumo() {
               <button type="button" className="btn" onClick={guardar} disabled={guardando || Number(tope) === m.tope}>{guardando ? 'Guardando…' : 'Fijar tope'}</button>
             </div>
           </div>
-          {retenidos > 0 && <p className="a-dec__msg a-dec__msg--error">{retenidos} {retenidos === 1 ? 'pedido retenido' : 'pedidos retenidos'} por el tope. Subilo para que pasen al motor.</p>}
+          {retenidos > 0 && <p className="a-dec__msg a-dec__msg--error">{retenidos} {retenidos === 1 ? 'pedido retenido' : 'pedidos retenidos'} por el tope. Súbelo para que pasen al motor.</p>}
         </section>
 
         <section className="a-vot__sec">
@@ -123,7 +140,7 @@ export function Consumo() {
                     <td className="mono"><Link to={`/analizar/s/${s.id}`}>{s.simbolo}</Link></td>
                     <td className="mono">{ESTADO[s.estado] ?? s.estado}</td><td className="mono">{s.etapa ?? '—'}</td>
                     <td>{s.tier ? <TierBadge tier={s.tier} size={16} /> : '—'}</td>
-                    <td className="mono">{s.consume_cupo ? (s.estado === 'listo' ? 'consumió' : s.estado === 'fallido' || s.estado === 'bloqueado' ? 'devuelto' : 'reservado') : 'no'}</td>
+                    <td className="mono">{s.consume_cupo ? (s.estado === 'listo' ? 'consumió' : s.estado === 'fallido' || s.estado === 'bloqueado' || s.estado === 'no_analizable' ? 'devuelto' : 'reservado') : 'no'}</td>
                     <td className="mono">{usd(s.costo_real_usd, 2)}</td><td className="mono">{s.motor}</td>
                   </tr>
                 ))}

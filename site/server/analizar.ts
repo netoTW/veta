@@ -32,9 +32,18 @@ interface FilaSolicitud {
   consume_cupo: number; cupo_periodo: string | null; costo_real_usd: number; motor: string; creada: string; iniciada: string | null; terminada: string | null; actualizada: string; vista: number; enviada: number
   /** §9.5: cuál de las homónimas se pidió. */
   contrato: string | null; cadena: string | null
+  /** §20: JSON con inicio_estimado, puesto, requiere_admin y motivo_cola mientras está en cola. */
+  cola: string | null; motor_actualizado: string | null; alerta_admin_en: string | null
 }
 const nuevoId = () => `sol-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${randomBytes(3).toString('hex')}`
-const TERMINAL: EstadoSolicitud[] = ['listo', 'fallido', 'bloqueado']
+const TERMINAL: EstadoSolicitud[] = ['listo', 'no_analizable', 'fallido', 'bloqueado']
+/* §20: `no_analizable` se guarda como `fallido` con código `no_analizable` (la tabla restringe
+   `estado` y cambiar esa restricción en producción no hace falta para esto); hacia fuera,
+   `estadoVisible` lo devuelve como su propio estado. */
+const estadoVisible = (f: FilaSolicitud): EstadoSolicitud =>
+  f.estado === 'fallido' && f.fallo && (JSON.parse(f.fallo) as { codigo?: string }).codigo === 'no_analizable' ? 'no_analizable' : f.estado
+/** Sin noticias del motor en este tiempo, un pedido vivo se avisa a admin. La web no lo cierra: el reloj es del motor (§20). */
+const PARADO_MS = 30 * 60_000
 
 async function cupoDeSesion(s: Sesion | null, rol: Rol): Promise<Cupo | null> {
   if (!s) return null
@@ -43,12 +52,23 @@ async function cupoDeSesion(s: Sesion | null, rol: Rol): Promise<Cupo | null> {
 const cupoSerializable = (c: Cupo | null) => (c ? { ...c, restantes: c.ilimitado ? null : c.restantes } : null)
 
 /** Lo que el cliente ve de una solicitud: sin ids internos de más, con el resultado si terminó. */
-async function vistaSolicitud(f: FilaSolicitud, conResultado = true) {
+async function vistaSolicitud(f: FilaSolicitud, conResultado = true, admin = false) {
+  const estado = estadoVisible(f)
+  const fallo = f.fallo ? JSON.parse(f.fallo) as { codigo?: string; texto?: string } : null
+  const verificador = f.verificador ? JSON.parse(f.verificador) as { estado?: string; motivo_bloqueo?: string } : null
+  const cola = f.cola ? JSON.parse(f.cola) as { inicio_estimado?: string | null; puesto?: number | null; requiere_admin?: boolean; motivo_cola?: string | null } : null
   return {
-    id: f.id, simbolo: f.simbolo, nombre: f.nombre, nivel: f.nivel, origen: f.origen, estado: f.estado, etapa: f.etapa, avance: f.avance, detalle: f.detalle,
+    id: f.id, simbolo: f.simbolo, nombre: f.nombre, nivel: f.nivel, origen: f.origen, estado, etapa: f.etapa, avance: f.avance, detalle: f.detalle,
     etapas_hechas: JSON.parse(f.etapas_hechas) as string[], consume_cupo: !!f.consume_cupo, motor: f.motor,
     creada: f.creada, iniciada: f.iniciada, terminada: f.terminada, actualizada: f.actualizada, vista: !!f.vista,
-    fallo: f.fallo ? JSON.parse(f.fallo) : null, verificador: f.verificador ? JSON.parse(f.verificador) : null,
+    /* Al cliente sólo el código: los textos de cada estado son fijos (producto/analizar/estados.ts).
+       El texto crudo del motor —motivo de bloqueo, trazas— es de la mesa. */
+    fallo: fallo ? (admin ? fallo : { codigo: fallo.codigo ?? 'otro' }) : null,
+    verificador: verificador ? (admin ? verificador : { estado: verificador.estado ?? '' }) : null,
+    motivo_no_analizable: estado === 'no_analizable' ? (fallo?.texto ?? '') : null,
+    inicio_estimado: cola?.requiere_admin ? null : cola?.inicio_estimado ?? null,
+    puesto: cola?.puesto ?? null,
+    ...(admin ? { requiere_admin: !!cola?.requiere_admin, motivo_cola: cola?.motivo_cola ?? null, motor_actualizado: f.motor_actualizado, alerta_admin_en: f.alerta_admin_en } : {}),
     resultado: conResultado && f.resultado ? JSON.parse(f.resultado) : null,
     tier: f.resultado ? (JSON.parse(f.resultado) as { tier?: string }).tier ?? null : null,
     enviada: !!f.enviada,
@@ -59,7 +79,13 @@ async function vistaSolicitud(f: FilaSolicitud, conResultado = true) {
 /* ---------- espejo del progreso: el motor manda, la tabla copia ---------- */
 async function aplicarProgreso(f: FilaSolicitud, p: Progreso) {
   const terminaba = TERMINAL.includes(f.estado); const termina = TERMINAL.includes(p.estado)
-  await bd.ejecutar(`UPDATE solicitud SET estado = ?, etapa = ?, avance = ?, detalle = ?, etapas_hechas = ?, resultado = ?, fallo = ?, verificador = ?, costo_real_usd = ?, iniciada = COALESCE(iniciada, ?), terminada = ?, actualizada = ? WHERE id = ?`, [p.estado, p.etapa, p.avance, p.detalle, JSON.stringify(p.etapas_hechas), p.resultado ? JSON.stringify(p.resultado) : null, p.fallo ? JSON.stringify(p.fallo) : null, p.verificador ? JSON.stringify(p.verificador) : null, p.costo_real_usd ?? 0, p.iniciado, p.terminado, ahora(), f.id])
+  const noAnalizable = p.estado === 'no_analizable'
+  const estadoBd = noAnalizable ? 'fallido' : p.estado
+  const fallo = noAnalizable ? { codigo: 'no_analizable', texto: p.motivo_no_analizable ?? '' } : p.fallo
+  const cola = p.estado === 'en_cola' ? { inicio_estimado: p.inicio_estimado ?? null, puesto: p.puesto ?? null, requiere_admin: !!p.requiere_admin, motivo_cola: p.motivo_cola ?? null } : null
+  await bd.ejecutar(`UPDATE solicitud SET estado = ?, etapa = ?, avance = ?, detalle = ?, etapas_hechas = ?, resultado = ?, fallo = ?, verificador = ?, costo_real_usd = ?, iniciada = COALESCE(iniciada, ?), terminada = ?, actualizada = ?, cola = ?, motor_actualizado = ? WHERE id = ?`, [estadoBd, p.etapa, p.avance, p.detalle, JSON.stringify(p.etapas_hechas ?? []), p.resultado ? JSON.stringify(p.resultado) : null, fallo ? JSON.stringify(fallo) : null, p.verificador ? JSON.stringify(p.verificador) : null, p.costo_real_usd ?? 0, p.iniciado, p.terminado, ahora(), cola ? JSON.stringify(cola) : null, p.actualizado ?? null, f.id])
+  // §20: el motor pide a la mesa que intervenga. Una alerta, no una por ciclo.
+  if (cola?.requiere_admin) await avisarAdmin(f, `el motor pide intervención${cola.motivo_cola ? `: ${cola.motivo_cola}` : ''}`)
   if (termina && !terminaba) {
     // consumo real y cupo: sólo el que termina bien lo consume (spec §5.6)
     if (p.estado === 'listo') olvidarAPedido() // el resultado entra a la lista de análisis
@@ -73,19 +99,29 @@ async function aplicarProgreso(f: FilaSolicitud, p: Progreso) {
   }
 }
 
-const SIN_REGISTRO_MS = 60_000
+/** Una alerta en admin por pedido parado; se anota en la fila para no repetirla en cada ciclo. */
+async function avisarAdmin(f: FilaSolicitud, motivo: string) {
+  if (f.alerta_admin_en) return
+  const r = await bd.ejecutar('UPDATE solicitud SET alerta_admin_en = ? WHERE id = ? AND alerta_admin_en IS NULL', [ahora(), f.id])
+  if (r.cambios) { f.alerta_admin_en = ahora(); console.error(`[analizar] ALERTA ${f.id} (${f.simbolo}): ${motivo}`) }
+}
+
+/* El reloj es del motor (contrato §20): la web nunca da un pedido por perdido ni lo cierra
+   por tiempo. Si el motor no informa de un pedido vivo en PARADO_MS —o ni siquiera lo
+   conoce—, se avisa a admin y el cliente lo sigue viendo en cola o en marcha. */
 async function sincronizarUna(f: FilaSolicitud): Promise<FilaSolicitud> {
   if (TERMINAL.includes(f.estado)) return f
   if (f.estado === 'en_cola' && !f.enviada) { await intentarArrancar(f); return await bd.uno('SELECT * FROM solicitud WHERE id = ?', [f.id]) as FilaSolicitud }
   try {
     const p = await motor.progreso(f.id)
     if (p) await aplicarProgreso(f, p)
-    else if (Date.now() - Date.parse(f.iniciada ?? f.creada) > SIN_REGISTRO_MS) {
-      // el motor no tiene registro del pedido (se reinició, o nunca lo tomó): no se deja al usuario esperando
-      await aplicarProgreso(f, { solicitud_id: f.id, estado: 'fallido', etapa: f.etapa as Progreso['etapa'], avance: null, detalle: 'El pedido se perdió.', etapas_hechas: JSON.parse(f.etapas_hechas), iniciado: f.iniciada, actualizado: ahora(), terminado: ahora(), costo_real_usd: 0, resultado: null, fallo: { codigo: 'motor_no_disponible', texto: 'El sistema de análisis perdió el registro de este pedido. No se descontó: puedes pedirlo de nuevo.' }, verificador: null })
-    }
   } catch (e) { console.warn('[analizar] progreso', f.id, (e as Error).message) }
-  return await bd.uno('SELECT * FROM solicitud WHERE id = ?', [f.id]) as FilaSolicitud
+  const g = await bd.uno('SELECT * FROM solicitud WHERE id = ?', [f.id]) as FilaSolicitud
+  const ultimaNoticia = Date.parse(g.motor_actualizado ?? g.iniciada ?? g.creada)
+  if (!TERMINAL.includes(g.estado) && g.enviada && Date.now() - ultimaNoticia > PARADO_MS) {
+    await avisarAdmin(g, `sin noticias del motor desde ${g.motor_actualizado ?? g.iniciada ?? g.creada}`)
+  }
+  return g
 }
 
 /** Los pedidos en cola arrancan cuando hay margen bajo el tope (spec §5.7). */
@@ -100,7 +136,15 @@ async function intentarArrancar(f: FilaSolicitud) {
     if (p) await aplicarProgreso({ ...f, enviada: 1 }, p)
     else await bd.ejecutar("UPDATE solicitud SET estado = 'en_curso', etapa = 'recolectando', detalle = 'Arrancando.' WHERE id = ?", [f.id])
   } catch (e) {
-    await aplicarProgreso(f, { solicitud_id: f.id, estado: 'fallido', etapa: null, avance: null, detalle: 'No se pudo pedir el análisis.', etapas_hechas: [], iniciado: null, actualizado: ahora(), terminado: ahora(), costo_real_usd: 0, resultado: null, fallo: { codigo: 'motor_no_disponible', texto: (e as Error).message === 'no_encontrada' ? 'Esa moneda no está entre las que cubrimos.' : 'El sistema de análisis no respondió al pedido.' }, verificador: null })
+    const m = (e as Error).message
+    // El motor dice que no la cubre: es su respuesta, y es terminal (cupo devuelto).
+    if (m === 'no_encontrada' || /\(404\)/.test(m)) {
+      await aplicarProgreso(f, { solicitud_id: f.id, estado: 'no_analizable', etapa: null, avance: null, detalle: '', etapas_hechas: [], iniciado: null, actualizado: ahora(), terminado: ahora(), costo_real_usd: 0, resultado: null, fallo: null, verificador: null, motivo_no_analizable: 'Esa moneda está fuera de lo que cubrimos por ahora.' })
+      return
+    }
+    // Si el motor no contestó, el pedido no se pierde: sigue reservado y se reintenta en el siguiente ciclo.
+    console.warn('[analizar] no se pudo enviar', f.id, m)
+    await bd.ejecutar('UPDATE solicitud SET actualizada = ? WHERE id = ?', [ahora(), f.id])
   }
 }
 
@@ -274,11 +318,13 @@ consumoAdmin.get('/', async (c) => {
     FROM solicitud s LEFT JOIN "user" u ON u.id = s.usuario_id WHERE s.usuario_id IS NOT NULL GROUP BY s.usuario_id, s.usuario_email, u.plan, u.role ORDER BY costo_real_usd DESC, profundos DESC`) as Record<string, unknown>[]
   // El admin no tiene tope: si aquí se le muestra el del plan, la pestaña contradice a la del análisis.
   const conCupo = await Promise.all(porUsuario.map(async (u) => ({ ...u, cupo: u.usuario_id ? cupoSerializable(await cupoDe(String(u.usuario_id), u.role === 'admin' ? 'pro' : String(u.plan ?? 'gratis'), u.role === 'admin')) : null })))
-  const solicitudes = await Promise.all((await bd.todos<FilaSolicitud>("SELECT * FROM solicitud WHERE nivel = 'profundo' ORDER BY creada DESC LIMIT 80")).map(async (f) => ({ ...(await vistaSolicitud(f, false)), usuario_email: f.usuario_email, costo_real_usd: f.costo_real_usd })))
+  const solicitudes = await Promise.all((await bd.todos<FilaSolicitud>("SELECT * FROM solicitud WHERE nivel = 'profundo' ORDER BY creada DESC LIMIT 80")).map(async (f) => ({ ...(await vistaSolicitud(f, false, true)), usuario_email: f.usuario_email, costo_real_usd: f.costo_real_usd })))
   const visitantes = (await bd.uno("SELECT COUNT(*) AS n FROM solicitud WHERE usuario_id IS NULL") as { n: number }).n
   const porMes = await bd.todos("SELECT substr(creada, 1, 7) AS mes, COUNT(*) AS n, COALESCE(SUM(costo_real_usd), 0) AS costo FROM solicitud WHERE nivel = 'profundo' GROUP BY mes ORDER BY mes DESC LIMIT 6")
-  const cola = await Promise.all((await bd.todos<FilaSolicitud>("SELECT * FROM solicitud WHERE nivel = 'profundo' AND estado = 'en_cola' ORDER BY creada")).map(async (f) => ({ ...(await vistaSolicitud(f, false)), usuario_email: f.usuario_email })))
-  return c.json({ mes, por_usuario: conCupo, solicitudes, cola, visitantes_determinista: visitantes, por_mes: porMes, motor: motor.nombre, motor_url: ENV.MOTOR === 'http' ? ENV.MOTOR_URL : null, costo_estimado: ENV.COSTO_ESTIMADO_USD })
+  const cola = await Promise.all((await bd.todos<FilaSolicitud>("SELECT * FROM solicitud WHERE nivel = 'profundo' AND estado = 'en_cola' ORDER BY creada")).map(async (f) => ({ ...(await vistaSolicitud(f, false, true)), usuario_email: f.usuario_email })))
+  // Pedidos vivos que necesitan a la mesa: el motor lo pidió (requiere_admin) o lleva más de 30 min sin informar.
+  const alertas = await Promise.all((await bd.todos<FilaSolicitud>("SELECT * FROM solicitud WHERE nivel = 'profundo' AND alerta_admin_en IS NOT NULL AND estado IN ('en_cola','en_curso') ORDER BY alerta_admin_en")).map(async (f) => ({ ...(await vistaSolicitud(f, false, true)), usuario_email: f.usuario_email })))
+  return c.json({ mes, por_usuario: conCupo, solicitudes, cola, alertas, visitantes_determinista: visitantes, por_mes: porMes, motor: motor.nombre, motor_url: ENV.MOTOR === 'http' ? ENV.MOTOR_URL : null, costo_estimado: ENV.COSTO_ESTIMADO_USD })
 })
 consumoAdmin.patch('/tope', async (c) => {
   const { tope } = await c.req.json().catch(() => ({})) as { tope?: number }

@@ -2,7 +2,9 @@
 export type Nivel = 'determinista' | 'profundo'
 export type Etapa = 'recolectando' | 'calculando' | 'esceptico' | 'redactando' | 'verificando'
 export const ETAPAS: Etapa[] = ['recolectando', 'calculando', 'esceptico', 'redactando', 'verificando']
-export type EstadoSolicitud = 'en_cola' | 'en_curso' | 'listo' | 'fallido' | 'bloqueado'
+/** Contrato §20: `no_analizable` es nuevo; `bloqueado` ya no lo emite el motor (sólo registros viejos);
+    `fallido` queda para la cancelación. */
+export type EstadoSolicitud = 'en_cola' | 'en_curso' | 'listo' | 'no_analizable' | 'fallido' | 'bloqueado'
 
 export interface Moneda { simbolo: string; nombre: string; id_coingecko?: string; cadena?: string; con_informe: boolean
   /** §9.2: lo dice el motor. `null` = todavía no lo informa y no se puede afirmar nada. */
@@ -59,6 +61,11 @@ export interface Progreso {
   resultado: Record<string, unknown> | null
   fallo: { codigo: string; texto: string } | null
   verificador: { estado: string; motivo_bloqueo: string } | null
+  /** §20.1, con `en_cola`: hora estimada de arranque (o null si no hay una honesta), puesto (1 = el próximo)
+      y si la mesa tiene que intervenir. `requiere_admin` no se le enseña al cliente. */
+  inicio_estimado?: string | null; puesto?: number | null; requiere_admin?: boolean; motivo_cola?: string | null
+  /** §20.1, con `no_analizable`: el motivo, en lenguaje de cliente. */
+  motivo_no_analizable?: string | null
 }
 
 /** Lectura estructural, sin tesis, sin escenarios, sin veredicto. */

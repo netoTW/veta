@@ -10,8 +10,9 @@ import { fechaHora, usd } from '../../lib/formato'
 import { EmptyState } from '../../ui/EmptyState'
 import { Loader } from '../../ui/Loader'
 import type { Informe } from '../../lib/contrato'
+import { textoDeEstado } from '../analizar/estados'
 import {
-  LecturaDeterminista, SinDatosAun, Decidir, EscenaAnalisis, Etapas, Transcurrido, BotonAviso, CupoChip, Nota, useCupo, useUniverso, llano,
+  LecturaDeterminista, SinDatosAun, Decidir, EscenaAnalisis, Etapas, Transcurrido, BotonAviso, CupoChip, Nota, useCupo, useUniverso,
   FormatoAceptado, Candidatas, SinCoincidencia, NoAnalizable, NoDaParaAnalisis, PuedeAnalizarse, InformeNarrado, narradoDe,
   type MedidasFuera,
   type Lectura, type Cupo, type Solicitud, type Moneda, type Candidata, type Resolucion,
@@ -227,7 +228,7 @@ function MisAnalisis() {
             <Link to={`/analizar/s/${s.id}`} className={`an-mio an-mio--${s.estado}`}>
               <span className="an-mio__gema" aria-hidden="true" />
               <b className="display">{s.simbolo}</b>
-              <span className="an-mio__estado mono">{ESTADO_LABEL[s.estado]}{s.estado === 'en_curso' && s.etapa ? ` · ${s.etapa}` : ''}</span>
+              <span className="an-mio__estado mono">{textoDeEstado(s).etiqueta}</span>
               {s.tier && <TierBadge tier={s.tier} size={18} />}
               <span className="an-mio__fecha mono">{fechaHora(s.terminada ?? s.creada)}</span>
             </Link>
@@ -237,84 +238,73 @@ function MisAnalisis() {
     </section>
   )
 }
-const ESTADO_LABEL: Record<string, string> = { en_cola: 'en cola', en_curso: 'en marcha', listo: 'listo', fallido: 'no terminó', bloqueado: 'no pasó la verificación' }
 
 /* ============================ la espera y el resultado ============================ */
 export function AnalizarSolicitud() {
   const { id } = useParams()
   const [s, setS] = useState<Solicitud | null>(null)
   const [cupo, setCupo] = useState<Cupo | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<number | null>(null)
   const avisado = useRef(false)
-  const terminal = s ? ['listo', 'fallido', 'bloqueado'].includes(s.estado) : false
+  const t = s ? textoDeEstado(s) : null
+  const terminal = t ? !t.viva : false
 
   const cargar = useCallback(async () => {
-    try { const d = await api<{ solicitud: Solicitud; cupo: Cupo | null }>(`/api/analizar/solicitudes/${id}`); setS(d.solicitud); setCupo(d.cupo); setError(null) } catch (e) { setError(e instanceof ErrorApi ? e.message : String(e)) }
+    try { const d = await api<{ solicitud: Solicitud; cupo: Cupo | null }>(`/api/analizar/solicitudes/${id}`); setS(d.solicitud); setCupo(d.cupo); setError(null) } catch (e) { setError(e instanceof ErrorApi ? e.status : 0) }
   }, [id])
   useEffect(() => { cargar() }, [cargar])
-  useEffect(() => { if (terminal) return; const t = setInterval(cargar, 2000); return () => clearInterval(t) }, [cargar, terminal])
+  // Mientras no esté terminado —también si la red falla— se sigue preguntando: nunca una pantalla muerta.
+  useEffect(() => { if (terminal && error === null) return; const iv = setInterval(cargar, 2000); return () => clearInterval(iv) }, [cargar, terminal, error])
   useEffect(() => {
-    if (!s || !terminal || avisado.current) return
+    if (!s || !t || !terminal || avisado.current) return
     avisado.current = true
     api(`/api/analizar/solicitudes/${s.id}/vista`, { cuerpo: {} }).catch(() => {})
     invalidarDatos()
     if (typeof Notification !== 'undefined' && Notification.permission === 'granted' && document.hidden) {
-      try { new Notification(`VETA · ${s.simbolo}`, { body: s.estado === 'listo' ? 'Tu análisis está listo.' : 'El análisis no terminó: no se descontó del cupo.' }) } catch { /* sin permiso */ }
+      try { new Notification(`VETA · ${s.simbolo}`, { body: t.titular + '.' }) } catch { /* sin permiso */ }
     }
-  }, [s, terminal])
+  }, [s, t, terminal])
 
-  if (error) return <div className="shell p-cargando"><EmptyState kind="error" title="No encontramos ese análisis" detail={error} action={<Link to="/analizar" className="btn btn--ghost">Volver</Link>} /></div>
-  if (!s) return <div className="shell p-cargando"><Loader size={72} label="Cargando" /></div>
+  if (error === 404) return <div className="shell p-cargando"><EmptyState kind="sin-datos" title="No encontramos ese análisis" detail="Puede que el enlace esté incompleto." action={<Link to="/analizar" className="btn btn--ghost">Ir a Analiza tu moneda</Link>} /></div>
+  // Red caída o respuesta rara antes de tener nada: se dice que se está comprobando, no que falló.
+  if (!s || !t) return error === null
+    ? <div className="shell p-cargando"><Loader size={72} label="Cargando" /></div>
+    : <div className="shell p-cargando"><EmptyState kind="vacio" title="Estamos comprobando tu pedido" detail="Tu cupo está a salvo. Esta página se actualiza sola." action={<button type="button" className="btn btn--ghost" onClick={cargar}>Actualizar</button>} /></div>
 
   const inf = s.estado === 'listo' && s.resultado ? (s.resultado as unknown as Informe) : null
   const narrado = s.estado === 'listo' ? narradoDe(s.resultado) : null
   return (
-    <div className={`an-sol an-sol--${s.estado}`}>
+    <div className={`an-sol an-sol--${s.estado} an-sol--${t.clave}`}>
       <div className="shell"><Volver to="/analizar" label="Analiza tu moneda" /></div>
       <section className="shell an-espera" aria-live="polite">
         <EscenaAnalisis s={s} />
-        <div className="an-espera__panel">
-          <span className="eyebrow mono" data-mat={s.estado === 'listo' ? 'esmeralda' : 'oro'}><span className="eyebrow__mark" aria-hidden="true" />{s.estado === 'listo' ? 'Análisis profundo · listo' : s.estado === 'en_cola' ? 'En cola' : s.estado === 'en_curso' ? 'Analizando' : s.estado === 'bloqueado' ? 'Verificación · no pasó' : 'No terminó'}</span>
-          <h1 className="display an-espera__t">
-            {s.estado === 'en_curso' ? <>Leyendo <b>{s.simbolo}</b></> : <>{s.simbolo}<small>{s.estado === 'listo' ? s.nombre : s.estado === 'en_cola' ? 'en la cola, esperando lanzamiento' : s.estado === 'bloqueado' ? 'no pasó la verificación · no se descontó' : 'no terminó · no se descontó'}</small></>}
-          </h1>
+        <div className="an-espera__panel" data-estado={t.clave}>
+          <span className="eyebrow mono" data-mat={t.tono === 'esm' ? 'esmeralda' : 'oro'}><span className="eyebrow__mark" aria-hidden="true" />Análisis completo · {t.etiqueta}</span>
+          <h1 className="display an-espera__t an-espera__t--estado">{t.titular}</h1>
           <div className="an-espera__meta mono">
             <Transcurrido desde={s.iniciada ?? s.creada} hasta={s.terminada} />
-            {s.estado === 'listo' && s.tier && <TierBadge tier={s.tier} size={20} />}
+            {t.clave === 'entregado' && s.tier && <TierBadge tier={s.tier} size={20} />}
             {cupo && <CupoChip cupo={cupo} compacto />}
           </div>
-          <Etapas s={s} />
-          {s.estado === 'en_cola' && (
-            <div className="an-cola">
-              <Nota tono="oro">
-                <b>{s.enviada ? `Tu pedido está en la cola${s.posicion_cola ? `, en el puesto ${s.posicion_cola}` : ''}.` : 'Tu pedido espera por el tope de gasto de este mes.'}</b>{' '}
-                {s.enviada
-                  ? 'Los análisis profundos los lanza el equipo a mano, uno por uno, porque cada uno gasta dinero real. No hay un tiempo garantizado: puede ser en minutos o al día siguiente.'
-                  : 'Arranca solo en cuanto se libere margen; no tienes que hacer nada.'}
-              </Nota>
-              <p className="an-cola__que">{llano(s.detalle ?? '')}</p>
-              <ul className="an-cola__lista">
-                <li>Cuando arranque verás aquí las etapas, y en la barra el avance.</li>
-                <li>Te avisamos al terminar, también si te fuiste.</li>
-                <li>El cupo se descuenta sólo si el análisis termina y pasa la verificación.</li>
-              </ul>
+          {t.clave === 'en_curso' && <Etapas s={s} />}
+          {t.cuerpo.length > 0 && (
+            <div className="an-estado__cuerpo">
+              {t.cuerpo.map((p, i) => <p key={i} className={i === 0 ? 'an-estado__lead' : 'body-muted'}>{p}</p>)}
             </div>
           )}
-          {(s.estado === 'en_curso' || s.estado === 'en_cola') && (
+          {t.viva && t.clave !== 'desconocido' && <div className="an-espera__pie"><BotonAviso /></div>}
+          {t.accion && (
             <div className="an-espera__pie">
-              <p className="body-muted">Puedes irte. Cuando termine te avisamos arriba, en la barra, y el resultado queda en <Link to="/analizar">tus análisis</Link>.</p>
-              <BotonAviso />
+              {t.accion.a ? <Link to={t.accion.a} className="btn btn--ghost">{t.accion.texto}</Link> : <button type="button" className="btn btn--ghost" onClick={cargar}>{t.accion.texto}</button>}
+              {t.accion2 && <Link to={t.accion2.a} className="btn btn--ghost">{t.accion2.texto}</Link>}
             </div>
           )}
-          {s.estado === 'bloqueado' && <Nota tono="rojo">No pasó nuestro control de calidad{s.verificador?.motivo_bloqueo ? `: ${s.verificador.motivo_bloqueo}` : ''}. <b>No se descontó de tu cupo.</b></Nota>}
-          {s.estado === 'fallido' && <Nota tono="rojo">{s.fallo?.texto ?? 'No se pudo terminar.'} <b>No se descontó de tu cupo.</b></Nota>}
           {s.estado === 'listo' && (
             <>
-              <Nota tono="esm">Este análisis es tuyo. No lleva sello editorial: si vale para todos, se publica desde la mesa de revisión.</Nota>
-              {!!(s.resultado as { simulado?: boolean })?.simulado && <Nota tono="mudo">Resultado de simulación: reproduce un análisis que VETA ya hizo sobre esta moneda. El análisis en vivo todavía no está conectado.</Nota>}
+              <Nota tono="esm">Este análisis es tuyo. Si vale para todos, lo publicamos también en Análisis.</Nota>
+              {!!(s.resultado as { simulado?: boolean })?.simulado && <Nota tono="mudo">Resultado de simulación: reproduce un análisis que VETA ya hizo sobre esta moneda.</Nota>}
             </>
           )}
-          {(s.estado === 'fallido' || s.estado === 'bloqueado') && <div className="an-espera__pie"><Link to="/analizar" className="btn btn--ghost">Probar con otra moneda</Link></div>}
         </div>
       </section>
       {inf && (

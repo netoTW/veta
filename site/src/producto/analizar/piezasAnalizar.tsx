@@ -4,7 +4,7 @@ import { AuthEscena, type EstadoEscena } from '../../auth/AuthEscena'
 import { controlInicial, type Control } from '../../three/control'
 import { Dato, Advertencias, PlanBadge, Puerta } from '../piezas'
 import { fecha, fechaHora, mult, num, precio, usd } from '../../lib/formato'
-import { llano, LECTURA_LABEL } from '../../lib/lenguaje'
+import { llano, LECTURA_LABEL, prosaDeCliente } from '../../lib/lenguaje'
 export { LECTURA_LABEL }
 export { llano }
 
@@ -24,7 +24,7 @@ import type { Advertencia, Tier } from '../../lib/contrato'
 
 export type Etapa = 'recolectando' | 'calculando' | 'esceptico' | 'redactando' | 'verificando'
 export const ETAPAS: Etapa[] = ['recolectando', 'calculando', 'esceptico', 'redactando', 'verificando']
-export type EstadoSolicitud = 'en_cola' | 'en_curso' | 'listo' | 'fallido' | 'bloqueado'
+export type EstadoSolicitud = 'en_cola' | 'en_curso' | 'listo' | 'no_analizable' | 'fallido' | 'bloqueado'
 export interface Cifra { k: string; v: number | string | null; unidad?: string }
 export interface Bloque { lectura: string; texto: string; fuente: string | null; cifras: Cifra[]; condiciones?: { nombre: string; cumple: boolean; detalle: string }[] }
 export interface Lectura {
@@ -36,8 +36,11 @@ export interface Cupo { plan: string; ilimitado: boolean; incluidos: number; usa
 export interface Solicitud {
   id: string; simbolo: string; nombre: string | null; nivel: 'determinista' | 'profundo'; estado: EstadoSolicitud; etapa: Etapa | null; avance: number | null; detalle: string | null
   etapas_hechas: Etapa[]; consume_cupo: boolean; motor: string; creada: string; iniciada: string | null; terminada: string | null; vista: boolean
-  fallo: { codigo: string; texto: string } | null; verificador: { estado: string; motivo_bloqueo: string } | null; resultado: Record<string, unknown> | null; tier: Tier | null
+  /** Al cliente sólo le llega el código: los textos son los de producto/analizar/estados.ts. */
+  fallo: { codigo: string; texto?: string } | null; verificador: { estado: string; motivo_bloqueo?: string } | null; resultado: Record<string, unknown> | null; tier: Tier | null
   enviada?: boolean; posicion_cola?: number | null
+  /** Contrato §20. */
+  puesto?: number | null; inicio_estimado?: string | null; motivo_no_analizable?: string | null
 }
 export interface Moneda { simbolo: string; nombre: string; id_coingecko?: string; cadena?: string; con_informe: boolean
   /** null = todavía no se sabe, y entonces no se afirma nada. Sólo `false` cierra la puerta. */
@@ -50,11 +53,11 @@ export const useUniverso = () => useDatos<{ monedas: Moneda[]; motor: string }>(
 
 /* ---------- vocabulario llano ---------- */
 export const ETAPA_LABEL: Record<Etapa, { titulo: string; que: string }> = {
-  recolectando: { titulo: 'Trayendo los datos', que: 'precio, futuros, ingresos, quién tiene el token' },
-  calculando: { titulo: 'Calculando el riesgo', que: 'cola de caídas, las dos referencias, concentración' },
-  esceptico: { titulo: 'Buscando los contraargumentos', que: 'se ataca la lectura antes de darla por buena' },
-  redactando: { titulo: 'Redactando', que: 'tesis en una línea, escenarios, qué la invalidaría' },
-  verificando: { titulo: 'Comprobando cada cifra', que: 'número por número contra su fuente; si no coincide, no sale' },
+  recolectando: { titulo: 'Reuniendo datos de mercado, de la cadena y del protocolo', que: 'precio, futuros, ingresos, quién tiene el token' },
+  calculando: { titulo: 'Calculando riesgo, liquidez y niveles', que: 'caídas, las dos referencias, concentración' },
+  esceptico: { titulo: 'Buscando lo que podría salir mal', que: 'se ataca la lectura antes de darla por buena' },
+  redactando: { titulo: 'Escribiendo tu informe', que: 'la lectura en una línea, los escenarios y qué la cambiaría' },
+  verificando: { titulo: 'Comprobando cada cifra contra su fuente', que: 'número por número, antes de entregártelo' },
 }
 export const BLOQUES: { k: keyof Pick<Lectura, 'demanda' | 'riesgo_cola' | 'concentracion' | 'tokenomics' | 'liquidez'>; titulo: string; pregunta: string }[] = [
   { k: 'demanda', titulo: 'Demanda', pregunta: '¿La mueve compra real o apalancamiento?' },
@@ -356,7 +359,8 @@ export function Decidir({ simbolo, cupo, puedeProfundo, onPedir, ocupado, error 
 }
 
 /* ---------- la espera: la roca obedece al progreso real ---------- */
-const estadoEscenaDe = (s: Solicitud): EstadoEscena => (s.estado === 'listo' ? 'exito' : s.estado === 'fallido' || s.estado === 'bloqueado' ? 'error' : s.estado === 'en_cola' ? 'atenta' : 'enviando')
+// Lo que no termina no se pinta de rojo ni tiembla: la roca vuelve a reposo (el riesgo vive en el informe, no en la interfaz).
+const estadoEscenaDe = (s: Solicitud): EstadoEscena => (s.estado === 'listo' ? 'exito' : s.estado === 'en_cola' ? 'atenta' : s.estado === 'en_curso' ? 'enviando' : 'reposo')
 
 export function EscenaAnalisis({ s }: { s: Solicitud }) {
   const control = useRef<Control>(controlInicial())
@@ -384,7 +388,6 @@ export function EscenaAnalisis({ s }: { s: Solicitud }) {
       else set({ u: 0.94, open: 0.5, dolly: 0.35, tint: 0, shake: 0.45 })
       return
     }
-    if (s.estado === 'bloqueado') { set({ u: 0.72, open: 0, tint: 1, shake: 1, dolly: 0 }); const t = setTimeout(() => set({ tint: 0.6 }), 1300); return () => clearTimeout(t) }
     if (s.estado === 'fallido') { set({ u: 0.06, open: 0, tint: 1, shake: 1, dolly: 0 }); const t = setTimeout(() => set({ tint: 0.5 }), 1300); return () => clearTimeout(t) }
   }, [s.estado, s.etapa, s.avance, s.tier])
   return (
@@ -410,13 +413,13 @@ export function Etapas({ s }: { s: Solicitud }) {
       {ETAPAS.map((e, i) => {
         const hecha = hechas.has(e) || s.estado === 'listo'
         const actual = s.estado === 'en_curso' && s.etapa === e
-        const rota = (s.estado === 'fallido' || s.estado === 'bloqueado') && s.etapa === e
+        const rota = false
         return (
           <li key={e} className={`an-etapa ${hecha && !rota ? 'is-hecha' : ''} ${actual ? 'is-actual' : ''} ${rota ? 'is-rota' : ''}`} style={{ ['--i' as string]: i }}>
             <span className="an-etapa__gema" aria-hidden="true" />
             <div className="an-etapa__cuerpo">
               <span className="an-etapa__t">{ETAPA_LABEL[e].titulo}</span>
-              <span className="an-etapa__q">{actual && s.detalle ? s.detalle : ETAPA_LABEL[e].que}</span>
+              <span className="an-etapa__q">{actual && prosaDeCliente(s.detalle) ? prosaDeCliente(s.detalle) : ETAPA_LABEL[e].que}</span>
               {actual && s.avance !== null && <span className="an-etapa__barra" aria-hidden="true"><span style={{ width: `${Math.round(s.avance * 100)}%` }} /></span>}
             </div>
           </li>
