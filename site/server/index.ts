@@ -28,6 +28,7 @@ import { pagosApp, cobroAutomatico, enlacesCheckout } from './pagos.ts'
 import { noticiasPara, noticiasAdmin } from './noticias.ts'
 import { enlacesApp, enlacesAdmin, sembrarEnlaces } from './enlaces.ts'
 import { sembrar } from './semilla.ts'
+import { sinTenencia } from './tenencia.ts'
 
 type Vars = { sesion: Sesion | null; rol: Rol; rolReal: Rol; verComo: Rol | null }
 const app = new Hono<{ Variables: Vars }>()
@@ -72,6 +73,10 @@ app.use('/api/*', async (c, next) => {
   c.header('Cache-Control', 'private, no-store')
   c.header('Vary', 'Cookie')
 })
+
+/* Tenencia declarada: ninguna moneda con posición del operador sale de la API hacia
+   un cliente, venga de la ruta que venga. Un solo punto de salida (server/tenencia.ts). */
+app.use('/api/*', sinTenencia)
 
 app.get('/api/yo', (c) => {
   const s = c.get('sesion')
