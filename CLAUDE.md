@@ -64,6 +64,10 @@ Todo lo marcado **[DISEÑO]** se propone antes de construir.
 
 ## Dónde está lo demás
 
+**Para retomar: `TRASPASO.md` primero.** Estado, pendientes con prioridad,
+decisiones y su motivo, reglas de coordinación y dónde está cada cosa en el
+servidor. Con ése, este archivo y el contrato, basta para seguir.
+
 `ESTADO-WEB.md` (estado, operación y qué falta), `SISTEMA-VISUAL.md` (paleta y piezas),
 `DESPLIEGUE.md` (producción), `HUECOS-CONTRATO.md` (lo que falta del motor),
 `CONTRATO-ANALISIS-A-PEDIDO.md` (la interfaz con el motor),
