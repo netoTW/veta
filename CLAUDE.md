@@ -53,6 +53,11 @@ Se traducen así:
 
 **Lo que no hay, no se muestra.** Nunca una casilla que diga que falta un dato.
 
+**Única excepción (decidida el 26-sep-2026):** en la ficha gratis y en los informes, lo que no
+está disponible se nombra en **una sola línea discreta al final** del bloque o de la ficha
+(«No entra en esta ficha: …»), y las cifras retiradas o sin verificar van en el bloque «Sobre los
+datos de este informe». Nunca una caja vacía, una fila con hueco ni un chip de «sin dato».
+
 En **admin** sí se usa el vocabulario real: ahí trabaja quien conoce el sistema.
 
 ## Método de trabajo
