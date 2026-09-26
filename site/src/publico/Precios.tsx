@@ -87,9 +87,9 @@ export function Precios() {
     try {
       const q = origenComoConsulta()
       const { url } = await api<{ url: string }>(`/api/pagos/checkout/${k}${q ? `?${q}` : ''}`)
-      window.location.assign(url)
+      window.location.assign(url) // nav-por-clic: el botón de pago
     } catch {
-      window.location.assign(destino(k))
+      window.location.assign(destino(k)) // nav-por-clic: el botón de pago
     }
   }
 

@@ -1,7 +1,7 @@
 import { Suspense, lazy, useEffect, useRef, useState } from 'react'
 import { detectQuality, detectTier, dprCap, type Quality, type Tier } from '../lib/tier'
 import { GLBoundary } from '../components/GLBoundary'
-import type { Control } from '../three/HeroScene'
+import type { Control } from '../three/control'
 
 /* ============================================================================
    La escena del login: la misma roca del hero, pero obedeciendo al
@@ -14,7 +14,9 @@ const Escena = lazy(() => import('../three/HeroScene').then((m) => ({ default: m
 
 export type EstadoEscena = 'reposo' | 'atenta' | 'enviando' | 'exito' | 'error'
 
-export function AuthEscena({ control, estado }: { control: React.RefObject<Control>; estado: EstadoEscena }) {
+/** `sin3d`: sólo el poster. Recuperar y restablecer son un formulario de un campo; no
+    pagan la escena (compilar shaders bloqueaba el hilo principal 300 ms o más). */
+export function AuthEscena({ control, estado, sin3d = false }: { control: React.RefObject<Control>; estado: EstadoEscena; sin3d?: boolean }) {
   const [tier, setTier] = useState<Tier | null>(null)
   const [quality, setQuality] = useState<Quality>('high')
   const [live, setLive] = useState(false)
@@ -23,7 +25,15 @@ export function AuthEscena({ control, estado }: { control: React.RefObject<Contr
   const pointerRef = useRef({ x: 0, y: 0 })
 
   useEffect(() => {
-    setTier(detectTier())
+    if (sin3d) return
+    // Después del primer pintado: el formulario aparece antes de que la escena pida nada.
+    const ric = window.requestIdleCallback ?? ((f: () => void) => window.setTimeout(f, 200))
+    const cic = window.cancelIdleCallback ?? window.clearTimeout
+    const id = ric(() => setTier(detectTier()), { timeout: 1500 })
+    return () => cic(id)
+  }, [sin3d])
+
+  useEffect(() => {
     const forced = new URLSearchParams(window.location.search).get('q')
     setQuality(forced === 'high' || forced === 'medium' ? forced : detectQuality())
   }, [])

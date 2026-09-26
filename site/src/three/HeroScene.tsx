@@ -7,6 +7,8 @@ import {
 import { BlendFunction, ToneMappingMode } from 'postprocessing'
 import * as THREE from 'three'
 import type { Quality } from '../lib/tier'
+import type { Control } from './control'
+export { controlInicial, type Control } from './control'
 
 /* ============================================================================
    Hero — la roca que se abre y revela la veta.
@@ -824,17 +826,6 @@ interface CycleState { jump: number; shake: number }
    página: hasta dónde llega la grieta (u → saltos reales de crackProgress),
    cuánto se abre, el tinte de la veta (0 esmeralda · 1 rojo: la llave
    equivocada) y un acercamiento de cámara para el éxito. */
-export interface Control {
-  /** Avance objetivo de la propagación, 0..1. Se mapea a los saltos reales. */
-  u: number
-  open: number
-  form: number
-  tint: number
-  /** Pulso de temblor: la escena lo consume (lo vuelve a 0). */
-  shake: number
-  dolly: number
-}
-export const controlInicial = (): Control => ({ u: 0.12, open: 0, form: 1, tint: 0, shake: 0, dolly: 0 })
 const ROJO_LUZ = new THREE.Color('#FF5A46')
 const ROJO = new THREE.Color('#C8352A')
 const VEIN_VERDE = new THREE.Color('#1c8f62')

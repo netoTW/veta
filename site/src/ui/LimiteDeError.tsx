@@ -55,7 +55,7 @@ export class LimiteDeError extends Component<Props, Estado> {
   /* Si lo que faltó fue un trozo de la propia página, reintentar no puede
      funcionar: el fichero ya no existe en el servidor. Lo que hace falta es
      pedir la versión nueva. */
-  private recargar = () => { window.location.reload() }
+  private recargar = () => { window.location.reload() } // nav-por-clic: el botón «Recargar»
 
   render() {
     if (!this.state.fallo) return this.props.children

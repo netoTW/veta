@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { AuthEscena, type EstadoEscena } from '../../auth/AuthEscena'
-import { controlInicial, type Control } from '../../three/HeroScene'
+import { controlInicial, type Control } from '../../three/control'
 import { Dato, Advertencias, PlanBadge, Puerta } from '../piezas'
 import { fecha, fechaHora, mult, num, precio, usd } from '../../lib/formato'
 import { llano, LECTURA_LABEL } from '../../lib/lenguaje'

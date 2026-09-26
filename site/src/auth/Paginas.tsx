@@ -3,7 +3,8 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { authClient, mensajeAuth } from '../lib/auth'
 import { useSesion } from '../lib/sesion'
 import { invalidarDatos } from '../lib/datos'
-import { controlInicial, type Control } from '../three/HeroScene'
+import { rutaPropia, useNavegarUnaVez } from '../lib/guardaNavegacion'
+import { controlInicial, type Control } from '../three/control'
 import { AuthEscena, type EstadoEscena } from './AuthEscena'
 
 /* ============================================================================
@@ -45,10 +46,10 @@ function useEscena() {
   return api
 }
 
-function Marco({ escena, eyebrow, titulo, lead, children, pie }: { escena: ReturnType<typeof useEscena>; eyebrow: string; titulo: ReactNode; lead: ReactNode; children: ReactNode; pie?: ReactNode }) {
+function Marco({ escena, eyebrow, titulo, lead, children, pie, sin3d }: { escena: ReturnType<typeof useEscena>; eyebrow: string; titulo: ReactNode; lead: ReactNode; children: ReactNode; pie?: ReactNode; sin3d?: boolean }) {
   return (
     <div className={`auth auth--${escena.estado}`}>
-      <AuthEscena control={escena.control} estado={escena.estado} />
+      <AuthEscena control={escena.control} estado={escena.estado} sin3d={sin3d} />
       <div className="auth__panel">
         <Link to="/" className="auth__logo" aria-label="VETA, ir al inicio">
           <img src="/img/logo-mark.webp" alt="" width={460} height={345} />
@@ -100,11 +101,13 @@ export function Entrar() {
   const [pass, setPass] = useState('')
   const [msg, setMsg] = useState<string | null>(q.get('ok') === 'restablecida' ? null : null)
   const [ocupado, setOcupado] = useState(false)
-  const volver = q.get('volver') && q.get('volver')!.startsWith('/') ? q.get('volver')! : '/gemas'
+  // Sólo rutas propias: «//otro-dominio» también empieza por «/» y era una redirección abierta.
+  const volver = rutaPropia(q.get('volver'), '/gemas')
   const valido = EMAIL.test(email) && pass.length >= MIN_PASS
 
   // Ya con sesión: no hay nada que abrir acá.
-  useEffect(() => { if (!cargando && yo?.usuario && escena.estado === 'reposo') nav(volver, { replace: true }) }, [cargando, yo, nav, volver, escena.estado])
+  const navAuto = useNavegarUnaVez()
+  useEffect(() => { if (!cargando && yo?.usuario && escena.estado === 'reposo') navAuto(volver, { replace: true }) }, [cargando, yo, navAuto, volver, escena.estado])
   useEffect(() => { if (escena.estado !== 'reposo' && escena.estado !== 'enviando' && escena.estado !== 'exito' && escena.estado !== 'error') escena.atenta(valido) }, [valido]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const enviar = async (e: FormEvent) => {
@@ -226,6 +229,7 @@ export function Recuperar() {
   return (
     <Marco
       escena={escena}
+      sin3d
       eyebrow="VETA · Recuperar contraseña"
       titulo={<>Una llave <em>nueva.</em></>}
       lead="Dinos tu correo. Si hay una cuenta, te llega un enlace de una hora y de un solo uso para elegir otra contraseña."
@@ -258,7 +262,7 @@ export function Restablecer() {
   const token = q.get('token') ?? ''
   const [pass, setPass] = useState('')
   const [pass2, setPass2] = useState('')
-  const [msg, setMsg] = useState<string | null>(q.get('error') ? 'El enlace ya no sirve: pide uno nuevo.' : null)
+  const [msg, setMsg] = useState<string | null>(null)
   const [ocupado, setOcupado] = useState(false)
   const valido = pass.length >= MIN_PASS && pass === pass2 && !!token
   useEffect(() => { if (escena.estado === 'atenta') escena.atenta(valido) }, [valido]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -275,12 +279,29 @@ export function Restablecer() {
     escena.luego(1500, () => nav('/entrar?ok=restablecida', { replace: true }))
   }
 
+  // Sin token (caducó, ya se usó o se copió mal) no hay nada que guardar: se ofrece otro enlace, no un formulario muerto.
+  if (!token) return (
+    <Marco
+      escena={escena}
+      sin3d
+      eyebrow="VETA · Nueva contraseña"
+      titulo={<>Pide un enlace <em>nuevo.</em></>}
+      lead="El que abriste ya caducó: los enlaces para cambiar la contraseña valen una hora y se usan una sola vez. En un minuto eliges la nueva."
+      pie={<><span><Link to="/entrar">Entrar</Link></span></>}
+    >
+      <div className="auth__form">
+        <Link to="/recuperar" className="btn auth__btn">Pedir otro enlace</Link>
+      </div>
+    </Marco>
+  )
+
   return (
     <Marco
       escena={escena}
+      sin3d
       eyebrow="VETA · Nueva contraseña"
       titulo={<>Elige la <em>llave.</em></>}
-      lead={token ? 'Una contraseña nueva. Las sesiones abiertas se cierran.' : 'Este enlace no trae token. Pide uno nuevo desde "Olvidé mi contraseña".'}
+      lead="Una contraseña nueva. Las sesiones abiertas se cierran."
       pie={<><span><Link to="/recuperar">Pedir otro enlace</Link></span><span><Link to="/entrar">Entrar</Link></span></>}
     >
       <form className="auth__form" onSubmit={enviar} noValidate>
@@ -291,7 +312,7 @@ export function Restablecer() {
           <Clave id="pass2" value={pass2} onChange={setPass2} onFocus={() => escena.atenta(valido)} autoComplete="new-password" />
         </Campo>
         <Error msg={msg} />
-        <button type="submit" className="btn auth__btn" disabled={ocupado || !token}>{ocupado ? 'Guardando…' : 'Guardar'}</button>
+        <button type="submit" className="btn auth__btn" disabled={ocupado}>{ocupado ? 'Guardando…' : 'Guardar'}</button>
       </form>
     </Marco>
   )

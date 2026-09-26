@@ -1,4 +1,5 @@
 import { lazy, type ComponentType } from 'react'
+import { recargarUnaVez } from './guardaNavegacion'
 
 /* ============================================================================
    Fragmentos de código que desaparecen bajo los pies.
@@ -13,22 +14,18 @@ import { lazy, type ComponentType } from 'react'
    reintentar no sirve —el fichero no va a volver— y lo que hace falta es pedir
    la versión nueva, que es exactamente lo que hace recargar.
 
-   Se recarga **una vez**. La marca vive en la pestaña y se borra en cuanto un
-   fragmento carga bien, así que el siguiente despliegue vuelve a tener su
-   oportunidad, pero un fallo de red persistente no deja la página dando
-   vueltas. La ruta no se pierde: recargar mantiene la URL.
+   Se recarga **una vez** en diez segundos, y la cuenta la lleva la guardia única
+   (guardaNavegacion.ts). Antes la marca vivía aquí, en sessionStorage, y si el
+   almacenamiento estaba bloqueado (visores de correo) no se podía anotar y la
+   página recargaba sin fin: 78 veces en 10 s, pantalla en blanco. Ahora, sin
+   dónde anotar, no se recarga: sale el límite de error con «Recargar». La ruta
+   no se pierde: recargar mantiene la URL.
    ========================================================================== */
-const CLAVE = 'veta.fragmento-recargado'
-
 /** Los tres navegadores lo dicen con tres frases distintas. */
 export function esFalloDeFragmento(e: unknown): boolean {
   const m = String((e as { message?: unknown })?.message ?? e ?? '')
   return /Failed to fetch dynamically imported module|error loading dynamically imported module|Importing a module script failed/i.test(m)
 }
-
-const yaRecargo = () => { try { return !!sessionStorage.getItem(CLAVE) } catch { return false } }
-const anotarRecarga = () => { try { sessionStorage.setItem(CLAVE, String(Date.now())) } catch { /* sin storage */ } }
-const olvidarRecarga = () => { try { sessionStorage.removeItem(CLAVE) } catch { /* sin storage */ } }
 
 /**
  * Como `lazy`, pero si la parte ya no existe pide la versión nueva de la página
@@ -38,13 +35,9 @@ const olvidarRecarga = () => { try { sessionStorage.removeItem(CLAVE) } catch { 
 export function lazySeguro<T extends ComponentType<any>>(carga: () => Promise<{ default: T }>) {
   return lazy<T>(async () => {
     try {
-      const m = await carga()
-      olvidarRecarga()
-      return m
+      return await carga()
     } catch (e) {
-      if (esFalloDeFragmento(e) && !yaRecargo()) {
-        anotarRecarga()
-        window.location.reload()
+      if (esFalloDeFragmento(e) && recargarUnaVez('fragmento')) {
         // La página se está yendo: no se resuelve ni se lanza, o React pinta
         // un error durante el parpadeo de la recarga.
         await new Promise<never>(() => {})

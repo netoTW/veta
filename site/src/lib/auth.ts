@@ -1,10 +1,26 @@
 /* Cliente de autenticación: misma origen (/api/auth), cookie de sesión. */
 import { createAuthClient } from 'better-auth/react'
 import { adminClient } from 'better-auth/client/plugins'
+import { irUnaVez } from './guardaNavegacion'
+
+/* better-auth trae un plugin que, si una respuesta dice `redirect`, cambia
+   location.href por su cuenta. Se apaga y se pone uno igual que pasa por la
+   guardia única: una redirección automática no se repite en diez segundos. */
+const redireccionGuardada = {
+  id: 'redireccion-guardada', name: 'Redirección guardada',
+  hooks: {
+    onSuccess(ctx: { data?: { url?: unknown; redirect?: unknown } }) {
+      const url = ctx.data?.url
+      if (ctx.data?.redirect && typeof url === 'string' && /^(https?:\/\/|\/)/.test(url)) irUnaVez(url, 'auth')
+    },
+  },
+}
 
 export const authClient = createAuthClient({
   basePath: '/api/auth',
   plugins: [adminClient()],
+  disableDefaultFetchPlugins: true,
+  fetchOptions: { plugins: [redireccionGuardada] },
 })
 
 /** Mensajes de error en español para lo que el usuario puede provocar. */
