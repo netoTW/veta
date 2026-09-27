@@ -221,7 +221,8 @@ Todo en `0fcb868` (web y API), desplegado con los invariantes en verde. Servicio
 activo, sin errores. `publicados-web.json` en secuencia creciente con CELO y STONK
 publicados y la noticia de SYN despublicada; el motor lo lee.
 
-**Publicado:** 2 análisis (CELO, STONK). SYN despublicado el 26-sep (tenencia
+**Publicado:** nada. CELO y STONK despublicados el 27-sep (metodología anterior al
+lanzamiento, se archivan; filas `publicacion` 7 y 8). SYN despublicado el 26-sep (tenencia
 declarada) y fuera de toda respuesta a clientes. Track record público vacío.
 
 **Tiempos en el VPS:** rutas de contenido p95 ≤ 20 ms con y sin sesión; la primera

@@ -9,7 +9,21 @@ Cada pieza trae **qué haré**, **aceptación** (verificable) y **riesgos**. Los
 
 ---
 
-## 0. Lo que tienes que decidir antes
+## 0. Decisiones (27-sep, aprobada con esto)
+
+- **D1:** las tesis retiradas se quedan en el historial, con el resultado congelado el día del
+  retiro. Desde el lanzamiento nada se saca; lo anterior es calibración y se archiva.
+- **D2:** la revisión legal va en paralelo y no bloquea. La sección del backtest sólo aparece
+  cuando el motor lo entregue.
+- **D3:** BTC en la portada; el universo con igual peso, en el panel de admin y en la metodología.
+- **D4:** lo define el motor en §24.
+- **D5:** en la portada, fuera de muestra más el vivo; el período completo con el corte marcado,
+  en la metodología.
+- **D6:** SYN fuera de todo lo público, incluidas las listas de operaciones.
+
+Se construye cuando el motor publique §24; lo que no dependa de él, antes.
+
+### La propuesta original, para contexto
 
 | # | Qué | Por qué | Mi propuesta |
 |---|---|---|---|
