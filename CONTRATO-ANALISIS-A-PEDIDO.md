@@ -1726,3 +1726,41 @@ marcas en lectura, riesgos y un catalizador, servida junto a la v1: 9/9) y
 
 Una petición: que `no_disponibles[].que` llegue ya en lenguaje de cliente (§A.20, punto 1): con
 la v2 lo lee el cliente en la línea final para lo no marcado.
+
+---
+
+## 17.1 Tesis retiradas: se quedan en el historial (2026-09-27) — AVISO AL MOTOR
+
+Escrito por la web. Cambia lo que §17 decía del track record público (decisión de Pablo, 27-sep,
+`ESPECIFICACION-SENALES.md` D1):
+
+- **Desde el lanzamiento nada se saca.** Una gema que el público vio y después se retira sigue en
+  el historial y en el marcador públicos, con el resultado **congelado el día del retiro**, la
+  fecha (`retirada_en`) y el motivo (`motivo_retiro`, en lenguaje de cliente).
+- **Lo anterior es calibración y se archiva.** Lo que el público vio antes de la fecha de
+  lanzamiento (`VETA_LANZAMIENTO`, hoy 2026-09-27) no aparece en el historial público; sigue entero
+  en admin. PUMP (19-sep) queda archivada.
+- **Lo que necesita la web del motor:** que una tesis retirada conserve su última fila de
+  `seguimiento_diario` (la del día del retiro) y deje de actualizarla, y que el registro traiga
+  `retirada_en` y `motivo_retiro` en llano. Si el motor ya hace eso, no hay nada que cambiar.
+- **Sin cambios:** una retirada no genera alertas de seguimiento a suscriptores.
+
+## 24 · lo que VETA necesita para las señales (2026-09-27) — PETICIÓN AL MOTOR
+
+La sección §24 la escribe el motor (D4). Esto es lo que la web necesita que traiga; el detalle de
+campos está en `ESPECIFICACION-SENALES.md` §4 y las decisiones que lo condicionan en su §0:
+
+1. **`senales/estrategia.json`** · la estrategia congelada (reglas, costes, versión, huella del
+   código), la serie diaria contra BTC y **contra el universo con igual peso** (D3: BTC en la
+   portada; el universo en admin y en la metodología), métricas por tramo (dentro de muestra, fuera
+   de muestra y vivo, más el total), tres puntos de partida fijos y `simulado: true`. La portada
+   enseña **fuera de muestra más vivo** (D5); la metodología, el período completo con el corte.
+2. **`senales/track_record.json`** · una fila por gema que el público vio desde el lanzamiento,
+   con su resultado y el de BTC en el mismo período, y el resultado congelado al cerrar o al
+   retirarse (§17.1).
+3. **`senales/senales.json`** · para admin: cada señal y cada tipo de tesis con los tres tramos
+   (rendimiento, tasa de acierto, asimetría de pago, caída máxima, alfa y beta contra BTC y
+   contra el universo, operaciones) y la **deriva** (`estable · vigilar · deteriorada`).
+4. **Tenencia declarada (D6):** SYN no aparece en ningún fichero público, **tampoco en las listas
+   de operaciones**. En `senales.json` (admin) sí.
+5. **Todo número llega calculado** y con la unidad de §21.2; la web sólo formatea con §23.

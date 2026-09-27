@@ -156,7 +156,8 @@ app.get('/api/contenido/marcador', async (c) => {
   const m = await contenido.marcadorAgregado()
   // el visitante ve el agregado (evidencia de método); el detalle por gema, sólo quien puede ver el informe
   const rol = c.get('rol')
-  return c.json(puede(rol, 'seguimiento') ? m : { ...m, gemas: m.gemas.map((g) => ({ gema_id: g.gema_id, simbolo: g.simbolo, b1: { lado: g.b1.lado }, b2: { lado: g.b2.lado }, cerrada: g.cerrada, dias_al_cierre: g.dias_al_cierre })) })
+  return c.json(puede(rol, 'seguimiento') ? m : { ...m, gemas: m.gemas.map((g) => ({ gema_id: g.gema_id, simbolo: g.simbolo, b1: { lado: g.b1.lado }, b2: { lado: g.b2.lado }, cerrada: g.cerrada, dias_al_cierre: g.dias_al_cierre, ...(g.retirada ? { retirada: g.retirada } : {}) })) })
+  // §17.1: que una tesis se retiró es parte del historial que ve todo el mundo; nada se esconde.
 })
 
 /* ---------- predicción del usuario: una vez, con fecha, sin cambios ---------- */

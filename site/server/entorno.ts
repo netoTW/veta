@@ -54,6 +54,9 @@ export const ENV = {
   SERVIR_DIST: process.env.VETA_SERVIR_DIST === '1',
   /** Acceso anticipado del plan pro: horas antes de que el base vea una gema recién aprobada. [JUICIO] */
   HORAS_ANTICIPO: num('VETA_HORAS_ANTICIPO', 6),
+  /** Contrato §17.1: lo que el público vio antes de esta fecha es calibración y se archiva
+      (fuera del historial público); desde ella, nada se saca. */
+  LANZAMIENTO: (process.env.VETA_LANZAMIENTO ?? '2026-09-27').trim(),
   CUPO: { gratis: 0, base: num('VETA_CUPO_BASE', 2), pro: num('VETA_CUPO_PRO', 6) } as Record<string, number>,
   /* Precios de cara al público, en USD al mes. Se cambian por variable de entorno,
      sin tocar código, porque van a moverse cuando el motor mida el costo real. */

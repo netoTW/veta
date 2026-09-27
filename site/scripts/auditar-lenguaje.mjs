@@ -13,6 +13,8 @@ const PROHIBIDAS = /\b(escéptico|verificador|redactor|umbral|observable|criteri
    Lo único que puede decir un informe es «sin verificar» y «No entra en este informe: …». */
 // «dato no disponible» sí puede salir: es el hueco de una cifra retirada dentro de su frase (§20.3).
 const INCOMPLETO = /\b(ausentes?|parcial(es)?|retirad[oa]s?|corregid[oa]s?|(?<!dato )no disponibles?)\b/gi
+/* Nada puede prometer rentabilidad (CLAUDE.md, ESPECIFICACION-SENALES.md B1.4): en toda la web. */
+const PROMESAS = /\b(garantiz\w*|ganar[áa]s|vas a ganar|rentabilidad asegurada|retorno asegurado|sin riesgo|duplic\w* tu|triplic\w* tu|retorno esperado|rentabilidad esperada|dinero f[áa]cil)\b/gi
 const MAQUINA = /\b[a-z]+(?:_[a-z0-9]+){1,}\b|\b(?:binance|defillama|coingecko|okx|arkham):[\w\/]+|dataType=|equal-weight|long-only|https?:\/\/[^\s)]+/g
 /* Lo que sí puede aparecer: palabras compuestas nuestras y direcciones públicas. */
 const PERDONADAS = /^(veta_|utm_|no_|sin_)|^(e_?mail|on_?chain)$|vetalab\.io|bls\.gov|federalreserve\.gov|whop\.com/i
@@ -36,7 +38,7 @@ for (const r of rutas) {
   const t = await p.evaluate(()=>document.body.innerText)
   // La regla de §6 es para informes y sus listas: en una noticia, «se había retirado» es castellano.
   const esInforme = /^\/(analisis|gemas|analizar|seguimiento)(\/|$)/.test(r)
-  const hits = [...new Set([...(t.match(PROHIBIDAS)||[]), ...(esInforme ? (t.match(INCOMPLETO)||[]) : [])].map(s=>s.toLowerCase()))]
+  const hits = [...new Set([...(t.match(PROHIBIDAS)||[]), ...(t.match(PROMESAS)||[]), ...(esInforme ? (t.match(INCOMPLETO)||[]) : [])].map(s=>s.toLowerCase()))]
   for (const m of new Set(t.match(MAQUINA)||[])) if (!PERDONADAS.test(m)) hits.push(m.slice(0,48))
   total += hits.length
   console.log('  '+(hits.length?'⚠ ':'✓ ')+r.padEnd(38)+(hits.join(', ')||'limpio'))

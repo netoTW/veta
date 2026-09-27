@@ -147,6 +147,7 @@ límite de error, archivado de la calibración.
 | **El reloj de un pedido es del motor** | La web cerraba pedidos que el motor todavía iba a entregar. Ahora sólo avisa a admin a los 30 min. |
 | **La tenencia declarada se filtra a la salida de toda la API** | Un filtro por ruta se olvida en la ruta nueva: la watchlist le enseñaba SYN a cualquier Base. |
 | **Lo de admin no sale del servidor** (retiradas, combustible, solo_admin) | Esconderlo en pantalla no basta: viajaba en la API. |
+| **Desde el lanzamiento (`VETA_LANZAMIENTO`, 27-sep) nada se saca del historial** | Contrato §17.1, D1 de Pablo. Una retirada se queda con su resultado congelado; lo anterior es calibración y se archiva. |
 
 ---
 

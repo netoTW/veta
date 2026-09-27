@@ -5,6 +5,7 @@ import { useSesion } from '../lib/sesion'
 import { puede } from '../lib/acceso'
 import { dias, fecha, fechaHora, pct } from '../lib/formato'
 import type { BenchmarkDef } from '../lib/contrato'
+import { prosaDeCliente } from '../lib/lenguaje'
 
 /* ============================================================================
    El benchmark, en primer plano.
@@ -25,6 +26,8 @@ export interface LadoBenchmark { lado: Lado; valor?: number | null; motivo_codig
 export interface MarcadorGema {
   gema_id: string; simbolo: string; fecha?: string; estado_tesis?: string; dias_al_cierre: number
   retorno_gema?: number | null; b1: LadoBenchmark; b2: LadoBenchmark; cerrada: boolean
+  /** Contrato §17.1: retirada del seguimiento, con el resultado congelado ese día. Se queda en el historial. */
+  retirada?: { en: string | null; motivo: string } | null
 }
 export interface Marcador {
   fecha: string | null; vivas: number; cerradas: number
@@ -133,11 +136,14 @@ export function MarcadorAgregado({ visitante = false }: { visitante?: boolean })
         <ul className="mk__lista">
           {m.gemas.map((g) => (
             <li key={g.gema_id}>
-              <Link to={`/gemas/${g.gema_id}`} className="mk__sym">{g.simbolo}</Link>
+              {/* Una retirada se queda en el historial, pero su informe ya no se publica: sin enlace. */}
+              {g.retirada ? <span className="mk__sym">{g.simbolo}</span> : <Link to={`/gemas/${g.gema_id}`} className="mk__sym">{g.simbolo}</Link>}
               {typeof g.retorno_gema === 'number' && <span className="num mk__ret">{pct(g.retorno_gema, 1, true)}</span>}
               <span className={`mk__lado mono mk__lado--${g.b1.lado}`}>vs canasta: {LADO_LABEL[g.b1.lado].replace('la gema ', '')}</span>
               <span className={`mk__lado mono mk__lado--${g.b2.lado}`}>vs regla: {LADO_LABEL[g.b2.lado].replace('la gema ', '')}</span>
-              <span className="mono mk__dias">{g.cerrada ? 'cerrada' : `quedan ${dias(g.dias_al_cierre)}`}</span>
+              <span className="mono mk__dias" title={g.retirada ? prosaDeCliente(g.retirada.motivo) || undefined : undefined}>
+                {g.retirada ? `retirada${g.retirada.en ? ` el ${fecha(g.retirada.en)}` : ''} · resultado congelado` : g.cerrada ? 'cerrada' : `quedan ${dias(g.dias_al_cierre)}`}
+              </span>
             </li>
           ))}
         </ul>

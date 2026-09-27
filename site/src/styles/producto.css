@@ -864,3 +864,6 @@
 .a-comb__fuente { margin: 0; color: var(--ceniza-2); font-size: 0.64rem; }
 /* Una cifra retirada dentro de su frase (§20.3): el hueco se dice, sin alarma. */
 .p-nd { color: var(--ceniza); font-style: italic; border-bottom: 1px dotted var(--ceniza-2); cursor: help; }
+/* Una tesis retirada del seguimiento (§17.1): se queda, sin alarma, con su fecha. */
+.p-seg__retirada { color: var(--ceniza); font-size: 0.7rem; letter-spacing: 0.06em; }
+.p-seg__card--retirada { opacity: 0.92; }

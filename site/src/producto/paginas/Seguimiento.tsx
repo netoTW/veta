@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { llano, fuenteDeCliente } from '../../lib/lenguaje'
+import { llano, fuenteDeCliente, prosaDeCliente } from '../../lib/lenguaje'
 import { Cabecera, Exportar } from '../Shell'
 import { Cargando, Puerta, EstadoTesisBadge, TierBadge, Dato, Adv, Avanzado } from '../piezas'
 import { useBenchmark, useGemas, useSeguimiento } from '../../lib/datos'
@@ -174,6 +174,24 @@ const CAB_SEG = {
   lead: 'Cada gema se mide contra su propia condición de invalidación y contra dos benchmarks congelados de antemano. Cuando algo no se puede medir, se dice por qué.',
 }
 
+/** Una tesis retirada del seguimiento (contrato §17.1): no se borra. Resultado congelado el día del retiro. */
+function FichaRetirada({ s }: { s: SeguimientoDiario & { retirada_en: string | null; motivo_retiro?: string } }) {
+  const simbolo = String(s.gema_id).split('-')[0]
+  const motivo = prosaDeCliente(s.motivo_retiro ?? '')
+  return (
+    <article className="p-card p-seg__card p-seg__card--retirada">
+      <header className="p-card__head">
+        <span className="p-card__sym">{simbolo}</span>
+        <span className="mono p-seg__retirada">Retirada del seguimiento{s.retirada_en ? ` el ${fecha(s.retirada_en)}` : ''}</span>
+      </header>
+      <div className="p-datos">
+        <Dato k="Resultado desde la publicación" v={pct(s.retorno_desde_publicacion, 1, true)} sub={<>congelado el día del retiro · {fecha(s.fecha)}</>} />
+      </div>
+      {motivo && <p className="body-muted" style={{ margin: '8px 0 0' }}>{motivo}</p>}
+    </article>
+  )
+}
+
 export function Seguimiento() {
   const { rol } = useRol()
   const abierto = puede(rol, 'seguimiento')
@@ -209,8 +227,10 @@ export function Seguimiento() {
                   <MarcadorAgregado />
                   <MarcadorPersonal />
                   <div className="p-seg">
-                    {ultimo.length === 0 && <div className="p-vacio"><EmptyState kind="vacio" title="Todavía no hay tesis en seguimiento." /></div>}
+                    {ultimo.length === 0 && <div className="p-vacio"><EmptyState kind="vacio" title="Cada gema que publiquemos entra aquí y se mide a diario hasta su cierre." detail="Acierte o no, queda en el historial." /></div>}
                     {ultimo.map((s) => {
+                      // §17.1: una retirada se queda, con su resultado congelado; su informe ya no se publica.
+                      if ((s as { retirada_en?: string | null }).retirada_en !== undefined) return <FichaRetirada key={s.id} s={s as SeguimientoDiario & { retirada_en: string | null; motivo_retiro?: string }} />
                       const g = gs.find((x) => x.id === s.gema_id)
                       if (!g) return <div key={s.id} className="p-vacio"><EmptyState kind="error" title={`Registro sin gema: ${s.gema_id}`} /></div>
                       return <FichaSeguimiento key={s.id} g={g} s={s} />

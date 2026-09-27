@@ -21,7 +21,10 @@ Cada pieza trae **qué haré**, **aceptación** (verificable) y **riesgos**. Los
   en la metodología.
 - **D6:** SYN fuera de todo lo público, incluidas las listas de operaciones.
 
-Se construye cuando el motor publique §24; lo que no dependa de él, antes.
+Se construye cuando el motor publique §24; lo que no dependa de él, antes. **Hecho el 27-sep**
+sin esperar a §24: D1 en el historial (retiradas se quedan con su resultado congelado, lo anterior
+al lanzamiento archivado), el invariante B2.1 (`probar-historial.mjs`), la lista de promesas en la
+auditoría (B1.4) y la petición de §24 y el aviso §17.1 en el contrato.
 
 ### La propuesta original, para contexto
 

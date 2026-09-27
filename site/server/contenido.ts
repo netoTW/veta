@@ -346,25 +346,31 @@ export async function marcarGemasPublicas(): Promise<number> {
 /** Los informes del track record, con la fecha de reclasificación si la hubo. */
 /* Las marcadas cambian sólo en marcarGemasPublicas: se guardan en memoria y se
    olvidan allí, o al minuto. Era una consulta por cada petición del marcador. */
-let marcadasMem: { hasta: number; filas: { informe_id: string; reclasificada_en: string | null }[] } | null = null
+let marcadasMem: { hasta: number; filas: { informe_id: string; desde: string; reclasificada_en: string | null }[] } | null = null
 async function gemasMarcadas(forzar = false) {
   if (!forzar && marcadasMem && marcadasMem.hasta > Date.now()) return marcadasMem.filas
-  const filas = await bd.todos<{ informe_id: string; reclasificada_en: string | null }>('SELECT informe_id, reclasificada_en FROM gema_publica')
+  const filas = await bd.todos<{ informe_id: string; desde: string; reclasificada_en: string | null }>('SELECT informe_id, desde, reclasificada_en FROM gema_publica')
   marcadasMem = { hasta: Date.now() + 60_000, filas }
   return filas
 }
 
-export async function gemasDelSeguimiento(): Promise<{ registro: Registro; reclasificada_en: string | null }[]> {
+export interface EnHistorial { registro: Registro; reclasificada_en: string | null; retirada: { en: string | null; motivo: string } | null }
+
+/* Contrato §17.1 (decisión de Pablo, 27-sep): desde el lanzamiento nada se saca del historial.
+   Una tesis retirada se queda, con su resultado congelado el día del retiro (el motor deja de
+   medirla, así que su última fila de seguimiento es la de ese día), su fecha y su motivo.
+   Lo que el público vio antes del lanzamiento es calibración: se archiva (sigue en admin). */
+export async function gemasDelSeguimiento(): Promise<EnHistorial[]> {
   const marcadas = await gemasMarcadas()
   const porId = new Map(gemasTodas().map((g) => [g.id, g]))
-  const out: { registro: Registro; reclasificada_en: string | null }[] = []
+  const out: EnHistorial[] = []
   for (const m of marcadas) {
     const g = porId.get(m.informe_id)
     if (!g) continue
-    /* §17: una tesis retirada sale del track record y del marcador públicos.
-       No se borra nada: sigue entera en admin y en la base. */
-    if ((g as { estado_seguimiento?: string }).estado_seguimiento === 'retirado') continue
-    out.push({ registro: g, reclasificada_en: m.reclasificada_en })
+    if (String(m.desde ?? '').slice(0, 10) < ENV.LANZAMIENTO) continue
+    const rg = g as { estado_seguimiento?: string; retirada_en?: string; motivo_retiro?: string }
+    const retirada = rg.estado_seguimiento === 'retirado' ? { en: rg.retirada_en ?? null, motivo: rg.motivo_retiro ?? '' } : null
+    out.push({ registro: g, reclasificada_en: m.reclasificada_en, retirada })
   }
   return out
 }
@@ -405,11 +411,13 @@ export async function seguimientoPara(_rol: Rol) {
   const track = await gemasDelSeguimiento()
   const dentro = new Set(track.map((t) => t.registro.id))
   const recl = new Map(track.filter((t) => t.reclasificada_en).map((t) => [t.registro.id, t.reclasificada_en!]))
+  const retiradas = new Map(track.filter((t) => t.retirada).map((t) => [t.registro.id, t.retirada!]))
   const s = seguimientoTodo()
   const marcar = (x: Record<string, unknown>) => {
     const y = conInvalidacionRevisada(x)
     const f = recl.get(String(y.gema_id))
-    return f ? { ...y, reclasificada_en: f } : y
+    const r = retiradas.get(String(y.gema_id))
+    return { ...y, ...(f ? { reclasificada_en: f } : {}), ...(r ? { retirada_en: r.en, motivo_retiro: r.motivo } : {}) }
   }
   return {
     ultimo: s.ultimo.filter((x) => dentro.has(String(x.gema_id))).map(marcar),
@@ -449,6 +457,8 @@ export interface MarcadorGema {
   b1: { lado: Lado; valor: number | null; motivo_codigo: string; motivo_texto: string; fuente: string }
   b2: { lado: Lado; valor: number | null; motivo_codigo: string; motivo_texto: string; fuente: string }
   cerrada: boolean
+  /** §17.1: retirada del seguimiento; el resultado queda congelado ese día. */
+  retirada?: { en: string | null; motivo: string } | null
 }
 
 export function marcadorDe(u: Registro, simbolo: string): MarcadorGema {
@@ -471,13 +481,19 @@ export async function marcadorAgregado() {
   // cuentan cosas distintas y una de las dos miente.
   const track = await gemasDelSeguimiento()
   const porId = new Map(track.map((t) => [t.registro.id, t.registro]))
+  const retiradas = new Map(track.filter((t) => t.retirada).map((t) => [t.registro.id, t.retirada!]))
   /* Por el mismo filtro que la pantalla: si aquí se lee el dato crudo, el
      marcador dice ROTA mientras el seguimiento dice "dato en revisión", y una
      de las dos miente. Es el mismo error que ya costó "1 tesis" contra "2". */
   const filas = seguimientoTodo().ultimo
     .filter((u) => porId.has(String(u.gema_id)))
     .map((u) => conInvalidacionRevisada(u as Record<string, unknown>) as typeof u)
-    .map((u) => marcadorDe(u, String(porId.get(String(u.gema_id))!.simbolo)))
+    .map((u) => {
+      const m = marcadorDe(u, String(porId.get(String(u.gema_id))!.simbolo))
+      const r = retiradas.get(m.gema_id)
+      // Una retirada cuenta como cerrada: su resultado ya no se mueve.
+      return r ? { ...m, cerrada: true, retirada: r } : m
+    })
   const cuenta = (k: 'b1' | 'b2') => ({ gana: filas.filter((f) => f[k].lado === 'gana').length, pierde: filas.filter((f) => f[k].lado === 'pierde').length, sin_medir: filas.filter((f) => f[k].lado === 'sin_medir').length })
   const fecha = filas.map((f) => f.fecha).sort().at(-1) ?? null
   return { fecha, vivas: filas.filter((f) => !f.cerrada).length, cerradas: filas.filter((f) => f.cerrada).length, b1: cuenta('b1'), b2: cuenta('b2'), gemas: filas, definicion: benchmark() }
