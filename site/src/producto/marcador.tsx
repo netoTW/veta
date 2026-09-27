@@ -112,6 +112,8 @@ export function MarcadorAgregado({ visitante = false }: { visitante?: boolean })
   const [abierto, setAbierto] = useState(false)
   if (st.estado !== 'ok') return null
   const m = st.datos
+  // Sin ninguna tesis que contar, no hay marcador: un «0 ganando, 0 perdiendo» no dice nada.
+  if (!m.vivas && !m.cerradas) return null
   const total = m.b1.gana + m.b1.pierde
   const veredicto = m.b1.gana > m.b1.pierde ? 'gana' : m.b1.pierde > m.b1.gana ? 'pierde' : total ? 'parejo' : 'sin_medir'
   const frase = veredicto === 'gana' ? 'VETA va ganando' : veredicto === 'pierde' ? 'VETA va perdiendo' : veredicto === 'parejo' ? 'VETA va parejo' : 'Todavía sin resultado'

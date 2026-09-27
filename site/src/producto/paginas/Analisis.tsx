@@ -76,12 +76,19 @@ export function Analisis() {
         return (
           <>
             <Cabecera
-              eyebrow={<>Análisis diario · {orden.length} {orden.length === 1 ? 'pieza' : 'piezas'}</>}
+              // Sin piezas no se cuenta «0»: se dice qué viene (lo que no hay, no se enseña).
+              eyebrow={orden.length ? <>Análisis diario · {orden.length} {orden.length === 1 ? 'pieza' : 'piezas'}</> : <>Análisis diario</>}
               titulo={<>Una moneda por día, con su lectura.</>}
               lead="Cada día tomamos una moneda y la analizamos a fondo: qué es, cómo factura, qué mueve su precio y qué tendría que pasar para que cambie la historia."
             />
             <div className="shell p-diario">
-              {!ultimo && <div className="p-vacio"><EmptyState kind="vacio" title="Todavía no hay análisis publicados." /></div>}
+              {!ultimo && (
+                <div className="p-vacio">
+                  <EmptyState kind="vacio" title="Los primeros análisis con la metodología nueva se publican pronto."
+                    detail="Cada uno queda aquí con su fecha y la fuente de cada número."
+                    action={<Link to="/metodologia" className="btn btn--ghost">Cómo trabajamos</Link>} />
+                </div>
+              )}
               {ultimo && (
                 <section className="p-diario__dia" aria-label="Último análisis">
                   <div className="p-grupo__head">

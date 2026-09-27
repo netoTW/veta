@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { EmptyState } from '../../ui/EmptyState'
 import { Cabecera, Exportar } from '../Shell'
 import { Cargando, Puerta, TierBadge, Adv, Advertencias } from '../piezas'
 import { Cifras, Prosa, RiesgoLlano } from '../cifras'
@@ -116,7 +117,7 @@ export function Gemas() {
         return (
           <>
             <Cabecera
-              eyebrow={<>Gemas · {gemas.length} publicadas</>}
+              eyebrow={gemas.length ? <>Gemas · {gemas.length} publicadas</> : <>Gemas</>}
               titulo={<>Lo que encontramos.</>}
               lead="Cada gema es un informe con tesis, dos referencias, escenarios y riesgo. Se agrupan por tier de riesgo; el tier no es una recomendación, es cuántas condiciones incumple."
               acciones={<Exportar que="gemas" />}
@@ -124,7 +125,15 @@ export function Gemas() {
             <div className="shell">
               {!puede(rol, 'gemas.informe') && <MarcadorAgregado visitante />}
               <Anticipadas lista={anticipadas} />
-              {porTier.map(({ tier, items }) => (
+              {/* Sin ninguna gema, un solo mensaje que dice qué viene, no tres grupos vacíos. */}
+              {!gemas.length && !anticipadas.length && (
+                <div className="p-vacio">
+                  <EmptyState kind="vacio" title="Las primeras gemas con la metodología nueva se publican pronto."
+                    detail="Cada gema que publiquemos queda en el historial, acierte o no."
+                    action={<Link to="/metodologia" className="btn btn--ghost">Cómo trabajamos</Link>} />
+                </div>
+              )}
+              {(gemas.length > 0 || anticipadas.length > 0) && porTier.map(({ tier, items }) => (
                 <section key={tier} className="p-grupo" aria-label={`Tier ${tier}`}>
                   <div className="p-grupo__head">
                     <TierBadge tier={tier} size={26} />
