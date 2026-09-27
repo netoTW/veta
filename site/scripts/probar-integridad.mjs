@@ -29,7 +29,7 @@ async function pagina(cookie) {
   if (cookie) await p.setCookie(...cookie.split('; ').map((c) => ({ name: c.slice(0, c.indexOf('=')), value: c.slice(c.indexOf('=') + 1), url: f.base })))
   return p
 }
-const PROHIBIDAS = /\b(ausentes?|parcial|retirad[oa]s?|corregid[oa]s?|no disponibles?)\b/i
+const PROHIBIDAS = /\b(ausentes?|parcial|retirad[oa]s?|corregid[oa]s?|(?<!dato )no disponibles?)\b/i
 
 const cli = await pagina(f.cuentas.base)
 if (tres) {
@@ -54,7 +54,7 @@ if (tres) {
   await new Promise((x) => setTimeout(x, 600))
   const tabla = await adm.evaluate(() => document.body.innerText)
   if (OUT) await adm.screenshot({ path: `${OUT}/admin-verificador.png` })
-  ok(/integridad · retiradas \d+/i.test(tabla) && /\bretirada\b/i.test(tabla), 'A6.4 admin: tabla de integridad con retiradas y motivo interno')
+  ok(/integridad v\d+ · retiradas \d+/i.test(tabla) && /\bretirada\b/i.test(tabla), 'A6.4 admin: tabla de integridad con retiradas y motivo interno')
 }
 if (limpio) {
   await cli.goto(`${f.base}/analisis/${limpio.id}`, { waitUntil: 'networkidle0' }); await new Promise((x) => setTimeout(x, 1200))

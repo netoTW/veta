@@ -8,7 +8,7 @@
      5. matriz de acceso en el servidor
      6. tenencia declarada fuera de todo lo público
      7. barrido de rutas: 5 roles × 2 anchos
-     8. prueba de contrato (si existe)
+     8. prueba de contrato e integridad v1 y v2 (contrato §20.2 y §20.3), sobre las fixtures
 
    Uso: npm run invariantes   Sale con 0 sólo si pasan todos. */
 import { spawn, spawnSync } from 'node:child_process'
@@ -62,6 +62,8 @@ if (ok) {
     && paso('barrido', 'node', ['scripts/barrido.mjs'])
   if (ok) {
     if (existsSync('scripts/probar-contrato.mjs')) ok = paso('prueba de contrato', 'node', ['scripts/probar-contrato.mjs'])
+      && paso('integridad v1', 'node', ['scripts/probar-integridad.mjs'])
+      && paso('integridad v2', 'node', ['scripts/probar-integridad-v2.mjs'])
     else { console.log('\n━━ prueba de contrato ━━\n  aún no existe: se salta con aviso'); resultados.push(['prueba de contrato', 'saltada', 0]) }
   }
 }

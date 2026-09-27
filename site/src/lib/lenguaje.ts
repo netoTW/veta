@@ -392,5 +392,11 @@ export function numerosDeProsa(t: string): string {
     .replace(/(\d)[ \u00A0]USD\b/g, `$1${FINO}USD`)
 }
 
-/** La marca ⟦sv:i⟧ (contrato §20.2) nunca sale cruda: donde no se convierte en nota, se quita. */
-export const prosaDeCliente = (t?: string | null): string => numerosDeProsa(limpiarProsa(llano((t ?? '').replace(/⟦sv:\d+⟧/g, ''))))
+/** Las marcas nunca salen crudas. ⟦sv:i⟧ (§20.2), donde no se convierte en nota, se quita.
+    ⟦nd:<cifra_id>⟧ (§20.3, integridad v2) es una cifra retirada: se dice «dato no disponible».
+    Va antes que los filtros: el cifra_id («c:dl_revenue_holders_30d») lleva un nombre de campo
+    y el filtro de identificadores de código se habría llevado la frase entera. */
+export const MARCA_ND = /⟦nd:([^⟧]+)⟧/g
+export const TEXTO_ND = 'dato no disponible'
+export const prosaDeCliente = (t?: string | null): string =>
+  numerosDeProsa(limpiarProsa(llano((t ?? '').replace(/⟦sv:\d+⟧/g, '').replace(MARCA_ND, TEXTO_ND))))

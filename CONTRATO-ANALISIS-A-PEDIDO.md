@@ -1307,6 +1307,49 @@ Cada registro `gema`/`analisis` trae:
 - El detalle interno de cada corrección (`correcciones`) queda en `verificador.json` del informe,
   no en el registro.
 
+### 20.3 Integridad por cifra, versión 2 (2026-09-27) — AVISO A VETA · PENDIENTE DE CONFIRMACIÓN
+
+Escrito por el motor para el rediseño de compuertas aprobado el 27-sep (cifras con identidad y
+castigo proporcional). **El motor no emite esta forma hasta que VETA la confirme.** Los registros
+anteriores quedan con la forma de §20.2, marcados, sin tocarlos.
+
+**Qué cambia para el cliente.** Hoy, cuando una cifra no se puede confirmar, se retira la frase
+entera, y si era de la tesis, la tesis. En la versión 2 se retira sólo la cifra: la frase queda y
+en el lugar del número va una marca. La tesis cae sólo si una cifra que la sostiene resulta
+incorrecta con la fuente comprobada y, con el dato correcto, la lectura no se sostiene.
+
+```json
+"integridad": {
+  "version": 2,
+  "no_disponibles": [{"cifra_id": "x:3", "que": "votos de cloture en el Senado",
+                      "motivo_cliente": "no pudimos confirmar este dato en su fuente original, así que no lo usamos"}],
+  "retiradas":      [{"cifra_id": "x:3", "seccion": "tesis_oportunidad", "veredicto": "no_verificable",
+                      "motivo_interno": "…"}],
+  "reconciliadas":  [{"cifra_id": "c:dl_revenue_holders_30d", "valor_anterior": 3521905.94,
+                      "valor_fuente": 7900000, "fuente_url": "https://…"}],
+  "sin_verificar":  [{"que": "calendario de desbloqueos", "fuente": "obtenido de docs.x.io, sin verificar",
+                      "seccion": "tokenomics", "cifra": "15 %"}]
+}
+```
+
+- **Marca `⟦nd:<cifra_id>⟧` en el texto de cliente.** Aparece donde había una cifra retirada. La
+  web la pinta como «dato no disponible» y, si quiere, muestra el `motivo_cliente` de la entrada
+  de `no_disponibles` con el mismo `cifra_id`. Misma mecánica que `⟦sv:<índice>⟧`, que no cambia.
+- **`cifra_id`** identifica la cifra: `c:<campo del paquete>` o `x:<n>` para una cifra externa
+  (con URL y cita). La web no necesita interpretarlo; sólo sirve para enlazar la marca con su
+  entrada.
+- **`retiradas`** sigue siendo sólo de admin, pero ya no trae frases: trae la cifra, la sección y
+  el veredicto del Verificador (`incorrecta`, `no_verificable`).
+- **`reconciliadas`** (nuevo, sólo admin): cifras del paquete que se reemplazaron por la de la
+  fuente comprobada, con los dos valores. El texto de cliente ya trae el valor corregido.
+- **Sin cambios:** `sin_verificar` y `⟦sv⟧`, `motivo_sin_tesis_cliente`, `tesis: null` cuando no
+  hay tesis, los estados de §20.1 y los textos ya formateados (los números llegan escritos; la
+  web no formatea).
+- **Cómo distinguir la versión:** `integridad.version == 2`. Sin `version`, es la forma de §20.2.
+
+Qué le pedimos a VETA: confirmar que puede pintar `⟦nd:<cifra_id>⟧` y leer `integridad.version`.
+Hasta esa confirmación el motor sigue con §20.2.
+
 ## 21. Ficha determinista de cualquier moneda: `POST /ficha` (2026-09-26) — AVISO A VETA
 
 La foto de una moneda en cinco bloques, sin agentes, sin tesis y sin veredicto: lo que «Analiza tu
@@ -1658,3 +1701,28 @@ Lo que la web hizo con cada punto, y lo que le queda pidiendo al motor.
    (4 en el servidor): la prueba de contrato corre sobre ellos. «Listo» (§E) pide los 20.
 6. **`catalizador` e `invalidacion` de `escenarios[]`** llegaban sin pasar por el filtro de
    lenguaje de la web; ya pasan, pero conviene que salgan limpios de origen.
+
+## A.20.3 Acuse de §20.3 · integridad v2 (27-sep-2026) — CONFIRMADO POR VETA
+
+**VETA está lista para la versión 2.** Desplegado en producción y probado con las dos formas a la
+vez (los registros sin `version` siguen con §20.2, sin tocarlos):
+
+- **`integridad.version`** se lee: `2` activa lo de abajo; sin `version`, §20.2 como hasta ahora.
+- **`⟦nd:<cifra_id>⟧`** se pinta «dato no disponible» dentro de su frase, en tono neutro, con el
+  `motivo_cliente` de la entrada de `no_disponibles` del mismo `cifra_id` al pasar el ratón. Va en
+  la lectura, los hallazgos, los riesgos, los catalizadores y cualquier prosa: donde la web no
+  pueda poner la nota, queda el texto «dato no disponible». Una marca nunca sale cruda, y el
+  `cifra_id` (aunque lleve un nombre de campo) no hace caer la frase.
+- **La línea final** («No entra en este informe: …») nombra sólo los `no_disponibles` cuyo
+  `cifra_id` no aparece marcado en la prosa: lo que ya se dijo en su frase no se repite.
+- **`retiradas`** (con `cifra_id` y `veredicto`) y **`reconciliadas`** no salen del servidor hacia
+  quien no es admin; en la bandeja, admin las ve con su versión, veredicto y los dos valores.
+- **Sin cambios:** `sin_verificar` y `⟦sv⟧`, `motivo_sin_tesis_cliente`, estados de §20.1.
+
+Pruebas que lo sostienen (dentro de los invariantes de cada despliegue):
+`scripts/probar-integridad-v2.mjs` (una copia v2 del registro de las tres integridades, con
+marcas en lectura, riesgos y un catalizador, servida junto a la v1: 9/9) y
+`scripts/probar-integridad.mjs` (v1: 9/9), más las pruebas unitarias de las marcas.
+
+Una petición: que `no_disponibles[].que` llegue ya en lenguaje de cliente (§A.20, punto 1): con
+la v2 lo lee el cliente en la línea final para lo no marcado.

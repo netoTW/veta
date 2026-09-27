@@ -11,7 +11,8 @@ const PROHIBIDAS = /\b(escéptico|verificador|redactor|umbral|observable|criteri
    Es la familia que sacó "revenue_holders_30d" y "binance:spot/klines · equal-weight". */
 /* §6 (A6.3): lo que no hay no se enseña, y lo que se corrigió no se le cuenta al cliente.
    Lo único que puede decir un informe es «sin verificar» y «No entra en este informe: …». */
-const INCOMPLETO = /\b(ausentes?|parcial(es)?|retirad[oa]s?|corregid[oa]s?|no disponibles?)\b/gi
+// «dato no disponible» sí puede salir: es el hueco de una cifra retirada dentro de su frase (§20.3).
+const INCOMPLETO = /\b(ausentes?|parcial(es)?|retirad[oa]s?|corregid[oa]s?|(?<!dato )no disponibles?)\b/gi
 const MAQUINA = /\b[a-z]+(?:_[a-z0-9]+){1,}\b|\b(?:binance|defillama|coingecko|okx|arkham):[\w\/]+|dataType=|equal-weight|long-only|https?:\/\/[^\s)]+/g
 /* Lo que sí puede aparecer: palabras compuestas nuestras y direcciones públicas. */
 const PERDONADAS = /^(veta_|utm_|no_|sin_)|^(e_?mail|on_?chain)$|vetalab\.io|bls\.gov|federalreserve\.gov|whop\.com/i

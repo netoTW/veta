@@ -31,3 +31,32 @@ test('un nombre de dato del motor sale en llano', () => {
   const l = lineasDeIntegridad({ fuentes: [], integridad: { no_disponibles: [{ que: 'TVL ethena-usde y Δ30d' }] } })
   assert.equal(l.noDisponibles[0], 'fondos bloqueados y variación a 30 días')
 })
+
+/* ---------- §20.3 · integridad v2 ---------- */
+import { prosaDeCliente } from '../../src/lib/lenguaje.ts'
+
+test('v2: ⟦nd⟧ se lee «dato no disponible» y la frase no se cae aunque el cifra_id lleve un campo', () => {
+  assert.equal(prosaDeCliente('Los holders cobran ⟦nd:c:dl_revenue_holders_30d⟧ al mes.'), 'Los holders cobran dato no disponible al mes.')
+  assert.equal(prosaDeCliente('El Senado tiene ⟦nd:x:3⟧ votos de cloture.'), 'El Senado tiene dato no disponible votos de cloture.')
+})
+test('v2: una marca nunca sale cruda', () => {
+  assert.doesNotMatch(prosaDeCliente('A ⟦nd:x:1⟧ y B ⟦sv:0⟧.'), /⟦|⟧|x:1|sv:/)
+})
+test('v2: partir distingue nota, hueco y texto', () => {
+  assert.deepEqual(partirSinVerificar('cae ⟦nd:x:3⟧ y sube 15 %⟦sv:0⟧.'), [{ texto: 'cae ' }, { nd: 'x:3' }, { texto: ' y sube 15 %' }, { nota: 0 }, { texto: '.' }])
+})
+test('v2: lo que ya dice «dato no disponible» en su frase no se repite en la línea final', () => {
+  const r = {
+    fuentes: [],
+    informe_cliente: { lectura: { parrafos: ['El Senado tiene ⟦nd:x:3⟧ votos.'] } },
+    integridad: { version: 2, no_disponibles: [
+      { cifra_id: 'x:3', que: 'votos de cloture en el Senado', motivo_cliente: 'no pudimos confirmarlo' },
+      { cifra_id: 'c:dl_tvl_usd', que: 'fondos depositados', motivo_cliente: 'la fuente no respondió' },
+    ] },
+  }
+  assert.deepEqual(lineasDeIntegridad(r as never).noDisponibles, ['fondos depositados'])
+})
+test('v1 sigue igual: sin version, todo va a la línea final', () => {
+  const r = { fuentes: [], informe_cliente: { lectura: { parrafos: ['nada'] } }, integridad: { no_disponibles: [{ que: 'votos de cloture' }] } }
+  assert.deepEqual(lineasDeIntegridad(r as never).noDisponibles, ['votos de cloture'])
+})

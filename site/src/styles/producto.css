@@ -862,3 +862,5 @@
 .a-comb__kv dt { color: var(--ceniza); } .a-comb__kv dd { margin: 0; color: var(--hueso); }
 .a-comb__lectura { margin: 0; color: var(--ceniza); font-size: 0.86rem; line-height: 1.5; max-width: 80ch; }
 .a-comb__fuente { margin: 0; color: var(--ceniza-2); font-size: 0.64rem; }
+/* Una cifra retirada dentro de su frase (§20.3): el hueco se dice, sin alarma. */
+.p-nd { color: var(--ceniza); font-style: italic; border-bottom: 1px dotted var(--ceniza-2); cursor: help; }

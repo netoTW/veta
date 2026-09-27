@@ -60,6 +60,10 @@ está disponible se nombra en **una sola línea discreta al final** del bloque o
 mencionan al cliente**: sólo las ve admin. Nunca una caja vacía, una fila con hueco ni un chip de
 «sin dato».
 
+**Ampliación (27-sep-2026, contrato §20.3):** cuando el motor retira una cifra y deja la frase, en
+su lugar se lee «dato no disponible» dentro de la misma frase, en tono neutro, con el motivo al
+pasar el ratón. Esa cifra no se repite en la línea final.
+
 En **admin** sí se usa el vocabulario real: ahí trabaja quien conoce el sistema.
 
 ## Método de trabajo

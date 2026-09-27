@@ -249,9 +249,13 @@ function Esceptico({ inf }: { inf: Informe }) {
 
 /* ---------- verificador ---------- */
 interface IntegridadAdmin {
-  retiradas?: { que: string; seccion?: string; cifra?: string; motivo_interno?: string }[]
+  version?: number
+  /** v1: la frase retirada (`que`, `cifra`); v2 (§20.3): la cifra (`cifra_id`) y el `veredicto`. */
+  retiradas?: { que?: string; cifra_id?: string; veredicto?: string; seccion?: string; cifra?: string; motivo_interno?: string }[]
+  /** v2: cifras del paquete reemplazadas por la de la fuente comprobada. */
+  reconciliadas?: { cifra_id: string; valor_anterior?: number | string; valor_fuente?: number | string; fuente_url?: string }[]
   sin_verificar?: { que: string; fuente: string; seccion?: string; cifra?: string }[]
-  no_disponibles?: { que: string; motivo_cliente?: string }[]
+  no_disponibles?: { que: string; motivo_cliente?: string; cifra_id?: string }[]
 }
 
 function Verificador({ inf, bruto }: { inf: Informe; bruto: Record<string, unknown> | null }) {
@@ -260,15 +264,16 @@ function Verificador({ inf, bruto }: { inf: Informe; bruto: Record<string, unkno
   const ig = (inf as unknown as { integridad?: IntegridadAdmin | null }).integridad ?? null
   return (
     <section className="a-sec">
-      {ig && (ig.retiradas?.length || ig.sin_verificar?.length || ig.no_disponibles?.length) ? (
+      {ig && (ig.retiradas?.length || ig.reconciliadas?.length || ig.sin_verificar?.length || ig.no_disponibles?.length) ? (
         <div className="a-sec__grupo" style={{ marginBottom: 16 }}>
-          <span className="mono a-sec__k">integridad · retiradas {ig.retiradas?.length ?? 0} · sin verificar {ig.sin_verificar?.length ?? 0} · no disponibles {ig.no_disponibles?.length ?? 0}</span>
+          <span className="mono a-sec__k">integridad v{ig.version ?? 1} · retiradas {ig.retiradas?.length ?? 0}{ig.reconciliadas ? ` · reconciliadas ${ig.reconciliadas.length}` : ''} · sin verificar {ig.sin_verificar?.length ?? 0} · no disponibles {ig.no_disponibles?.length ?? 0}</span>
           <div className="p-tabla-wrap"><table className="p-tabla">
             <thead><tr><th>Tipo</th><th>Qué</th><th>Sección</th><th>Cifra</th><th>Motivo</th></tr></thead>
             <tbody>
-              {(ig.retiradas ?? []).map((r, i) => <tr key={`r${i}`} className="is-ausente"><td className="mono">retirada</td><td>{r.que}</td><td className="mono">{r.seccion}</td><td>{r.cifra}</td><td>{r.motivo_interno}</td></tr>)}
+              {(ig.retiradas ?? []).map((r, i) => <tr key={`r${i}`} className="is-ausente"><td className="mono">retirada{r.veredicto ? ` · ${r.veredicto}` : ''}</td><td>{r.que ?? <span className="mono">{r.cifra_id}</span>}</td><td className="mono">{r.seccion}</td><td>{r.cifra ?? ''}</td><td>{r.motivo_interno}</td></tr>)}
+              {(ig.reconciliadas ?? []).map((r, i) => <tr key={`c${i}`}><td className="mono">reconciliada</td><td className="mono">{r.cifra_id}</td><td /><td>{String(r.valor_anterior ?? '')} → {String(r.valor_fuente ?? '')}</td><td>{r.fuente_url && /^https?:/.test(r.fuente_url) ? <a href={r.fuente_url} target="_blank" rel="noreferrer">{new URL(r.fuente_url).hostname}</a> : r.fuente_url}</td></tr>)}
               {(ig.sin_verificar ?? []).map((r, i) => <tr key={`s${i}`}><td className="mono">sin verificar</td><td>{r.que}</td><td className="mono">{r.seccion}</td><td>{r.cifra}</td><td>{r.fuente}</td></tr>)}
-              {(ig.no_disponibles ?? []).map((r, i) => <tr key={`n${i}`}><td className="mono">no disponible</td><td>{r.que}</td><td /><td /><td>{r.motivo_cliente}</td></tr>)}
+              {(ig.no_disponibles ?? []).map((r, i) => <tr key={`n${i}`}><td className="mono">no disponible</td><td>{r.que}{r.cifra_id ? <span className="mono"> · {r.cifra_id}</span> : null}</td><td /><td /><td>{r.motivo_cliente}</td></tr>)}
             </tbody>
           </table></div>
         </div>

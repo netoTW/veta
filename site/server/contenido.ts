@@ -203,14 +203,15 @@ export async function anticipadasPara(rol: Rol) {
 async function filtrar<T>(xs: T[], f: (x: T) => Promise<boolean>) { const ok = await Promise.all(xs.map(f)); return xs.filter((_, i) => ok[i]) }
 const conPublicacion = async (r: Registro, rol: Rol) => (rol === 'admin' ? { ...r, publicacion: await estadoPublicacion(r) } : paraCliente(r))
 
-/* Contrato §20.2: lo que el control de calidad corrigió o quitó (`integridad.retiradas`)
+/* Contrato §20.2 y §20.3: lo que el control de calidad corrigió o quitó (`integridad.retiradas`, `reconciliadas`)
    es de la mesa. No se esconde en pantalla: no sale del servidor hacia quien no es admin. */
 export function paraCliente(r: Registro): Registro {
   let out: Registro = r
-  const ig = r.integridad as { retiradas?: unknown } | undefined
-  if (ig && 'retiradas' in ig) {
-    const { retiradas: _fuera, ...resto } = ig as Record<string, unknown>
-    void _fuera
+  // v2 (§20.3) añade `reconciliadas`, también sólo de admin: el cliente ya lee el valor corregido.
+  const ig = r.integridad as Record<string, unknown> | undefined
+  if (ig && ('retiradas' in ig || 'reconciliadas' in ig)) {
+    const { retiradas: _r, reconciliadas: _c, ...resto } = ig
+    void _r; void _c
     out = { ...out, integridad: resto }
   }
   /* §10: el combustible (posiciones apalancadas) es una lectura de la mesa: no calibrada,
