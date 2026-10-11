@@ -1,4 +1,4 @@
-# Traspaso — estado al 26-sep-2026
+# Traspaso — estado al 11-oct-2026 (fase 6a: el panel de Mugiwara en /luffy)
 
 Para retomar hace falta leer **tres archivos y nada más**: `CLAUDE.md` (las reglas
 que mandan sobre todo lo demás), `CONTRATO-ANALISIS-A-PEDIDO.md` (la interfaz con
@@ -49,6 +49,7 @@ bloquea el trabajo esperando.
 |---|---|
 | Web (mía) | `~/Documents/VETA` · el código en `site/` |
 | Motor (ajeno) | `~/Documents/Crypto sistem/gem-pipeline` |
+| Mugiwara (ajeno; su contrato con la web es `CONTRATO-PANEL.md`) | `~/Documents/Mugiwara` |
 | Datos del motor espejados | `~/Documents/VETA/datos-motor/base_contenido` |
 | Archivo de calibración | `~/Documents/VETA/archivo/` (fuera de git) |
 
@@ -63,6 +64,7 @@ bloquea el trabajo esperando.
 | `/opt/veta/archivo/` | lo archivado de la calibración · 87 MB |
 | `/opt/veta/gem-pipeline/base_contenido/publicados-web.json` | lo publicado, para el motor (contrato §22) · lo escribe la web |
 | `/opt/veta/gem-pipeline/config/conflictos_interes.yaml` | monedas con tenencia declarada · la web lo lee |
+| `/opt/mugiwara` · `mugiwara-api` en `127.0.0.1:8800` | Mugiwara (Luffy) · la web llega por el puente `/api/luffy/*` con `MUGIWARA_API_TOKEN` |
 
 ### Servicios y temporizadores
 `veta-web` (la API, siempre activa) · `veta-servicio` (el motor por HTTP, :8787) ·
@@ -80,8 +82,20 @@ firma.
 
 ## 3. Qué está hecho
 
-Todo desplegado y verificado en producción. Lo del 26-sep (detalle y evidencia en
-`INFORME-LANZAMIENTO.md`):
+**Fase 6a (11-oct): el panel de Mugiwara en `/luffy`** (`ESTADO-WEB.md` §7ter). Puente
+`/api/luffy/*` sólo para el admin real (el resto, 404), SSE sin buffer, chat con los hilos de
+Telegram, gráficos interactivos dentro del mensaje (lightweight-charts 5 con paneles
+sincronizados y primitivas propias; ECharts para distribuciones y comparación), tarjetas de
+orden con Confirmar/Cambiar/Cancelar, imágenes adjuntas, laboratorio con catálogo,
+benchmarks, transformaciones y posiciones encima, tableros; todo a 390 px. Simulador del
+contrato (`server/luffySimulado.ts`) para desarrollo e invariantes; prueba de Playwright
+(`scripts/probar-luffy.mjs`) con el caso guiado de STONK dentro de `npm run invariantes`.
+**Lo que depende de Mugiwara:** el servidor todavía corre un `mugiwara-api` anterior a la 6a
+(sin `/graficos/datos`, `/tableros`, `spec_id` en los mensajes); cuando esa sesión despliegue,
+el panel funciona sin tocar nada aquí. **Lo que depende de Pablo:** `MUGIWARA_API_TOKEN` en el
+`.env` de `veta-web` y recargar el Caddyfile nuevo (§8).
+
+Lo del 26-sep (detalle y evidencia en `INFORME-LANZAMIENTO.md`):
 
 - **Invariantes y despliegue** (`npm run invariantes`, `scripts/desplegar.sh`): tipos,
   lint, navegaciones automáticas, pruebas unitarias, lenguaje, matriz de acceso en el
@@ -109,6 +123,10 @@ límite de error, archivado de la calibración.
 ## 4. Pendientes, por prioridad
 
 ### Alta
+0. **Encender Luffy en producción** (fase 6a): `MUGIWARA_API_TOKEN` en `/opt/veta-web/site/.env`,
+   copiar `despliegue/Caddyfile` a `/etc/caddy/Caddyfile` y recargar Caddy; esperar a que la
+   sesión de Mugiwara despliegue su backend de la 6a. Después: capturas con datos reales y
+   probar el SSE de punta a punta en `www.vetalab.io/luffy`.
 1. **El banco de 20 informes del motor** en `fixtures-contrato/`: sin él, «listo»
    (§13 de la especificación) no está completo. Es del motor.
 2. **El respaldo fuera del servidor no ha funcionado nunca** (`veta-backup` en
@@ -147,6 +165,9 @@ límite de error, archivado de la calibración.
 | **El reloj de un pedido es del motor** | La web cerraba pedidos que el motor todavía iba a entregar. Ahora sólo avisa a admin a los 30 min. |
 | **La tenencia declarada se filtra a la salida de toda la API** | Un filtro por ruta se olvida en la ruta nueva: la watchlist le enseñaba SYN a cualquier Base. |
 | **Lo de admin no sale del servidor** (retiradas, combustible, solo_admin) | Esconderlo en pantalla no basta: viajaba en la API. |
+| **`/luffy` responde 404 a quien no es admin, no 403, y sin nombrar nada** | Es el sistema personal de Pablo: para un socio no existe. Un 403 ya cuenta que hay algo. La puerta es doble: el servidor (rol real, sin impersonar) y la pantalla. |
+| **El eje 2 de los gráficos no se dibuja** | Dos ejes a izquierda y derecha se pisaban con las leyendas; la leyenda viva ya dice el valor del benchmark. |
+| **Sin token, Luffy es un simulador con la forma exacta del contrato** | Los invariantes y las capturas no pueden depender de un túnel SSH ni de gastar dinero en un turno real. |
 | **Desde el lanzamiento (`VETA_LANZAMIENTO`, 27-sep) nada se saca del historial** | Contrato §17.1, D1 de Pablo. Una retirada se queda con su resultado congelado; lo anterior es calibración y se archiva. |
 
 ---
@@ -206,7 +227,7 @@ cd ~/Documents/VETA/site
 git status                       # limpio: los invariantes se corren sobre lo que se despliega
 scripts/desplegar.sh "un texto nuevo que tenga que aparecer en el front"
 ```
-Corre `npm run invariantes` (~10 min), marca y empuja, despliega la API (fetch, reset,
+Corre `npm run invariantes` (~12 min; incluye la prueba de Playwright de /luffy), marca y empuja, despliega la API (fetch, reset,
 reinicio, espera a que responda) y espera a que Vercel sirva la build y el texto.
 Si algo falla, se para y no empuja nada.
 

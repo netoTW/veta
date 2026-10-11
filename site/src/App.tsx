@@ -52,6 +52,11 @@ const Privacidad = lazy(() => import('./publico/Legales').then((m) => ({ default
 const Contacto = lazy(() => import('./publico/Legales').then((m) => ({ default: m.Contacto })))
 const ContenidoAdmin = lazy(() => import('./producto/admin/Contenido').then((m) => ({ default: m.Contenido })))
 const Acciones = lazy(() => import('./producto/admin/Acciones').then((m) => ({ default: m.Acciones })))
+/* Luffy: el panel privado de Mugiwara. Sólo admin real; para el resto no existe. */
+const LuffyShell = lazy(() => import('./luffy/LuffyShell').then((m) => ({ default: m.LuffyShell })))
+const LuffyChat = lazy(() => import('./luffy/Chat').then((m) => ({ default: m.Chat })))
+const LuffyLaboratorio = lazy(() => import('./luffy/Laboratorio').then((m) => ({ default: m.Laboratorio })))
+const LuffyTableros = lazy(() => import('./luffy/Tableros').then((m) => ({ default: m.Tableros })))
 
 /* La guía de estilo, fuera de la portada. */
 function GuiaVisual() {
@@ -96,6 +101,14 @@ export default function App() {
           <Route path="/registro" element={<Suspense fallback={null}><Registro /></Suspense>} />
           <Route path="/recuperar" element={<Suspense fallback={null}><Recuperar /></Suspense>} />
           <Route path="/restablecer" element={<Suspense fallback={null}><Restablecer /></Suspense>} />
+          <Route path="/luffy" element={<Suspense fallback={null}><LuffyShell /></Suspense>}>
+            <Route index element={<LuffyChat />} />
+            <Route path="h/:hiloId" element={<LuffyChat />} />
+            <Route path="laboratorio" element={<LuffyLaboratorio />} />
+            <Route path="laboratorio/t/:tableroId" element={<LuffyLaboratorio />} />
+            <Route path="laboratorio/:specId" element={<LuffyLaboratorio />} />
+            <Route path="tableros" element={<LuffyTableros />} />
+          </Route>
           <Route element={<Producto />}>
             <Route path="/gemas" element={<Gemas />} />
             <Route path="/gemas/:id" element={<GemaDetalle />} />

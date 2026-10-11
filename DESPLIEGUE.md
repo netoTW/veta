@@ -88,6 +88,7 @@ Entrás como siempre: `ssh -i ~/.ssh/veta_vps root@144.91.123.49`.
    | `VETA_ADMIN_EMAIL` / `VETA_ADMIN_PASSWORD` | tu cuenta admin (se crea al primer arranque; la contraseña se puede cambiar después desde la web) |
    | `VETA_OPERACION_TOKEN` | el de `/opt/veta/.env` (`grep VETA_OPERACION_TOKEN /opt/veta/.env`) |
    | `VETA_SMTP_URL` / `VETA_CORREO_DESDE` | los de Resend (`smtps://resend:re_xxx@smtp.resend.com:465`) |
+   | `MUGIWARA_API_TOKEN` | el de `/opt/mugiwara/.env` (`grep MUGIWARA_API_TOKEN /opt/mugiwara/.env`): abre el panel `/luffy` contra `mugiwara-api` en `127.0.0.1:8800`. Sin él, `/luffy` responde el simulador. |
 
    El resto ya viene puesto (rutas del motor, `VETA_SYNC_MODO=local`, cupos, tope).
    **`NODE_ENV` no va en el .env**: lo pone la unidad de systemd.
@@ -113,6 +114,11 @@ Qué hace la API en el servidor, para que no sorprenda:
 - Escribe en `base_contenido/publicacion.jsonl` y `cola-web.jsonl` (por eso el usuario `veta`
   tiene permiso de escritura ahí).
 - Escucha en `127.0.0.1:8790`; sólo Caddy lo expone, en `https://api.<dominio>`.
+- Reenvía `/api/luffy/*` a `mugiwara-api` (`127.0.0.1:8800`) con el token de servicio, sólo
+  para el admin real. El chat es un stream: el `Caddyfile` de `despliegue/` no comprime
+  `text/event-stream` y vacía al instante. Si el Caddyfile del servidor es anterior a la fase
+  6a, hay que volver a copiarlo y recargar: `cp /opt/veta-web/site/despliegue/Caddyfile
+  /etc/caddy/Caddyfile && systemctl reload caddy`.
 
 ---
 

@@ -1,8 +1,27 @@
 # /etc/caddy/Caddyfile — HTTPS automático (Let's Encrypt) para la API.
 # Sólo la API va por acá; la web estática vive en Vercel y reescribe /api/* hacia este host.
+#
+# El chat de Luffy (/api/luffy/chat) es un stream de eventos (text/event-stream): tiene que
+# pasar sin buffer. La compresión se limita a los tipos de siempre (un stream comprimido
+# espera al bloque entero) y el proxy vacía al instante lo que recibe.
 api.{$VETA_DOMINIO} {
-	encode zstd gzip
-	reverse_proxy 127.0.0.1:8790
+	encode zstd gzip {
+		match {
+			header Content-Type application/json*
+			header Content-Type text/html*
+			header Content-Type text/plain*
+			header Content-Type text/css*
+			header Content-Type application/javascript*
+			header Content-Type image/svg+xml*
+		}
+	}
+	reverse_proxy 127.0.0.1:8790 {
+		flush_interval -1
+		transport http {
+			read_timeout 0
+			write_timeout 0
+		}
+	}
 	header {
 		X-Content-Type-Options nosniff
 		Referrer-Policy strict-origin-when-cross-origin

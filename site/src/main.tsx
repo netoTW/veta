@@ -9,6 +9,7 @@ import './styles/analizar.css'
 import './styles/auth.css'
 import './styles/admin.css'
 import './styles/charts.css'
+import './styles/luffy.css'
 import App from './App'
 
 /*

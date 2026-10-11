@@ -51,6 +51,10 @@ site/
                      formato.ts, lenguaje.ts (llano), contradicciones.ts, acceso.ts
     styles/          base, sistema, producto, auth, admin, charts, votacion, analizar
     ui/              Loader, EmptyState, TierIcon
+    luffy/           el panel privado de Mugiwara (/luffy): LuffyShell, Chat, Laboratorio,
+                     Tableros, api.ts (cliente del puente, SSE), tipos.ts (CONTRATO-PANEL.md),
+                     md.tsx (el texto de Luffy), charts/ (lwc.ts, primitivas.ts, Grafico.tsx,
+                     Distribucion.tsx y Comparacion.tsx con ECharts)
   server/
     index.ts         rutas y arranque
     bd.ts            la base abstraída: Postgres o SQLite tras una interfaz asíncrona
@@ -62,6 +66,8 @@ site/
     analizar.ts      analiza tu moneda: determinista, profundo, cupos, consumo
     votacion.ts      votación semanal y su administración
     operacion.ts     proxy de /operacion/* del motor y sincronización de contenido
+    luffy.ts         el puente /api/luffy/* hacia mugiwara-api (sólo admin real; el resto, 404)
+    luffySimulado.ts mugiwara-api simulado con la forma del contrato (desarrollo e invariantes)
     cupo.ts          el cupo por ciclo de renovación y el tope global de gasto
     motor.ts         el contrato con el motor; motorHttp.ts (real) y motorSimulado.ts
     correo.ts        SMTP o archivo
@@ -134,6 +140,9 @@ lo que cambia es lo que devuelve el servidor.
 | `/admin/consumo` | gasto contra el tope mensual, por usuario y pedido a pedido | **admin** |
 | `/admin/votacion` | armar la votación desde el ranking, recuento en vivo, cerrar, lanzar | **admin** |
 | `/admin/acciones` | registro de todo lo que hizo un admin | **admin** |
+| `/luffy`, `/luffy/h/:hilo` | el chat con Luffy (Mugiwara): los mismos hilos de Telegram, respuesta en streaming, gráficos interactivos y órdenes propuestas | **admin real** (para el resto no existe: 404) |
+| `/luffy/laboratorio[/:spec]`, `/luffy/laboratorio/t/:tablero` | el laboratorio de gráficos: series del catálogo, benchmarks, transformaciones, posiciones encima, paneles sincronizados | **admin real** |
+| `/luffy/tableros` | los gráficos guardados | **admin real** |
 
 ---
 
@@ -467,6 +476,75 @@ is invalid», que no es un problema de la clave—. La API buena es la **v1** co
 `Authorization: Bearer`: v2, v5 y GraphQL rechazan esta clave. Lectura por id
 (`/v1/plans/{id}`, `/v1/memberships/{id}`) funciona; los listados y la lectura de
 sesiones de checkout, no.
+
+## 7ter. Luffy: el panel privado de Mugiwara (`/luffy`)
+
+Mugiwara es el sistema de inversión personal de Pablo; Luffy, su agente. Vive en Telegram y
+desde la fase 6a también en la web, en una sección privada que **sólo existe para el rol
+admin real** (sin impersonar). Para cualquier otro, `/luffy` dice «esta página no existe» sin
+nombrar nada, y `/api/luffy/*` responde 404 en lectura y en escritura. No toca el producto
+público.
+
+**El puente (`server/luffy.ts`).** La web nunca habla con `mugiwara-api` directo: cada
+petición a `/api/luffy/*` se reenvía a `MUGIWARA_API_URL` (`127.0.0.1:8800` en el servidor)
+con la cabecera `X-Mugiwara-Token`, que vive en `MUGIWARA_API_TOKEN` del `.env` y nunca llega
+al navegador. El chat es un stream de eventos (`text/event-stream`) y pasa **sin buffer** de
+punta a punta: el cuerpo de Mugiwara es el cuerpo de nuestra respuesta, y el de la petición
+(imágenes adjuntas) también va en streaming. Caddy no comprime `text/event-stream` y vacía al
+instante (`flush_interval -1`); Vercel reescribe `/api/*` hacia la API y pasa el stream. Un
+turno de chat puede tardar minutos: esa ruta no tiene tope de tiempo; el resto, un minuto.
+Sin token, o con `VETA_LUFFY=simulado`, responde `server/luffySimulado.ts`: la misma forma
+de `CONTRATO-PANEL.md` v1.1 con series de semilla fija, sin red ni gasto. Es lo que corren los
+invariantes.
+
+**El contrato** es `~/Documents/Mugiwara/CONTRATO-PANEL.md` (lo escribe la sesión de
+Mugiwara). Lo que falte del otro lado se pide ahí, no se parchea aquí.
+
+**Chat.** Hilos a la izquierda (cajón en el teléfono), los mismos que Telegram; «Usar en
+Telegram» cambia el hilo activo del bot (`PATCH /hilos/{id}`). La respuesta llega por SSE
+(`src/luffy/api.ts › chat`): `paso` se muestra mientras Luffy trabaja («revisando derivados…»),
+`texto` se concatena, `grafico` se dibuja interactivo dentro del mensaje por su `spec_id` (con
+el PNG de respaldo si falla), `propuesta` es una tarjeta con Confirmar (dos pasos), Cambiar
+(rellena el cuadro con `cambiar (propuesta #id): `) y Cancelar; `fin` manda sobre el texto
+acumulado. Un pedido repetido mientras el turno sigue en curso recibe el 409 del contrato y se
+enseña como aviso. Imágenes: hasta 4 de 5 MB, por botón o pegando. La confirmación de una
+orden es siempre por código (`POST /propuestas/{id}/confirmar`), nunca por el modelo.
+
+**Gráficos (`src/luffy/charts/`).** Un spec v2 se pide a `POST /graficos/datos` y se dibuja
+con **lightweight-charts 5**: un solo chart, un panel por `paneles[]` (eje de tiempo
+compartido: zoom, arrastre y cruz sincronizados de fábrica, con dedos y con rueda), velas,
+líneas, áreas, barras y baseline (PnL, tono, funding) según `estilo`; marcadores de entradas,
+salidas, historial de stops y candidatas del radar; niveles como líneas de precio (precio
+actual, stop, invalidación, gatillos…); zonas, eventos y perfiles por precio (volumen,
+imán de liquidaciones) como **primitivas propias** (`primitivas.ts`). Las leyendas de cada
+panel son HTML encima del lienzo y muestran todas las series a la vez al mover la cruz. El
+rango se cambia con chips sin recargar. **ECharts** dibuja las distribuciones por precio
+(`Distribucion.tsx`) y la comparación de variación por serie en el rango (`Comparacion.tsx`).
+Colores de `SISTEMA-VISUAL.md` §6: esmeralda para lo positivo y la serie principal, oro sólo
+en hilos (medias móviles, niveles destacados), rojo apagado para lo negativo, ceniza para los
+benchmarks. El eje 2 (`eje: der`) no se dibuja: la leyenda viva ya dice su valor y dos ejes se
+pisaban. La atribución de lightweight-charts va en el logo del lienzo y en el pie del gráfico.
+
+**Laboratorio.** Abre un gráfico del chat (`GET /graficos/spec/{id}`), un tablero o uno nuevo,
+y edita el spec: activos, rango, intervalo, comparar contra BTC, ETH, otro par o la mediana
+(media, suma) de la categoría del protocolo, la posición de Pablo o de la caja encima,
+paneles con sus series (catálogo de `GET /graficos/catalogo`), estilos, eje, transformaciones
+(base 100, % desde fecha, ratio, promedio móvil, acumulado, por TVL, por usuario) y escala
+log por panel. El spec que vuelve normalizado del servidor es la base de edición (sin el atajo
+`benchmarks`, ya materializado en series). Guardar crea o actualiza un tablero; «Enlace» guarda
+el spec (`POST /graficos/spec`) y copia la URL. En el teléfono los controles son una hoja
+inferior («Ajustar»).
+
+**Tableros.** `GET /tableros` por grupo, vista previa dibujada al entrar en pantalla, abrir en
+el laboratorio, renombrar, subir/bajar (`PUT /tableros/orden`) y borrar en dos pasos.
+
+**Pruebas.** `scripts/probar-luffy.mjs` (Playwright, Chrome del sistema): los cinco perfiles
+contra `/api/luffy/*` (404 salvo admin), un suscriptor pro en `/luffy` (no existe), y con el
+simulador: chat con el gráfico dentro del mensaje, un turno en streaming con el paso visible,
+el **caso guiado** (abrir el gráfico de ingresos de STONK desde el mensaje, agregar la mediana
+de su categoría y la posición de Pablo, guardarlo en un tablero y verlo en Tableros) y las tres
+pantallas a 1440 y a 390 px sin desborde. Corre dentro de `npm run invariantes`; con una
+carpeta como argumento deja capturas (`recursos/capturas/luffy/`).
 
 ## 8. Huecos del contrato abiertos
 

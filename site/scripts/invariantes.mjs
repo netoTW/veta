@@ -8,7 +8,8 @@
      5. matriz de acceso en el servidor
      6. tenencia declarada fuera de todo lo público
      7. barrido de rutas: 5 roles × 2 anchos
-     8. prueba de contrato, integridad v1 y v2 (§20.2, §20.3) e historial sin borrados (§17.1), sobre las fixtures
+     8. /luffy: nadie que no sea admin lo ve; el caso guiado del laboratorio con Playwright
+     9. prueba de contrato, integridad v1 y v2 (§20.2, §20.3) e historial sin borrados (§17.1), sobre las fixtures
 
    Uso: npm run invariantes   Sale con 0 sólo si pasan todos. */
 import { spawn, spawnSync } from 'node:child_process'
@@ -20,6 +21,7 @@ const CONFLICTOS_MOTOR = resolve(homedir(), 'Documents/Crypto sistem/gem-pipelin
 const ENTORNO = {
   ...process.env,
   VETA_MOTOR: 'simulado',
+  VETA_LUFFY: 'simulado',
   ...(process.env.VETA_CONFLICTOS || !existsSync(CONFLICTOS_MOTOR) ? {} : { VETA_CONFLICTOS: CONFLICTOS_MOTOR }),
 }
 const resultados = []
@@ -60,6 +62,7 @@ if (ok) {
     && paso('matriz de acceso', 'node', ['scripts/probar-matriz.mjs'])
     && paso('tenencia declarada', 'node', ['scripts/probar-tenencia.mjs'])
     && paso('barrido', 'node', ['scripts/barrido.mjs'])
+    && paso('luffy (acceso y caso guiado)', 'node', ['scripts/probar-luffy.mjs'])
   if (ok) {
     if (existsSync('scripts/probar-contrato.mjs')) ok = paso('prueba de contrato', 'node', ['scripts/probar-contrato.mjs'])
       && paso('integridad v1', 'node', ['scripts/probar-integridad.mjs'])

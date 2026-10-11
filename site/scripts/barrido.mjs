@@ -13,8 +13,8 @@ import { readFileSync } from 'node:fs'
 const env = Object.fromEntries(readFileSync('.env','utf8').split('\n').filter(l=>l.includes('=')&&!l.startsWith('#')).map(l=>[l.slice(0,l.indexOf('=')).trim(),l.slice(l.indexOf('=')+1).trim()]))
 const BASE = 'http://localhost:5310'
 const PUB = ['/','/metodologia','/nosotros','/precios','/noticias','/gracias','/terminos','/privacidad','/contacto','/entrar','/registro','/recuperar']
-const PROD = ['/gemas','/seguimiento','/analisis','/watchlist','/analizar','/votacion','/cuenta','/piezas']
-const ADM = ['/admin/bandeja','/admin/cuentas','/admin/enlaces','/admin/consumo','/admin/operacion','/admin/contenido','/admin/acciones','/admin/votacion']
+const PROD = ['/gemas','/luffy','/seguimiento','/analisis','/watchlist','/analizar','/votacion','/cuenta','/piezas']
+const ADM = ['/luffy/laboratorio','/luffy/tableros','/admin/bandeja','/admin/cuentas','/admin/enlaces','/admin/consumo','/admin/operacion','/admin/contenido','/admin/acciones','/admin/votacion']
 const CUENTAS = { visitante:null, gratis:'gratis@veta.local', base:'base@veta.local', pro:'pro@veta.local', admin:env.VETA_ADMIN_EMAIL }
 
 const ANCHOS = [[1440,1000,'escritorio'],[390,844,'móvil']]

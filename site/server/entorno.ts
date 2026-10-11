@@ -105,4 +105,11 @@ export const ENV = {
   ADMIN_EMAIL: process.env.VETA_ADMIN_EMAIL ?? '',
   ADMIN_PASSWORD: process.env.VETA_ADMIN_PASSWORD ?? '',
   DEMO_PASSWORD: process.env.VETA_DEMO_PASSWORD ?? '',
+  /* Mugiwara (CONTRATO-PANEL.md): el panel /luffy habla con mugiwara-api sólo a través
+     del puente /api/luffy/* de este servidor, con el token de servicio que nunca llega al
+     navegador. Sin token (o con VETA_LUFFY=simulado) responde un simulador con la forma del
+     contrato: sirve para desarrollar, para las capturas y para los invariantes. */
+  LUFFY: (process.env.VETA_LUFFY === 'http' || process.env.VETA_LUFFY === 'simulado' ? process.env.VETA_LUFFY : (process.env.MUGIWARA_API_TOKEN ?? '').trim() ? 'http' : 'simulado') as 'http' | 'simulado',
+  MUGIWARA_URL: (process.env.MUGIWARA_API_URL ?? 'http://127.0.0.1:8800').replace(/\/$/, ''),
+  MUGIWARA_TOKEN: (process.env.MUGIWARA_API_TOKEN ?? '').trim(),
 }

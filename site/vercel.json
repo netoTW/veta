@@ -10,7 +10,7 @@
       "destination": "https://api.vetalab.io/api/:path*"
     },
     {
-      "source": "/:pantalla(analisis|analizar|contacto|cuenta|entrar|gemas|gracias|metodologia|nosotros|noticias|piezas|precios|privacidad|recuperar|registro|restablecer|seguimiento|sistema|terminos|votacion|watchlist)",
+      "source": "/:pantalla(analisis|analizar|contacto|cuenta|entrar|gemas|gracias|luffy|metodologia|nosotros|noticias|piezas|precios|privacidad|recuperar|registro|restablecer|seguimiento|sistema|terminos|votacion|watchlist)",
       "destination": "/index.html"
     },
     {

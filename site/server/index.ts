@@ -29,6 +29,7 @@ import { noticiasPara, noticiasAdmin } from './noticias.ts'
 import { enlacesApp, enlacesAdmin, sembrarEnlaces } from './enlaces.ts'
 import { sembrar } from './semilla.ts'
 import { sinTenencia } from './tenencia.ts'
+import { luffyApp } from './luffy.ts'
 
 type Vars = { sesion: Sesion | null; rol: Rol; rolReal: Rol; verComo: Rol | null }
 const app = new Hono<{ Variables: Vars }>()
@@ -228,6 +229,9 @@ app.route('/api/ir', enlacesApp)
 
 /* ---------- cobro (Whop) ---------- */
 app.route('/api/pagos', pagosApp)
+
+/* ---------- Luffy (Mugiwara): sólo Pablo; el resto, 404 ---------- */
+app.route('/api/luffy', luffyApp)
 
 /* ---------- analiza tu moneda ---------- */
 app.route('/api/analizar', analizarApp)
