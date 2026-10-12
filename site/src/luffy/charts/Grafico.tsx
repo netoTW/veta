@@ -30,7 +30,10 @@ export function Grafico({ spec, specId, onSpec, onDatos, alto, compacto = false,
   const [valores, setValores] = useState<Map<string, number | null>>(new Map())
   const [tCruz, setTCruz] = useState<number | null>(null)
   const [alturas, setAlturas] = useState<number[]>([])
+  const [anchosIzq, setAnchosIzq] = useState<number[]>([])
+  const [panelesVivos, setPanelesVivos] = useState<{ id: string; indice: number }[]>([])
   const lienzo = useRef<HTMLDivElement>(null)
+  const capa = useRef<HTMLDivElement>(null)
   const vivo = useRef<Vivo | null>(null)
 
   useEffect(() => {
@@ -58,20 +61,28 @@ export function Grafico({ spec, specId, onSpec, onDatos, alto, compacto = false,
     // eslint-disable-next-line react-hooks/exhaustive-deps -- onDatos cambia en cada render del padre; sólo el spec decide
   }, [clave])
 
-  const medir = useCallback(() => { if (vivo.current) setAlturas(vivo.current.alturas()) }, [])
+  /* Mide los paneles y las leyendas: las leyendas se colocan por pane y cada pane reserva
+     arriba el alto de la suya, así los datos nunca quedan debajo (tampoco en vistas previas ni a 390 px). */
+  const medir = useCallback(() => {
+    const v = vivo.current; if (!v) return
+    setAlturas(v.alturas()); setAnchosIzq(v.anchosIzq())
+    const leyendas = [...(capa.current?.querySelectorAll<HTMLElement>('.lf-g__ley') ?? [])].map((e) => e.offsetHeight)
+    v.fijarMargenes(leyendas)
+  }, [])
   useEffect(() => {
     const el = lienzo.current
     if (!el || !datos) return
     const v = dibujar(el, datos, { interactivo, compacto, intervalo: datos.rango.intervalo, onCruz: (vals, t) => { setValores(vals); setTCruz(t) } })
     vivo.current = v
     const ini = new Map<string, number | null>(); for (const s of v.series) ini.set(s.id, s.ultimo); setValores(ini); setTCruz(null)
-    const t = setTimeout(medir, 60)
+    setPanelesVivos(v.paneles)
+    const t1 = setTimeout(medir, 40), t2 = setTimeout(medir, 400)
     const ro = new ResizeObserver(() => medir()); ro.observe(el)
-    return () => { clearTimeout(t); ro.disconnect(); v.destruir(); vivo.current = null }
+    return () => { clearTimeout(t1); clearTimeout(t2); ro.disconnect(); v.destruir(); vivo.current = null }
   }, [datos, interactivo, compacto, medir])
 
   const cambiarRango = (r: string) => { if (!specEfectivo) return; if (onSpec) onSpec({ ...specEfectivo, rango: r }); else setRangoLocal(r) }
-  const nPaneles = datos?.paneles.length ?? 2
+  const nPaneles = Math.max(1, panelesVivos.length || datos?.paneles.filter((p) => p.series.length).length || 2)
   const altoPx = alto ?? (compacto ? 280 + (nPaneles - 1) * 72 : 420 + (nPaneles - 1) * 110)
   const rangoActual = specEfectivo?.rango ?? '90d'
   const series = vivo.current?.series ?? []
@@ -100,15 +111,15 @@ export function Grafico({ spec, specId, onSpec, onDatos, alto, compacto = false,
       </div>
       <div className="lf-g__marco" style={{ height: altoPx }}>
         <div ref={lienzo} className="lf-g__lienzo" />
-        <div className="lf-g__capa" aria-hidden="true">
-          {datos?.paneles.map((p, i) => (
-            <div key={p.id} className="lf-g__ley" style={{ top: (tops[i] ?? i * (altoPx / nPaneles)) + 6 }}>
+        <div className="lf-g__capa" aria-hidden="true" ref={capa}>
+          {panelesVivos.map((pv, i) => { const p = datos?.paneles.find((x) => x.id === pv.id); if (!p) return null; return (
+            <div key={p.id} className={`lf-g__ley ${compacto ? 'lf-g__ley--fila' : ''}`} style={{ top: (tops[i] ?? i * (altoPx / nPaneles)) + 6, left: 8 + (anchosIzq[i] ?? 0) }}>
               <span className="lf-g__ley-t">{p.titulo}{p.unidad ? <em> · {p.unidad}</em> : null}</span>
               {series.filter((s) => s.panel === p.id).map((s) => (
                 <span key={s.id} className="lf-g__ley-s"><i style={{ background: s.color }} />{s.etiqueta}<b className="num">{fmt(valores.get(s.id) ?? null, s.unidad === 'USDT' || s.unidad === 'USD' ? '' : s.unidad)}</b></span>
               ))}
             </div>
-          ))}
+          ) })}
           {tCruz !== null && <span className="lf-g__fecha mono">{fmtFecha(tCruz, datos?.rango.intervalo === '1h' || datos?.rango.intervalo === '4h')}</span>}
         </div>
         {cargando && <div className="lf-g__velo"><span className="lf-gema is-latiendo" /></div>}
@@ -124,7 +135,7 @@ export function Grafico({ spec, specId, onSpec, onDatos, alto, compacto = false,
         </div>
       )}
       {noDisp.length > 0 && <p className="lf-g__nota">Sin datos: {noDisp.map((n) => `${n.serie} (${n.motivo})`).join(' · ')}</p>}
-      {!compacto && datos && (
+      {datos && (
         <p className="lf-g__pie mono">
           {fuentes.length ? <>Fuentes: {fuentes.join(' · ')} · {fmtFecha(datos.consultado_en, true)}</> : null}
           <a href="https://www.tradingview.com/" target="_blank" rel="noopener noreferrer" title="Gráficos con TradingView Lightweight Charts™">TradingView Lightweight Charts™</a>

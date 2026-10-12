@@ -174,6 +174,19 @@ límite de error, archivado de la calibración.
 
 ## 6. Lo que se le ha pedido al motor  ·  vive en el contrato
 
+**A Mugiwara (CONTRATO-PANEL.md, sesión `mugiwara`), de la prueba real del 12-oct:**
+- `POST /graficos/datos` con `benchmarks: ["categoria"]` sobre un activo sin categoría en DefiLlama
+  (WAL) descarta el benchmark en silencio: no entra en `no_disponibles`. El contrato dice que lo que
+  no hay se declara con su motivo.
+- A las 00:00 UTC del 12-oct `mugiwara-api` devolvió, para cualquier spec con `posiciones`,
+  `no_disponibles: [{serie: "pnl", motivo: "FeatureNotSupported: cached plan must not change result type"},
+  {serie: "posiciones", motivo: "…"}]` y `marcadores: []`: un plan preparado de Postgres que quedó viejo
+  tras la migración 018 en una conexión del pool. Una hora antes la misma petición traía la entrada y el
+  stop de WAL; a las 00:10 volvía a traerlos. Se cura reiniciando el servicio o descartando los planes
+  (`DISCARD ALL`) al migrar. La web enseña el motivo tal cual en la nota del gráfico.
+- Las velas diarias de BingX vienen con `t` a las 16:00 UTC (no a las 00:00); el panel coloca cada marcador en
+  la vela abierta en ese momento, así que funciona, pero conviene decirlo en el contrato.
+
 En `CONTRATO-ANALISIS-A-PEDIDO.md`, acuse de §20 y §21 (al final). Lo abierto hoy:
 el banco de 20 exportaciones; la ficha más rápida; `no_disponibles[].que`,
 catalizadores y prosa en lenguaje de cliente y con la tabla de §23 (hoy la web lo

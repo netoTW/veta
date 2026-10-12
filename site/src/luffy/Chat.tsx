@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import { ErrorLuffy, leerImagen, luffy, urlPng } from './api'
 import type { Confirmacion, EventoChat, Fin, GraficoRef, HiloDetalle, HiloResumen, Mensaje, PropuestaResumen } from './tipos'
-import { Md } from './md'
+import { Md, aTextoPlano } from './md'
 import { Grafico } from './charts/Grafico'
 import { fmtHora, fmtUsd, hace, quedan } from './formato'
 import { EmptyState } from '../ui/EmptyState'
@@ -42,8 +42,32 @@ export function Chat() {
   )
 }
 
+/* Los hilos de prueba, los clones del banco de calidad y los bancos no son conversación: van a un
+   grupo «Archivo», plegado. La vista previa es el último mensaje visible, en texto plano, no el
+   memo interno del resumen vivo. */
+const esArchivo = (h: HiloResumen) => /\b(prueba|clon|clones|banco|test)\b/i.test(h.titulo)
 function ListaHilos({ hilos, error, activo, recargar }: { hilos: HiloResumen[] | null; error: string | null; activo: string | null; recargar: () => Promise<void> }) {
   const [nuevo, setNuevo] = useState(false)
+  const [previas, setPrevias] = useState<Record<string, string>>({})
+  const claveHilos = hilos?.map((h) => `${h.id}:${h.actualizado}`).join('|') ?? ''
+  useEffect(() => {
+    if (!hilos) return
+    let v = true
+    const visibles = hilos.filter((h) => !esArchivo(h)).slice(0, 24)
+    Promise.all(visibles.map(async (h): Promise<[string, string]> => {
+      try { const d = await luffy.hilo(h.id, 4); const m = [...d.mensajes].reverse().find((x) => x.rol === 'luffy' || x.rol === 'usuario'); return [h.id, m ? aTextoPlano(m.contenido).slice(0, 180) : ''] } catch { return [h.id, ''] }
+    })).then((ps) => { if (v) setPrevias(Object.fromEntries(ps)) })
+    return () => { v = false }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- se recarga cuando cambia la lista o la fecha de algún hilo
+  }, [claveHilos])
+  const fila = (h: HiloResumen) => (
+    <Link key={h.id} to={`/luffy/h/${h.id}`} className={`lf-hilo ${h.id === activo ? 'is-activo' : ''}`}>
+      <span className="lf-hilo__t">{h.titulo}</span>
+      {previas[h.id] ? <span className="lf-hilo__r">{previas[h.id]}</span> : null}
+      <span className="lf-hilo__m mono">{hace(h.actualizado)} · {h.n_mensajes} msj{h.telegram_activo && <em>Telegram</em>}</span>
+    </Link>
+  )
+  const vivos = hilos?.filter((h) => !esArchivo(h)) ?? [], archivo = hilos?.filter(esArchivo) ?? []
   const [titulo, setTitulo] = useState('')
   const [creando, setCreando] = useState(false)
   const crear = async (e: FormEvent) => { e.preventDefault(); if (!titulo.trim()) return; setCreando(true); try { await luffy.crearHilo(titulo.trim()); setTitulo(''); setNuevo(false); await recargar() } finally { setCreando(false) } }
@@ -61,13 +85,13 @@ function ListaHilos({ hilos, error, activo, recargar }: { hilos: HiloResumen[] |
       )}
       {error && <p className="lf-hilos__error">{error}</p>}
       <div className="lf-hilos__lista">
-        {hilos?.map((h) => (
-          <Link key={h.id} to={`/luffy/h/${h.id}`} className={`lf-hilo ${h.id === activo ? 'is-activo' : ''}`}>
-            <span className="lf-hilo__t">{h.titulo}</span>
-            {h.resumen_vivo && <span className="lf-hilo__r">{h.resumen_vivo}</span>}
-            <span className="lf-hilo__m mono">{hace(h.actualizado)} · {h.n_mensajes} msj{h.telegram_activo && <em>Telegram</em>}</span>
-          </Link>
-        ))}
+        {vivos.map(fila)}
+        {archivo.length > 0 && (
+          <details className="lf-hilos__archivo" open={!!activo && archivo.some((h) => h.id === activo)}>
+            <summary className="mono">Archivo · {archivo.length} hilo{archivo.length > 1 ? 's' : ''} de prueba</summary>
+            {archivo.map(fila)}
+          </details>
+        )}
       </div>
     </>
   )

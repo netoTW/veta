@@ -7,7 +7,8 @@ import { Fragment, type ReactNode } from 'react'
 
 function enLinea(s: string, clave: string): ReactNode[] {
   const out: ReactNode[] = []
-  const re = /(\*\*[^*]+\*\*|`[^`]+`|\*[^*\s][^*]*\*|_[^_\s][^_]*_|\[[^\]]+\]\((https?:\/\/[^)\s]+)\))/g
+  // el guion bajo sólo abre o cierra cursiva fuera de una palabra: «social_pulso» es un nombre, no un énfasis
+  const re = /(\*\*[^*]+\*\*|`[^`]+`|\*[^*\s][^*]*\*|(?<![\wÀ-ÿ])_(?=\S)(?:[^_]|_(?=[\wÀ-ÿ]))+?_(?![\wÀ-ÿ])|\[[^\]]+\]\((https?:\/\/[^)\s]+)\))/g
   let i = 0, m: RegExpExecArray | null, k = 0
   while ((m = re.exec(s))) {
     if (m.index > i) out.push(s.slice(i, m.index))
@@ -20,6 +21,14 @@ function enLinea(s: string, clave: string): ReactNode[] {
   }
   if (i < s.length) out.push(s.slice(i))
   return out
+}
+
+/** Lo que escribe Luffy, sin marcas: para una vista previa de una o dos líneas. */
+export function aTextoPlano(md: string): string {
+  return md.replace(/```[\s\S]*?```/g, ' ').replace(/`([^`]*)`/g, '$1').replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+    .replace(/^\s{0,3}#{1,6}\s+/gm, '').replace(/^\s*>\s?/gm, '').replace(/^\s*([-*•]|\d+[.)])\s+/gm, '').replace(/\|/g, ' ')
+    .replace(/\*\*([^*]+)\*\*/g, '$1').replace(/(^|\s)[*_]([^*_]+)[*_](?=\s|[.,;:!?]|$)/g, '$1$2').replace(/[*_]{2,}/g, '')
+    .replace(/\s+/g, ' ').trim()
 }
 
 export function Md({ texto, className = '' }: { texto: string; className?: string }) {

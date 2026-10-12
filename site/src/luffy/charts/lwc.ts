@@ -1,18 +1,36 @@
 /* ============================================================================
-   Un spec dibujado con lightweight-charts: un chart, un panel por `paneles[]`,
-   eje de tiempo compartido (zoom, arrastre y cruz sincronizados de fábrica),
-   series según estilo, marcadores de posiciones, niveles como líneas de precio,
-   zonas, eventos y perfiles por precio como primitivas. Sin React dentro: el
-   componente le pasa un contenedor y los datos y recibe las leyendas vivas.
+   Un spec dibujado con lightweight-charts: un chart, un panel por `paneles[]`
+   con series que dibujar (un panel que llegó vacío por falta de datos no abre
+   un hueco: su motivo ya va en la nota), eje de tiempo compartido (zoom,
+   arrastre y cruz sincronizados de fábrica), series según estilo, marcadores
+   de posiciones, niveles como líneas de precio, zonas, eventos y perfiles por
+   precio como primitivas. Sin React dentro: el componente le pasa un
+   contenedor y los datos y recibe las leyendas vivas.
+
+   Rótulos: un solo rótulo de último precio por panel (el nivel «precio actual»
+   cuando existe; si no, el último valor de la serie principal). Los demás
+   niveles llevan su etiqueta sobre la línea, nunca encima de los números del eje.
+   Las series en otra escala (eje 2: base 100, %, ratio) van en su propio eje, a
+   la izquierda; las leyendas se corren para no pisarlo.
    ========================================================================== */
-import { AreaSeries, BaselineSeries, CandlestickSeries, ColorType, CrosshairMode, HistogramSeries, LineSeries, LineStyle, PriceScaleMode, createChart, createSeriesMarkers, type IChartApi, type ISeriesApi, type MouseEventParams, type SeriesMarker, type SeriesType, type Time, type UTCTimestamp } from 'lightweight-charts'
+import { AreaSeries, BaselineSeries, CandlestickSeries, ColorType, CrosshairMode, HistogramSeries, LineSeries, LineStyle, PriceScaleMode, createChart, createSeriesMarkers, type IChartApi, type IPaneApi, type ISeriesApi, type MouseEventParams, type SeriesMarker, type SeriesType, type Time, type UTCTimestamp } from 'lightweight-charts'
 import type { Datos, Marcador, SerieDatos } from '../tipos'
 import { C, FUENTE_MONO, colorSerie, rgba } from './tema'
-import { Banda, Eventos, PerfilPrecio } from './primitivas'
+import { Banda, Eventos, PerfilPrecio, Rotulos, type Rotulo } from './primitivas'
 import { fmt } from '../formato'
 
 export interface SerieViva { id: string; etiqueta: string; color: string; unidad: string; panel: string; api: ISeriesApi<SeriesType, Time> | null; ultimo: number | null; formato: SerieDatos['formato'] }
-export interface Vivo { chart: IChartApi; series: SerieViva[]; destruir: () => void; alturas: () => number[] }
+export interface PanelVivo { id: string; indice: number }
+export interface Vivo {
+  chart: IChartApi; series: SerieViva[]; paneles: PanelVivo[]
+  /** Altura de cada pane, en el orden de `paneles`. */
+  alturas: () => number[]
+  /** Ancho del eje de la izquierda (eje 2) de cada pane, para correr la leyenda. */
+  anchosIzq: () => number[]
+  /** Reserva arriba de cada pane el sitio de su leyenda (altura en px) para que los datos no queden debajo. */
+  fijarMargenes: (alturasLeyenda: number[]) => void
+  destruir: () => void
+}
 export interface Opciones { interactivo: boolean; onCruz?: (valores: Map<string, number | null>, t: number | null) => void; intervalo: string; compacto?: boolean }
 
 const t = (s: number) => s as UTCTimestamp
@@ -30,16 +48,17 @@ const ESTILO_NIVEL: Record<string, { color: string; estilo: LineStyle; titulo: s
   gatillo: { color: C.oroLuz, estilo: LineStyle.LargeDashed, titulo: 'Gatillo' },
   nivel: { color: C.ceniza, estilo: LineStyle.Dotted, titulo: '' },
 }
+const dibujable = (s: SerieDatos) => (s.formato === 'ohlc' || s.formato === 'valor') && s.puntos.length > 0
 
 export function dibujar(el: HTMLElement, d: Datos, op: Opciones): Vivo {
   const horas = op.intervalo === '1h' || op.intervalo === '4h'
   const chart = createChart(el, {
     autoSize: true,
-    layout: { background: { type: ColorType.Solid, color: 'transparent' }, textColor: C.ceniza2, fontFamily: FUENTE_MONO, fontSize: 11, attributionLogo: true, panes: { separatorColor: C.hairline, separatorHoverColor: rgba(C.oro, 0.25), enableResize: op.interactivo } },
+    layout: { background: { type: ColorType.Solid, color: 'transparent' }, textColor: C.ceniza2, fontFamily: FUENTE_MONO, fontSize: 11, attributionLogo: false, panes: { separatorColor: C.hairline, separatorHoverColor: rgba(C.oro, 0.25), enableResize: op.interactivo } },
     grid: { vertLines: { color: C.grid }, horzLines: { color: C.grid } },
     crosshair: { mode: CrosshairMode.Normal, vertLine: { color: rgba(C.hueso, 0.35), width: 1, style: LineStyle.Dashed, labelBackgroundColor: C.roca3 }, horzLine: { color: rgba(C.hueso, 0.35), width: 1, style: LineStyle.Dashed, labelBackgroundColor: C.roca3 } },
-    rightPriceScale: { borderColor: C.hairline, scaleMargins: { top: 0.1, bottom: 0.08 }, entireTextOnly: true },
-    leftPriceScale: { visible: false, borderColor: C.hairline, scaleMargins: { top: 0.1, bottom: 0.08 } },
+    rightPriceScale: { borderColor: C.hairline, scaleMargins: { top: 0.12, bottom: 0.08 }, entireTextOnly: true },
+    leftPriceScale: { visible: false, borderColor: C.hairline, scaleMargins: { top: 0.12, bottom: 0.08 }, entireTextOnly: true },
     timeScale: { borderColor: C.hairline, timeVisible: horas, secondsVisible: false, rightOffset: 3, minBarSpacing: 1.5, fixLeftEdge: false, lockVisibleTimeRangeOnResize: true },
     localization: { locale: 'es-ES', priceFormatter: (v: number) => fmt(v) },
     handleScroll: op.interactivo ? { mouseWheel: true, pressedMouseMove: true, horzTouchDrag: true, vertTouchDrag: false } : false,
@@ -48,26 +67,28 @@ export function dibujar(el: HTMLElement, d: Datos, op: Opciones): Vivo {
   })
 
   const vivas: SerieViva[] = []
-  const porPanel = new Map(d.paneles.map((p, i) => [p.id, i]))
   const seriesPorId = new Map(d.series.map((s) => [s.id, s]))
+  const conPrecioActual = new Set(d.niveles.filter((n) => n.tipo === 'precio_actual').map((n) => n.panel))
   // la serie principal de precio de cada panel: ancla marcadores, niveles, zonas y perfiles
   const ancla = new Map<string, ISeriesApi<SeriesType, Time>>()
+  const paneles: PanelVivo[] = []
   const indicePorRol: Record<string, number> = {}
 
   for (const p of d.paneles) {
-    const pane = porPanel.get(p.id)!
-    const ids = p.series.length ? p.series : d.series.filter((s) => s.panel === p.id).map((s) => s.id)
+    const ids = (p.series.length ? p.series : d.series.filter((s) => s.panel === p.id).map((s) => s.id)).filter((id) => { const s = seriesPorId.get(id); return s && dibujable(s) })
+    if (!ids.length) continue
+    const pane = paneles.length
+    paneles.push({ id: p.id, indice: pane })
     for (const id of ids) {
-      const s = seriesPorId.get(id); if (!s) continue
+      const s = seriesPorId.get(id)!
       const k = `${p.id}:${s.rol}`; const n = indicePorRol[k] ?? 0; indicePorRol[k] = n + 1
       const color = colorSerie(s.rol, n, s.tipo, s.lado)
       const viva: SerieViva = { id: s.id, etiqueta: s.etiqueta, color, unidad: s.unidad, panel: p.id, api: null, ultimo: s.ultimo?.valor ?? null, formato: s.formato }
       vivas.push(viva)
-      if (s.formato !== 'ohlc' && s.formato !== 'valor') continue
       // izq = el eje principal (a la derecha, como en cualquier terminal); der = el segundo eje, a la izquierda
       const priceScaleId = s.eje === 'der' ? 'left' : 'right'
       const principal = s.rol === 'principal'
-      const comun = { priceScaleId, priceLineVisible: false, lastValueVisible: principal, crosshairMarkerVisible: true, title: '' }
+      const comun = { priceScaleId, priceLineVisible: false, lastValueVisible: principal && !conPrecioActual.has(p.id), crosshairMarkerVisible: s.formato !== 'ohlc', title: '' }
       let api: ISeriesApi<SeriesType, Time>
       if (s.formato === 'ohlc' && s.estilo === 'velas') {
         api = chart.addSeries(CandlestickSeries, { ...comun, upColor: C.esm, downColor: C.rojo, wickUpColor: C.esm, wickDownColor: C.rojo, borderVisible: false }, pane)
@@ -91,33 +112,29 @@ export function dibujar(el: HTMLElement, d: Datos, op: Opciones): Vivo {
         }
       }
       viva.api = api
-      // el eje 2 no se dibuja: la leyenda viva ya dice su valor, y dos ejes a izquierda y derecha se pisan con la leyenda
-      if (priceScaleId === 'left') api.priceScale().applyOptions({ visible: false })
+      if (priceScaleId === 'left') api.priceScale().applyOptions({ visible: true, borderColor: C.hairline })
       if (p.escala === 'log') api.priceScale().applyOptions({ mode: PriceScaleMode.Logarithmic })
       if (!ancla.has(p.id) && (s.tipo === 'ohlc' || s.tipo === 'cierre') && principal) ancla.set(p.id, api)
-      if (!ancla.has(p.id) && principal) ancla.set(p.id, api)
     }
-    if (!ancla.has(p.id)) { const v = vivas.find((x) => x.panel === p.id && x.api); if (v?.api) ancla.set(p.id, v.api) }
-    // sitio para la leyenda: cuantas más series, más aire arriba
-    const nLey = vivas.filter((x) => x.panel === p.id).length
-    for (const v of vivas) if (v.panel === p.id && v.api) v.api.priceScale().applyOptions({ scaleMargins: { top: Math.min(0.5, (op.compacto ? 0.2 : 0.14) + (op.compacto ? 0.1 : 0.07) * nLey), bottom: 0.08 } })
+    if (!ancla.has(p.id)) { const v = vivas.find((x) => x.panel === p.id && x.api && d.series.find((s) => s.id === x.id)?.rol === 'principal') ?? vivas.find((x) => x.panel === p.id && x.api); if (v?.api) ancla.set(p.id, v.api) }
   }
   // alturas relativas de los paneles
   const panes = chart.panes()
-  d.paneles.forEach((p, i) => { if (panes[i]) panes[i].setStretchFactor(Math.max(1, p.altura)) })
+  for (const pv of paneles) { const p = d.paneles.find((x) => x.id === pv.id); if (p && panes[pv.indice]) panes[pv.indice].setStretchFactor(Math.max(1, p.altura)) }
 
   /* ---------- marcadores de posiciones y del radar ---------- */
   const porSerie = new Map<string, Marcador[]>()
-  for (const m of d.marcadores) { const k = porSerie.has(m.serie) ? m.serie : [...ancla.entries()].find(([pid]) => d.paneles.some((p) => p.id === pid && p.series.includes(m.serie)))?.[0] ?? m.serie; if (!porSerie.has(k)) porSerie.set(k, []); porSerie.get(k)!.push(m) }
+  for (const m of d.marcadores) { if (!porSerie.has(m.serie)) porSerie.set(m.serie, []); porSerie.get(m.serie)!.push(m) }
   for (const [serieId, ms] of porSerie) {
-    const api = vivas.find((v) => v.id === serieId)?.api ?? ancla.get(d.series.find((s) => s.id === serieId)?.panel ?? '') ?? ancla.get(d.paneles[0]?.id ?? '')
+    const api = vivas.find((v) => v.id === serieId)?.api ?? ancla.get(d.series.find((s) => s.id === serieId)?.panel ?? '') ?? ancla.get(paneles[0]?.id ?? '')
     if (!api) continue
     const tiempos = (api.data() as { time: UTCTimestamp }[]).map((x) => x.time)
+    // el marcador cae en la vela que estaba abierta en ese momento
     const ajustar = (x: number) => { let r = tiempos[0] ?? t(x); for (const tt of tiempos) { if (tt <= x) r = tt; else break } return r }
     const marcas: SeriesMarker<Time>[] = ms.map((m) => {
       const precio = m.valor ?? m.precio
-      if (m.tipo === 'entrada') return { time: ajustar(m.t), position: 'belowBar', shape: 'arrowUp', color: C.esmLuz, text: 'Compra', size: 1.1 }
-      if (m.tipo === 'salida') return { time: ajustar(m.t), position: 'aboveBar', shape: 'arrowDown', color: C.hueso, text: 'Venta', size: 1.1 }
+      if (m.tipo === 'entrada') return { time: ajustar(m.t), position: 'belowBar', shape: 'arrowUp', color: C.esmLuz, text: `Compra ${fmt(precio)}`, size: 1.1 }
+      if (m.tipo === 'salida') return { time: ajustar(m.t), position: 'aboveBar', shape: 'arrowDown', color: C.hueso, text: `Venta ${fmt(precio)}`, size: 1.1 }
       if (m.tipo === 'stop_historial') return { time: ajustar(m.t), position: 'atPriceMiddle', shape: 'circle', color: C.rojoLuz, size: 0.55, price: precio }
       return { time: ajustar(m.t), position: 'atPriceMiddle', shape: 'circle', color: C.oroLuz, text: 'Radar', size: 0.7, price: precio }
     })
@@ -126,16 +143,23 @@ export function dibujar(el: HTMLElement, d: Datos, op: Opciones): Vivo {
   }
 
   /* ---------- niveles, zonas, eventos y perfiles ---------- */
+  const rotulosPorPanel = new Map<string, Rotulo[]>()
   for (const n of d.niveles) {
     const api = ancla.get(n.panel); if (!api) continue
     const e = ESTILO_NIVEL[n.tipo] ?? ESTILO_NIVEL.nivel
-    const titulo = n.tipo === 'precio_actual' ? '' : n.tipo === 'gatillo' ? (n.etiqueta.match(/^Gatillo #\d+/)?.[0] ?? 'Gatillo') : e.titulo || n.etiqueta.slice(0, 18)
-    api.createPriceLine({ price: n.valor ?? n.precio, color: e.color, lineWidth: 1, lineStyle: e.estilo, axisLabelVisible: true, title: titulo, axisLabelColor: e.color, axisLabelTextColor: C.roca })
+    const actual = n.tipo === 'precio_actual'
+    const precio = n.valor ?? n.precio
+    api.createPriceLine({ price: precio, color: e.color, lineWidth: 1, lineStyle: e.estilo, axisLabelVisible: actual, title: '', axisLabelColor: e.color, axisLabelTextColor: C.roca })
+    if (actual) continue
+    const corto = n.tipo === 'gatillo' ? (n.etiqueta.match(/^Gatillo #\d+/)?.[0] ?? 'Gatillo') : e.titulo || n.etiqueta.replace(/\s[\d.,]+$/, '').slice(0, 26)
+    if (!rotulosPorPanel.has(n.panel)) rotulosPorPanel.set(n.panel, [])
+    rotulosPorPanel.get(n.panel)!.push({ precio, texto: `${corto} ${fmt(n.precio)}`.toUpperCase(), color: e.color })
   }
+  for (const [pid, rs] of rotulosPorPanel) ancla.get(pid)?.attachPrimitive(new Rotulos(rs))
   const zonasPorPanel = new Map<string, typeof d.zonas>()
   for (const z of d.zonas) { if (!zonasPorPanel.has(z.panel)) zonasPorPanel.set(z.panel, []); zonasPorPanel.get(z.panel)!.push(z) }
   for (const [pid, zs] of zonasPorPanel) ancla.get(pid)?.attachPrimitive(new Banda(zs.map((z) => ({ desde: z.desde, hasta: z.hasta, etiqueta: z.etiqueta, tipo: z.tipo }))))
-  if (d.eventos.length) ancla.get(d.paneles[0]?.id ?? '')?.attachPrimitive(new Eventos(d.eventos.map((e) => ({ t: e.t, etiqueta: e.etiqueta }))))
+  if (d.eventos.length) ancla.get(paneles[0]?.id ?? '')?.attachPrimitive(new Eventos(d.eventos.map((e) => ({ t: e.t, etiqueta: e.etiqueta }))))
   for (const s of d.series) if (s.formato === 'por_precio' && s.puntos.length) ancla.get(s.panel)?.attachPrimitive(new PerfilPrecio({ puntos: s.puntos, tipo: s.tipo, etiqueta: s.etiqueta }))
 
   chart.timeScale().fitContent()
@@ -153,5 +177,19 @@ export function dibujar(el: HTMLElement, d: Datos, op: Opciones): Vivo {
   }
   chart.subscribeCrosshairMove(alCruz)
 
-  return { chart, series: vivas, alturas: () => chart.panes().map((p) => p.getHeight()), destruir: () => { chart.unsubscribeCrosshairMove(alCruz); chart.remove() } }
+  const anchoIzq = (pane: IPaneApi<Time> | undefined) => { try { const ps = (pane as { priceScale?: (id: string) => { width: () => number; options: () => { visible?: boolean } } } | undefined)?.priceScale?.('left'); return ps && ps.options().visible ? ps.width() : 0 } catch { return 0 } }
+  return {
+    chart, series: vivas, paneles,
+    alturas: () => paneles.map((pv) => chart.panes()[pv.indice]?.getHeight() ?? 0),
+    anchosIzq: () => paneles.map((pv) => anchoIzq(chart.panes()[pv.indice])),
+    fijarMargenes: (alturasLeyenda) => {
+      paneles.forEach((pv, i) => {
+        const alto = chart.panes()[pv.indice]?.getHeight() ?? 0
+        if (!alto) return
+        const top = Math.min(0.6, Math.max(0.08, ((alturasLeyenda[i] ?? 0) + 12) / alto))
+        for (const v of vivas) if (v.panel === pv.id && v.api) v.api.priceScale().applyOptions({ scaleMargins: { top, bottom: 0.08 } })
+      })
+    },
+    destruir: () => { chart.unsubscribeCrosshairMove(alCruz); chart.remove() },
+  }
 }

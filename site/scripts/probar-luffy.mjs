@@ -57,7 +57,13 @@ async function contexto(movil) {
 }
 async function entrar(ctx, email, pw) { const r = await ctx.request.post(`${BASE}/api/auth/sign-in/email`, { data: { email, password: pw }, headers: { Origin: BASE } }); if (r.status() !== 200) throw new Error(`login ${email}: ${r.status()}`) }
 async function foto(p, nombre, full = false) { if (OUT) { await p.screenshot({ path: `${OUT}/${nombre}.png`, fullPage: full }); console.log(`    · ${nombre}.png`) } }
-const sinDesborde = async (p) => p.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 2)
+// ni el documento ni las zonas que se desplazan por dentro (la conversación, el laboratorio) pueden desbordar de lado
+const sinDesborde = async (p) => p.evaluate(() => {
+  const W = window.innerWidth + 2
+  if (document.documentElement.scrollWidth > W) return false
+  // nada de lo que se lee puede terminar más allá del borde: párrafos, cabeceras, gráficos, tarjetas
+  return [...document.querySelectorAll('.lf-md p, .lf-md li, .lf-conv__cab, .lf-m__cuerpo, .lf-g, .lf-prop, .lf-tabj, .lf-ctrl__sec')].every((e) => e.getBoundingClientRect().right <= W)
+})
 
 console.log('\nLUFFY · un suscriptor pro no ve nada')
 {
@@ -138,10 +144,15 @@ console.log('\nLUFFY · admin, escritorio')
     await p.goto(`${BASE}/luffy/laboratorio`, { waitUntil: 'networkidle' })
     await p.waitForSelector('.lf-lab__lienzo .lf-g canvas', { timeout: 60000 })
     ok(true, 'el laboratorio abre un gráfico nuevo con datos reales')
-    await p.click('[data-prueba="categoria"]').catch(() => {})
-    for (const k of ['entradas', 'salidas', 'stop', 'stops_historial', 'pnl']) await p.click(`[data-prueba="pos-${k}"]`)
-    await p.selectOption('.lf-ctrl select[aria-label="Origen de las posiciones"]', 'ambos').catch(() => {})
-    await espera(4000); await foto(p, '05-lab-real')
+    await p.selectOption('.lf-ctrl select[aria-label="Origen de las posiciones"]', 'ambos')
+    // sólo los que no estén ya encendidos (el selector enciende entradas, salidas y stop)
+    for (const k of ['entradas', 'salidas', 'stop', 'stops_historial', 'pnl']) { const chip = p.locator(`[data-prueba="pos-${k}"]`); if (!(await chip.getAttribute('class'))?.includes('is-on')) await chip.click() }
+    await espera(1500); await p.waitForLoadState('networkidle'); await espera(1200)
+    const marcas = await p.locator('.lf-lab__lienzo .lf-g__marcas').innerText().catch(() => '')
+    const nota = await p.locator('.lf-lab__lienzo .lf-g__nota').innerText().catch(() => '')
+    if (!marcas && /posiciones \(/.test(nota)) console.log(`  · mugiwara-api no entregó las posiciones (no es del front): ${nota.slice(0, 140)}`)
+    else ok(/compra/i.test(marcas) && /stop/i.test(marcas), `la posición de la caja queda encima con datos reales: ${marcas.replace(/\n/g, ' · ').slice(0, 100)}`)
+    await foto(p, '05-lab-real')
     await p.goto(`${BASE}/luffy/tableros`, { waitUntil: 'networkidle' }); await espera(2500); await foto(p, '07-tableros', true)
   }
   await ctx.close()

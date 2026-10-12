@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ErrorLuffy, luffy } from './api'
 import type { Tablero } from './tipos'
@@ -38,14 +38,14 @@ export function Tableros() {
         <Link to="/luffy/laboratorio" className="btn">Gráfico nuevo</Link>
       </div>
       {!ts.length && <EmptyState kind="vacio" title="Todavía no hay tableros." detail="Arma un gráfico en el laboratorio y guárdalo aquí." action={<Link to="/luffy/laboratorio" className="btn">Ir al laboratorio</Link>} />}
-      {grupos.map((g) => (
-        <section key={g || '_'} className="lf-tab__grupo">
-          {g && <h2 className="mono lf-tab__g">{g}</h2>}
-          <div className="lf-tab__rejilla">
+      {/* una sola rejilla: el grupo va como chip en cada tarjeta, así las tarjetas llenan las columnas */}
+      <div className="lf-tab__rejilla">
+        {grupos.map((g) => (
+          <Fragment key={g || '_'}>
             {ts.filter((t) => (t.grupo ?? '') === g).map((t) => <Tarjeta key={t.id} t={t} recargar={cargar} mover={mover} />)}
-          </div>
-        </section>
-      ))}
+          </Fragment>
+        ))}
+      </div>
     </div>
   )
 }
@@ -62,7 +62,7 @@ function Tarjeta({ t, recargar, mover }: { t: Tablero; recargar: () => Promise<v
         {ren !== null ? (
           <form className="lf-tabj__ren" onSubmit={(e) => { e.preventDefault(); void renombrar() }}><input value={ren} onChange={(e) => setRen(e.target.value)} autoFocus maxLength={80} /><button type="submit" className="btn btn--esmeralda">Guardar</button><button type="button" className="btn btn--ghost" onClick={() => setRen(null)}>Cancelar</button></form>
         ) : (
-          <><h3 className="lf-tabj__n">{t.nombre}</h3><span className="lf-tabj__m mono">{t.spec.activos?.join(', ')} · {t.spec.rango ?? ''} · {fmtFecha(t.actualizado)}</span></>
+          <><h3 className="lf-tabj__n">{t.nombre}</h3><span className="lf-tabj__m mono">{t.grupo && <em className="lf-tabj__g">{t.grupo}</em>}{t.spec.activos?.join(', ')} · {t.spec.rango ?? ''} · {fmtFecha(t.actualizado)}</span></>
         )}
       </div>
       <div className="lf-tabj__prev">{visible ? <Grafico spec={t.spec} compacto interactivo={false} rangos={false} alto={220} /> : <div style={{ height: 220 }} />}</div>

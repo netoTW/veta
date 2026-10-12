@@ -119,7 +119,7 @@ function Controles({ spec, cat, datos, mutar, origen, setOrigen, aviso }: { spec
   })
   const catSerie = spec.paneles.flatMap((p) => p.series).find((x) => x.tipo === 'categoria')
   const mostrar = spec.posiciones?.mostrar ?? []
-  const posicion = (k: string) => mutar((s) => { const m = new Set(s.posiciones?.mostrar ?? []); if (m.has(k)) m.delete(k); else m.add(k); s.posiciones = m.size ? { origen: s.posiciones?.origen ?? 'pablo', mostrar: [...m] } : null })
+  const posicion = (k: string) => mutar((s) => { const m = new Set(s.posiciones?.mostrar ?? []); if (m.has(k)) m.delete(k); else m.add(k); s.posiciones = { origen: s.posiciones?.origen ?? 'pablo', mostrar: [...m] } })
   const agregarSerie = (panelId: string, c: CatalogoSerie) => mutar((s) => {
     const p = s.paneles.find((x) => x.id === panelId); if (!p) return
     const se: SerieSpec = { id: idLibre(s, c.tipo), tipo: c.tipo, activo: s.activos[0], estilo: c.estilos?.[0] ?? (c.formato === 'valor' && FUNDAMENTALES.includes(c.tipo) ? 'barras' : 'linea'), rol: 'principal', eje: 'izq' }
@@ -146,7 +146,7 @@ function Controles({ spec, cat, datos, mutar, origen, setOrigen, aviso }: { spec
 
   return (
     <div className="lf-ctrl">
-      <label className="lf-ctrl__campo"><span className="mono">Título</span><input value={spec.titulo ?? ''} onChange={(e) => mutar((s) => { s.titulo = e.target.value })} placeholder="Título del gráfico" /></label>
+      <label className="lf-ctrl__campo"><span className="mono">Título</span><input value={spec.titulo ?? ''} onChange={(e) => { const v = e.target.value; mutar((s) => { s.titulo = v }) }} placeholder="Título del gráfico" /></label>
 
       <section className="lf-ctrl__sec">
         <h3 className="mono">Activos</h3>
@@ -169,7 +169,7 @@ function Controles({ spec, cat, datos, mutar, origen, setOrigen, aviso }: { spec
         <div className="lf-chips">
           {['BTC', 'ETH'].map((a) => <button key={a} type="button" className={`lf-chip ${tieneBench(spec, a) ? 'is-on' : ''}`} onClick={() => bench(a)}>{a}</button>)}
           <button type="button" className={`lf-chip ${catSerie ? 'is-on' : ''}`} onClick={() => categoria()} data-prueba="categoria">Mediana de la categoría</button>
-          {catSerie && <select className="lf-ctrl__mini" value={catSerie.agregado ?? 'mediana'} onChange={(e) => mutar((s) => { for (const p of s.paneles) for (const x of p.series) if (x.tipo === 'categoria') x.agregado = e.target.value })} aria-label="Agregado de la categoría">{['mediana', 'media', 'suma'].map((a) => <option key={a} value={a}>{a}</option>)}</select>}
+          {catSerie && <select className="lf-ctrl__mini" value={catSerie.agregado ?? 'mediana'} onChange={(e) => { const v = e.target.value; mutar((s) => { for (const p of s.paneles) for (const x of p.series) if (x.tipo === 'categoria') x.agregado = v }) }} aria-label="Agregado de la categoría">{['mediana', 'media', 'suma'].map((a) => <option key={a} value={a}>{a}</option>)}</select>}
           <form className="lf-ctrl__add" onSubmit={(e) => { e.preventDefault(); const p = parNuevo.trim().toUpperCase().replace(/-USDT$/, ''); if (p) { bench(p); setParNuevo('') } }}>
             <input list="lf-activos" value={parNuevo} onChange={(e) => setParNuevo(e.target.value)} placeholder="+ otro par" aria-label="Comparar contra otro par" />
           </form>
@@ -179,7 +179,7 @@ function Controles({ spec, cat, datos, mutar, origen, setOrigen, aviso }: { spec
       <section className="lf-ctrl__sec">
         <h3 className="mono">Tu posición encima</h3>
         <div className="lf-chips">
-          <select className="lf-ctrl__mini" value={spec.posiciones?.origen ?? 'pablo'} onChange={(e) => mutar((s) => { s.posiciones = { origen: e.target.value, mostrar: s.posiciones?.mostrar ?? ['entradas', 'salidas', 'stop'] } })} aria-label="Origen de las posiciones">{(cat?.origenes_posiciones ?? ['pablo', 'caja', 'ambos']).map((o) => <option key={o} value={o}>{o === 'pablo' ? 'Pablo' : o === 'caja' ? 'la caja' : 'Pablo y la caja'}</option>)}</select>
+          <select className="lf-ctrl__mini" value={spec.posiciones?.origen ?? 'pablo'} onChange={(e) => { const v = e.target.value; mutar((s) => { s.posiciones = { origen: v, mostrar: s.posiciones?.mostrar ?? ['entradas', 'salidas', 'stop'] } }) }} aria-label="Origen de las posiciones">{(cat?.origenes_posiciones ?? ['pablo', 'caja', 'ambos']).map((o) => <option key={o} value={o}>{o === 'pablo' ? 'Pablo' : o === 'caja' ? 'la caja' : 'Pablo y la caja'}</option>)}</select>
           {MOSTRAR.map(([k, l]) => <button key={k} type="button" className={`lf-chip ${mostrar.includes(k) ? 'is-on' : ''}`} onClick={() => posicion(k)} data-prueba={`pos-${k}`}>{l}</button>)}
         </div>
         {datos?.posiciones.length ? <p className="lf-ctrl__nota mono">{datos.posiciones.map((p) => `${p.activo} · ${p.origen === 'caja' ? 'caja' : 'Pablo'} · ${p.estado}${p.simulado ? ' · simulada' : ''} · ${fmt(p.cantidad)} a ${fmt(p.precio_medio)}${p.pnl_no_realizado_usdt !== null ? ` · ${p.pnl_no_realizado_usdt >= 0 ? '+' : ''}${fmt(p.pnl_no_realizado_usdt, 'USDT')}` : ''}`).join(' / ')}</p> : null}
@@ -190,7 +190,7 @@ function Controles({ spec, cat, datos, mutar, origen, setOrigen, aviso }: { spec
         {spec.paneles.map((p, pi) => (
           <div key={p.id} className="lf-panel">
             <div className="lf-panel__cab">
-              <input className="lf-panel__t" value={p.titulo ?? ''} onChange={(e) => mutar((s) => { s.paneles[pi].titulo = e.target.value })} placeholder={p.id} aria-label="Título del panel" />
+              <input className="lf-panel__t" value={p.titulo ?? ''} onChange={(e) => { const v = e.target.value; mutar((s) => { s.paneles[pi].titulo = v }) }} placeholder={p.id} aria-label="Título del panel" />
               <div className="lf-seg lf-seg--mini"><button type="button" className={p.escala !== 'log' ? 'is-on' : ''} onClick={() => mutar((s) => { s.paneles[pi].escala = 'lineal' })}>lin</button><button type="button" className={p.escala === 'log' ? 'is-on' : ''} onClick={() => mutar((s) => { s.paneles[pi].escala = 'log' })}>log</button></div>
               <span className="lf-panel__alt mono" title="Altura relativa"><button type="button" onClick={() => mutar((s) => { s.paneles[pi].altura = Math.max(1, (s.paneles[pi].altura ?? 1) - 1) })}>−</button>{p.altura ?? 1}<button type="button" onClick={() => mutar((s) => { s.paneles[pi].altura = Math.min(5, (s.paneles[pi].altura ?? 1) + 1) })}>+</button></span>
               {spec.paneles.length > 1 && <button type="button" className="lf-panel__x" aria-label="Quitar panel" onClick={() => mutar((s) => { s.paneles.splice(pi, 1) })}>×</button>}
@@ -199,16 +199,16 @@ function Controles({ spec, cat, datos, mutar, origen, setOrigen, aviso }: { spec
               <div key={se.id} className={`lf-serie lf-serie--${se.rol ?? 'principal'}`}>
                 <div className="lf-serie__fila">
                   <span className="lf-serie__n">{etiqueta(se)}</span>
-                  <select className="lf-ctrl__mini" value={se.estilo ?? 'linea'} onChange={(e) => mutar((s) => { s.paneles[pi].series[si].estilo = e.target.value as SerieSpec['estilo'] })} aria-label="Estilo">{((cat?.series.find((x) => x.tipo === se.tipo)?.estilos) ?? cat?.estilos ?? ['linea', 'area', 'barras', 'velas', 'puntos']).map((x) => <option key={x} value={x}>{x}</option>)}</select>
-                  <select className="lf-ctrl__mini" value={se.eje ?? 'izq'} onChange={(e) => mutar((s) => { s.paneles[pi].series[si].eje = e.target.value as 'izq' | 'der' })} aria-label="Eje"><option value="izq">eje 1</option><option value="der">eje 2</option></select>
+                  <select className="lf-ctrl__mini" value={se.estilo ?? 'linea'} onChange={(e) => { const v = e.target.value; mutar((s) => { s.paneles[pi].series[si].estilo = v as SerieSpec['estilo'] }) }} aria-label="Estilo">{((cat?.series.find((x) => x.tipo === se.tipo)?.estilos) ?? cat?.estilos ?? ['linea', 'area', 'barras', 'velas', 'puntos']).map((x) => <option key={x} value={x}>{x}</option>)}</select>
+                  <select className="lf-ctrl__mini" value={se.eje ?? 'izq'} onChange={(e) => { const v = e.target.value; mutar((s) => { s.paneles[pi].series[si].eje = v as 'izq' | 'der' }) }} aria-label="Eje"><option value="izq">eje 1</option><option value="der">eje 2</option></select>
                   <button type="button" className="lf-panel__x" aria-label="Quitar serie" onClick={() => mutar((s) => { s.paneles[pi].series.splice(si, 1) })}>×</button>
                 </div>
-                {spec.activos.length > 1 && <select className="lf-ctrl__mini" value={se.activo ?? spec.activos[0]} onChange={(e) => mutar((s) => { s.paneles[pi].series[si].activo = e.target.value })} aria-label="Activo de la serie">{spec.activos.map((a) => <option key={a} value={a}>{a}</option>)}</select>}
+                {spec.activos.length > 1 && <select className="lf-ctrl__mini" value={se.activo ?? spec.activos[0]} onChange={(e) => { const v = e.target.value; mutar((s) => { s.paneles[pi].series[si].activo = v }) }} aria-label="Activo de la serie">{spec.activos.map((a) => <option key={a} value={a}>{a}</option>)}</select>}
                 <div className="lf-chips lf-chips--transf">
                   {(se.transformaciones ?? []).map((t, ti) => (
                     <span key={ti} className="lf-chip is-on lf-chip--t">{transfLabel(t)}
-                      {t.tipo === 'media_movil' && <input type="number" min={2} max={200} value={t.ventana ?? 7} onChange={(e) => mutar((s) => { s.paneles[pi].series[si].transformaciones![ti].ventana = Number(e.target.value) || 7 })} aria-label="Ventana" />}
-                      {t.tipo === 'ratio' && <select value={t.contra ?? ''} onChange={(e) => mutar((s) => { s.paneles[pi].series[si].transformaciones![ti].contra = e.target.value })} aria-label="Contra"><option value="">serie…</option>{spec.paneles.flatMap((q) => q.series).filter((x) => x.id !== se.id).map((x) => <option key={x.id} value={x.id}>{x.id}</option>)}</select>}
+                      {t.tipo === 'media_movil' && <input type="number" min={2} max={200} value={t.ventana ?? 7} onChange={(e) => { const v = e.target.value; mutar((s) => { s.paneles[pi].series[si].transformaciones![ti].ventana = Number(v) || 7 }) }} aria-label="Ventana" />}
+                      {t.tipo === 'ratio' && <select value={t.contra ?? ''} onChange={(e) => { const v = e.target.value; mutar((s) => { s.paneles[pi].series[si].transformaciones![ti].contra = v }) }} aria-label="Contra"><option value="">serie…</option>{spec.paneles.flatMap((q) => q.series).filter((x) => x.id !== se.id).map((x) => <option key={x.id} value={x.id}>{x.id}</option>)}</select>}
                       <button type="button" aria-label="Quitar transformación" onClick={() => mutar((s) => { s.paneles[pi].series[si].transformaciones!.splice(ti, 1) })}>×</button>
                     </span>
                   ))}

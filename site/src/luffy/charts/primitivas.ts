@@ -98,3 +98,29 @@ export class PerfilPrecio extends Base {
   }
   paneViews() { return [this.vista] }
 }
+
+/* ---------- rótulos de nivel ----------
+   La librería sólo rotula una línea de precio junto al eje, y ahí se pisan los
+   números. Aquí el rótulo va dentro del área, a la izquierda de la línea, con
+   fondo de roca; si dos niveles caen juntos, el segundo se aparta. */
+export interface Rotulo { precio: number; texto: string; color: string }
+export class Rotulos extends Base {
+  private items: { y: number; r: Rotulo }[] = []
+  private rotulos: Rotulo[]
+  private vista = new Vista('top', (ctx, _w, h) => {
+    ctx.font = `500 10px ${FUENTE_MONO}`; ctx.textBaseline = 'middle'; ctx.textAlign = 'left'
+    const puestos: number[] = []
+    for (const { y, r } of this.items) {
+      if (y < 4 || y > h - 4) continue
+      let yy = y - 8
+      for (let i = 0; i < 6 && puestos.some((p) => Math.abs(p - yy) < 13); i++) yy += 13
+      puestos.push(yy)
+      const txt = r.texto; const tw = ctx.measureText(txt).width
+      ctx.fillStyle = rgba(C.roca, 0.86); ctx.fillRect(6, yy - 7, tw + 10, 14)
+      ctx.fillStyle = r.color; ctx.fillText(txt, 11, yy)
+    }
+  })
+  constructor(rotulos: Rotulo[]) { super(); this.rotulos = rotulos }
+  updateAllViews() { if (!this.serie) return; this.items = this.rotulos.flatMap((r) => { const y = this.serie!.priceToCoordinate(r.precio); return y === null ? [] : [{ y, r }] }).sort((a, b) => a.y - b.y) }
+  paneViews() { return [this.vista] }
+}
