@@ -217,6 +217,22 @@ console.log('\nLUFFY · admin, escritorio')
   await ctx.close()
 }
 
+/* ---------- la oficina en vivo: los eventos la animan (simulador) ---------- */
+if (SIM) {
+  console.log('\nLUFFY · oficina: tarjetas, escena y eventos en vivo')
+  const { ctx, p } = await contexto(false)
+  await entrar(ctx, env.VETA_ADMIN_EMAIL, env.VETA_ADMIN_PASSWORD)
+  await ir(p, `${BASE}/luffy/oficina`)
+  await p.waitForSelector('[data-prueba="escena"]', { timeout: 30000 })
+  ok((await p.locator('[data-prueba^="tarjeta-"]').count()) === 6, 'una tarjeta por agente (Luffy, Cuant, Investigador, Estratega, Jev, Crawler)')
+  ok((await p.locator('[data-prueba^="ficha-"]').count()) > 0, `la araña sigue monedas (${await p.locator('[data-prueba^="ficha-"]').count()} fichas)`)
+  const trabaja = await p.waitForFunction(() => [...document.querySelectorAll('[data-prueba^="agente-"]')].some((e) => e.getAttribute('data-trabajando') === 'si' && !/jev|crawler/.test(e.getAttribute('data-prueba') ?? '')), null, { timeout: 40000 }).then(() => true, () => false)
+  ok(trabaja, 'con los eventos, un agente se pone a trabajar (teclea y se enciende su pantalla)')
+  const camina = await p.waitForFunction(() => { const t = document.querySelector('[data-prueba="arana"]')?.getAttribute('transform') ?? ''; return /rotate\((?!0\))/.test(t) }, null, { timeout: 60000, polling: 100 }).then(() => true, () => false)
+  ok(camina, 'una alerta manda a la araña hacia su moneda')
+  await ctx.close()
+}
+
 /* ---------- un dato raro no tumba la vista (el fallo del 12-oct: confluencia como diccionario) ---------- */
 {
   console.log('\nLUFFY · datos raros: la vista sigue en pie')

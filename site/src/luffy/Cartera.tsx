@@ -62,7 +62,7 @@ function Curva({ curva }: { curva: CurvaCapital }) {
   return <div ref={ref} className="lf-cart__curva" />
 }
 
-function TarjetaCurva({ origen }: { origen: 'pablo' | 'caja' }) {
+export function TarjetaCurva({ origen }: { origen: 'pablo' | 'caja' }) {
   const [rango, setRango] = useState('90d'); const [curva, setCurva] = useState<CurvaCapital | null>(null); const [error, setError] = useState<string | null>(null)
   const [form, setForm] = useState(false); const [m, setM] = useState({ fecha: hoy(), usdt: '', tipo: 'aporte' as 'aporte' | 'retiro', nota: '' })
   const cargar = useCallback(() => luffy6b.curva(origen, rango).then((c) => { setCurva(c); setError(null) }, (e) => setError(e instanceof Error ? e.message : String(e))), [origen, rango])

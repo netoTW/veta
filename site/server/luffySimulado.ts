@@ -859,7 +859,14 @@ const GUION_EVENTOS: Record<string, unknown>[] = [
   { tipo: 'turno_cerrado', proceso: 'api', hilo_id: H_MONITOR, tipo_turno: 'dato_grafico', modelo: 'claude-fable-5-1', costo_usd: 0.17, herramientas: 3, duracion_s: 34, mensaje_id: 1300 },
   { tipo: 'caja_ciclo', proceso: 'monitor', motivo: 'programado', corrio: false, propuestas: 0, costo_usd: 0 }, { tipo: 'reconciliacion', proceso: 'monitor', origen: 'caja', discrepancias: 0, eventos: 0 },
   { tipo: 'fuente_leida', proceso: 'monitor', fuente: 'defillama', n: 0, ok: false, detalle: 'tiempo agotado' }, { tipo: 'alerta', proceso: 'monitor', alerta_id: 913, activo: 'WAL', severidad: 'media' },
-  { tipo: 'gatillo', proceso: 'social', id_corto: 'g10wgr', evento: 'despertado' }, { tipo: 'fuente_leida', proceso: 'social', fuente: 'gobernanza', n: 390, ok: true },
+  { tipo: 'gatillo', proceso: 'social', id_corto: 'g10wgr', evento: 'despertado' }, { tipo: 'fuente_leida', proceso: 'social', fuente: 'snapshot', n: 390, ok: true },
+  // la oficina rehecha: más trabajo de agentes y eventos que nombran monedas (`activos`, pedido a Mugiwara en v2.3)
+  { tipo: 'agente_convocado', proceso: 'api', agente: 'investigador', hilo_id: H_MONITOR }, { tipo: 'herramienta', proceso: 'api', nombre: 'web_buscar', quien: 'investigador', ok: true, duracion_s: 3.1, fuente: 'web' },
+  { tipo: 'fuente_leida', proceso: 'social', fuente: 'x', n: 31, ok: true, detalle: '31 nuevos', activos: ['STRK', 'WAL'] }, { tipo: 'jev', proceso: 'social', proposito: 'clasificar_post', n: 31, costo_usd: 0.001, modelo: 'jev-1.13.0' },
+  { tipo: 'agente_terminado', proceso: 'api', agente: 'investigador', costo_usd: 0.42, duracion_s: 41, ok: true },
+  { tipo: 'agente_convocado', proceso: 'api', agente: 'estratega', hilo_id: H_MONITOR }, { tipo: 'radar_ciclo', proceso: 'monitor', modo: 'impulso', n_evaluados: 241, n_candidatas: 1, duracion_s: 9.8, activos: ['CFX'] },
+  { tipo: 'agente_terminado', proceso: 'api', agente: 'estratega', costo_usd: 0.31, duracion_s: 27, ok: true }, { tipo: 'alerta', proceso: 'monitor', alerta_id: 914, activo: 'STRK', severidad: 'media' },
+  { tipo: 'fuente_leida', proceso: 'social', fuente: 'upbit', grupo: 'listados', n: 0, ok: false, detalle: '429' }, { tipo: 'jev', proceso: 'social', proposito: 'clasificar_post', n: 12, costo_usd: 0.0004, modelo: 'jev-1.13.0' },
 ]
 
 /* ---------- informes ---------- */

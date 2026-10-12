@@ -749,6 +749,48 @@ la 6b; al estar al final no daba error, pero todo lo que se agregó después que
 liviano del teléfono del bloque A sólo se aplicaba a quien tuviera el movimiento reducido. Cerrado, y
 `pruebas/unidad/estilos.test.ts` revisa que toda hoja cierre sus llaves.
 
+### Pendientes tras la 6b · bloque C: la oficina en vivo, rehecha (12-oct-2026)
+
+**Hecha, a la espera de que Pablo la vea antes de desplegarla** (capturas y videos en
+`recursos/capturas/oficina/`). Toma de la oficina de GROKBOT + JEV sólo la idea; el arte es
+original y en el sistema visual de VETA.
+
+**La sala** (`src/luffy/oficina/Escena.tsx`, SVG dibujado en código): isométrica, en roca pulida,
+con un escritorio por agente y un personaje original en cada uno. Luffy es el jefe: cabeza de gema
+esmeralda, hombros de oro y un escritorio de mando con dos pantallas, al frente. Cuant lleva lentes de oro,
+el Investigador capucha y lupa, el Estratega visor y cresta, Jev audífonos y el Crawler gafas y un
+cable a la pantalla. Quien trabaja teclea, se le enciende la pantalla y cabecea; al terminar
+lleva un papel volando hasta Luffy, que brilla al recibirlo. Jev suelta publicaciones que suben.
+
+**La araña de oro** vive en la pantalla grande de la pared (el crawler y el radar): teje hilos hacia
+las monedas que se siguen (posiciones de Pablo y de la caja, candidatas de hoy, gatillos y
+vigilancia, sacadas de la lista de la terminal), que cuelgan como fichas con su ticker y su
+color. Cuando una alerta nombra una moneda, la araña camina hasta ella, refuerza su hilo y vuelve;
+cada ciclo del radar barre la tela. Las fuentes son objetos con su luz (al día, atrasada, caída,
+apagada): el servidor con los exchanges y los datos, la antena de celosía con lo social (X,
+Telegram) y la parabólica con los anuncios y la gobernanza; parpadean al entregar o al fallar.
+
+**Arriba**, una tarjeta por agente: su rol en una línea, lo último que hizo, su cifra de 24 h y si
+está trabajando (en el teléfono, en carrusel). **Abajo**, la curva de la caja, el registro (que
+arranca con los últimos 120 eventos; Jev agrupado en una línea que va sumando y los avisos
+repetidos juntos) y los trabajos programados.
+
+**Técnica.** Sólo se baja al abrir la vista. Un único bucle de `requestAnimationFrame` para lo
+que viaja (araña, papeles, barrido), apagado cuando nada se mueve; el tecleo es CSS. Fuera de
+pantalla o con la pestaña oculta, todo en pausa; con «reducir movimiento», nada se anima (medido:
+cero animaciones en la escena). En el teléfono la escena entra entera en el ancho y las fichas se
+agrandan para leerse.
+
+**Pedido a Mugiwara** (`TRASPASO.md` §6): los eventos del crawler y del radar no dicen qué monedas
+tocaron; con un campo `activos` en `fuente_leida` y `radar_ciclo`, la araña caminaría también a
+esas. El panel ya lo lee si llega (el simulador lo manda).
+
+**Pruebas.** En `probar-luffy.mjs`: seis tarjetas, fichas en la tela, un agente que se pone a
+trabajar con los eventos y la araña que camina con una alerta. El recorrido de botones y la app
+siguen en verde. Un hallazgo con datos reales: los eventos de fuentes traen su propio campo
+`grupo` y chocaba con el que juntaba a Jev; el aislante de tarjetas lo contuvo (sólo el registro
+se avisó) y quedó corregido, con un evento así en el simulador.
+
 ## 8. Huecos del contrato abiertos
 
 Lista completa en `HUECOS-CONTRATO.md`. Lo que sigue abierto, con qué falta de cada uno:

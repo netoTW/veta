@@ -116,6 +116,8 @@ export const luffy6b = {
 
   /* 8.5 */
   oficina: () => pedir<Oficina>('/oficina/estado'),
+  /** Los últimos eventos, para que el registro no arranque vacío (más viejos primero). */
+  eventosRecientes: (desdeId: number, limite = 60) => pedir<{ items: EventoOficina[]; ultimo_id: number | null }>(`/eventos/recientes${qs({ desde_id: desdeId, limite })}`),
   /** El SSE global. Se reconecta solo con `desde_id` (el último id visto), y avisa si el latido deja de llegar. */
   eventos(onEvento: (e: EventoOficina) => void, onEstado?: (abierto: boolean) => void, desdeId?: number | null): () => void {
     let ultimo = desdeId ?? null, es: EventSource | null = null, cerrado = false, reintento: ReturnType<typeof setTimeout> | null = null, vigia: ReturnType<typeof setInterval> | null = null, visto = Date.now()

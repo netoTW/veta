@@ -138,7 +138,9 @@ límite de error, archivado de la calibración.
 
 ### Alta
 000. **Pendientes tras la 6b** (`Mugiwara/PROMPT-VETA-pendientes.md`): bloque A (estabilidad y
-    velocidad) y B (app instalable) hechos el 12-oct, ver `ESTADO-WEB.md`; sigue C (oficina rehecha).
+    velocidad) y B (app instalable) desplegados el 12-oct; C (la oficina rehecha) hecho y con commit
+    local, **sin desplegar hasta que Pablo vea las capturas y el video** (`recursos/capturas/oficina/`).
+    Con su visto bueno: `bash scripts/desplegar.sh "Pendientes 6b, bloque C: la oficina"`.
     **Pablo:** instalar la app en su iPhone (Safari → compartir → «Agregar a inicio») y en Android
     (Chrome → «Instalar app») y contar si abre a pantalla completa con la gema.
 00. **La curva y el efectivo de la cartera de Pablo** dependen de Mugiwara (§6): hoy suman la
@@ -229,6 +231,9 @@ límite de error, archivado de la calibración.
 - La capa `gatillos` de `/graficos/datos` declara `no_disponibles: [{serie: "gat", motivo: "ValueError: no
   hay gatillos activos con nivel de precio para este activo"}]` cuando simplemente no hay gatillos: una
   capa vacía no es un dato que falte. La web la oculta y quita el nombre de la excepción de los motivos.
+- **La oficina:** `fuente_leida` (el crawler de X) y `radar_ciclo` no dicen qué monedas tocaron. Con un campo
+  `activos: ["WAL", …]` la araña de la oficina caminaría también a esas (hoy sólo lo hace con las alertas,
+  que traen `activo`). El panel ya lo lee si llega.
 - **Push (para cuando se quiera reemplazar Telegram):** el panel ya tiene el service worker que muestra el
   aviso y la función que suscribe (`src/luffy/pwa.ts`). Hace falta del lado de Mugiwara: una clave VAPID
   (la pública, por `GET /push/clave`), `POST /push/suscripciones` para guardar la suscripción del teléfono
