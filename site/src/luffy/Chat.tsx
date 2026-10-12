@@ -175,7 +175,7 @@ function Conversacion({ id, alCambiar, abrirCajon }: { id: string; alCambiar: ()
         {turno && <TurnoVivo t={turno} cambiar={cambiarPropuesta} />}
         {det && !det.mensajes.length && !turno && <p className="lf-conv__nada">Hilo nuevo. Escríbele a Luffy.</p>}
       </div>
-      <form className="lf-comp" onSubmit={(e) => { e.preventDefault(); void enviar() }}>
+      <form className={`lf-comp ${turno ? 'is-pensando' : ''}`} onSubmit={(e) => { e.preventDefault(); void enviar() }}>
         {aviso && <p className="lf-comp__aviso">{aviso}</p>}
         {imagenes.length > 0 && (
           <div className="lf-comp__imgs">{imagenes.map((i, k) => <span key={k} className="lf-comp__img"><img src={i.url} alt="" /><button type="button" aria-label="Quitar" onClick={() => setImagenes((x) => x.filter((_, j) => j !== k))}>×</button></span>)}</div>

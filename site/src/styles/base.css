@@ -94,8 +94,21 @@
   --font-body:    'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-mono:    'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 
-  /* Radio mínimo. La roca se corta, no se redondea. */
-  --r: 2px;
+  /* v2 «roca pulida» (SISTEMA-VISUAL.md §20): la roca ya no se ve cortada en bruto sino pulida,
+     como obsidiana. Radios por pieza, vidrio ahumado en la carcasa, hilo metálico en el borde. */
+  --r-tarjeta: 14px;      /* tarjetas, modales */
+  --r-hoja: 16px;         /* hojas inferiores, cajones, menús */
+  --r-control: 10px;      /* botones y campos */
+  --r-capsula: 999px;     /* chips y la barra de escritura */
+  --r-leve: 6px;          /* leyendas, miniaturas, tooltips */
+  --r: var(--r-control);
+  --vidrio: rgba(21, 24, 27, 0.74);
+  --vidrio-denso: rgba(12, 14, 16, 0.86);
+  --vidrio-solido: #15181B;
+  --vidrio-luz: inset 0 1px 0 rgba(236, 230, 216, 0.10);
+  --vidrio-sombra: 0 14px 34px -18px rgba(0, 0, 0, 0.75);
+  --hilo-metal: linear-gradient(135deg, rgba(138,106,42,0.65), rgba(234,209,137,0.55) 42%, rgba(201,162,75,0.35) 58%, rgba(138,106,42,0.6));
+  --hilo-suave: linear-gradient(135deg, rgba(236,230,216,0.16), rgba(236,230,216,0.06) 48%, rgba(201,162,75,0.26));
 
   --gutter: clamp(20px, 5vw, 64px);
   --measure: 60ch;

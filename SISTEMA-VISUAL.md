@@ -56,8 +56,8 @@ Texto y negativo:
 | `--rojo` | `#B5473E` | Negativo apagado, error |
 | `--rojo-luz` | `#D9695F` | Negativo en texto pequeño |
 
-Hairlines: `rgba(236,230,216,0.10)` y `0.06`. Radio: 2 px (la roca se corta,
-no se redondea).
+Hairlines: `rgba(236,230,216,0.10)` y `0.06`. Radio: desde la v2 (§20) la roca va pulida:
+14 px en tarjetas, 10 px en controles, cápsula en chips. (Hasta la fase 6a: 2 px, la roca cortada.)
 
 ## 3. Tipografía
 
@@ -574,3 +574,54 @@ tabla por usuario (cupo, profundos, listos, sin terminar, costo real) y pedido a
 
 Capturas: `recursos/capturas/analizar/` (01–22). Sin créditos Higgsfield: se reutilizó la roca
 del hero.
+
+## 20. v2 — roca pulida (fase 6b, 12-oct-2026)
+
+La misma identidad con otro acabado: la roca deja de verse cortada en bruto y pasa a verse
+pulida, como obsidiana con su veta de oro. El kintsugi sigue: **el oro es la costura, no la
+superficie**. Se mantienen la paleta, las tipografías, los números tabulares, la textura y el 3D
+de la portada. Cambian los radios, la carcasa (vidrio) y el borde (hilo metálico). Se aplica por
+tokens en todo el sitio, público incluido, sin reestructurar páginas: `src/styles/pulida.css` se
+carga la última y viste los selectores existentes.
+
+### Tokens (`base.css`)
+
+| Token | Valor | Dónde |
+|---|---|---|
+| `--r-tarjeta` | 14 px | tarjetas, modales, gráficos, propuestas, puertas, vacíos |
+| `--r-hoja` | 16 px | hojas inferiores, cajones, menús; la burbuja del usuario |
+| `--r-control` | 10 px | botones, campos, selectores segmentados (`--r` apunta aquí) |
+| `--r-capsula` | 999 px | chips, estados de plan, la barra de escritura del chat |
+| `--r-leve` | 6 px | leyendas sobre el lienzo, miniaturas, tooltips, código en línea |
+| `--vidrio` | roca-2 al 74 % | superficies de vidrio pequeñas (barra de escritura, menús, tooltips) |
+| `--vidrio-denso` | roca al 86 % | barras fijas, hojas y cajones (la legibilidad manda) |
+| `--vidrio-solido` | `#15181B` | la alternativa cuando no hay desenfoque |
+| `--vidrio-luz` | sombra interior 1 px hueso 10 % | el filo de luz en el borde superior de todo vidrio |
+| `--vidrio-sombra` | sombra exterior suave | lo que flota: barra de escritura, menús |
+| `--hilo-metal` | degradado oro-sombra → oro-luz → oro | el borde de lo que flota: línea, nunca relleno |
+| `--hilo-suave` | degradado hueso 16 % → oro 26 % | el borde de tarjetas y menús |
+
+### Reglas
+
+- **Vidrio sólo en lo fijo y lo pequeño:** barras, la barra de escritura, hojas, cajones, menús y
+  tooltips (`backdrop-filter: blur(18–22px) saturate(150%)`). Las tarjetas son sólidas. **Nunca
+  detrás de un gráfico:** los lienzos van sobre fondo sólido dentro de tarjetas redondeadas
+  (`.lf-g` con `overflow: hidden`), las velas se leen perfectas.
+- **Sin desenfoque, mismo dibujo:** `@supports not (backdrop-filter)` cambia el vidrio por
+  `--vidrio-solido`; nada depende del efecto.
+- **El hilo metálico con radio:** `border-image` no sabe de esquinas, así que el borde degradado
+  es una capa `::before` enmascarada al borde (`mask-composite: exclude`, 1 px). Lo usan el
+  primario (`.btn`), la barra de escritura, menús, tarjetas de tablero, puertas y vacíos.
+- **Barra de escritura tipo Siri:** cápsula de vidrio separada del borde, sombra suave, el
+  adjunto como botón redondo y «Enviar» como cápsula. Mientras Luffy piensa (`.is-pensando`),
+  un hilo de luz esmeralda → oro recorre el borde (gradiente cónico animado por `@property
+  --lf-ang`, con un halo desenfocado detrás): es un hilo, no una mancha. Sin `@property`, queda
+  un borde esmeralda-oro fijo.
+- **Movimiento:** las vistas entran con un desplazamiento de 6 px y fundido (280 ms); hojas y
+  cajones con `--ease-piedra`; los gráficos funden al cambiar de datos. Todo se apaga con
+  `prefers-reduced-motion`.
+- **Rendimiento:** el desenfoque sólo en elementos fijos o de pocos píxeles; nada de vidrio en
+  listas largas ni en tarjetas, para mantener 60 fps al hacer scroll en el chat y en el terminal.
+
+Capturas antes/después: `recursos/capturas/pulida/antes-despues-*.png` (portada, chat, barra
+pensando, hoja del laboratorio, gemas; escritorio y teléfono).

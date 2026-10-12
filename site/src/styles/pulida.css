@@ -1,0 +1,115 @@
+/* ============================================================
+   VETA — v2 «roca pulida» (SISTEMA-VISUAL.md §20). Se carga la
+   última y aplica el acabado por tokens a todo el sitio sin
+   reestructurar nada: radios, vidrio en la carcasa, hilo
+   metálico en los bordes. Misma paleta, mismas tipografías,
+   misma regla: el oro es la costura, nunca la superficie.
+   El vidrio (desenfoque) sólo va en lo fijo y lo pequeño: barras,
+   la barra de escritura, hojas, cajones y menús. Las tarjetas son
+   sólidas, y los gráficos siempre sobre fondo sólido.
+   ============================================================ */
+
+/* ---------- vidrio ---------- */
+.p-top, .nav, .lf-top,
+.lf-comp__fila, .lf-comp__adj,
+.p-admin-menu__lista, .p-top__links.is-open, .lf-picker, .p-rol, .ch-tip {
+  background: var(--vidrio);
+  -webkit-backdrop-filter: blur(18px) saturate(150%); backdrop-filter: blur(18px) saturate(150%);
+  box-shadow: var(--vidrio-luz);
+}
+.p-top, .nav, .lf-top { background: var(--vidrio-denso); }
+.p-admin-menu__lista, .lf-picker, .ch-tip { box-shadow: var(--vidrio-luz), var(--vidrio-sombra); }
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .p-top, .nav, .lf-top, .lf-comp__fila, .lf-comp__adj, .p-admin-menu__lista, .p-top__links.is-open, .lf-picker, .p-rol, .ch-tip, .lf-hilos, .lf-lab__ctrl { background: var(--vidrio-solido); }
+}
+/* el hilo metálico como borde, con radio: una capa enmascarada al borde */
+.hilo-metal, .lf-comp__fila, .p-admin-menu__lista, .lf-picker, .lf-prop, .lf-tabj, .p-card, .p-puerta, .a-dec, .empty, .lf-lab__ctrl, .lf-hilos.is-open {
+  position: relative; isolation: isolate;
+}
+.lf-comp__fila::before, .p-admin-menu__lista::before, .lf-picker::before, .lf-tabj::before, .p-puerta::after, .a-dec::after, .empty::before {
+  content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none; z-index: 0;
+  background: var(--hilo-suave);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask-composite: exclude;
+}
+.lf-comp__fila::before { background: var(--hilo-metal); }
+.p-puerta::after, .a-dec::after { top: 0; bottom: 0; width: auto; height: auto; left: 0; right: 0; box-shadow: none; }
+
+/* ---------- radios: tarjetas ---------- */
+.p-card, .lf-g, .lf-prop, .lf-panel, .lf-tabj, .lf-dist, .a-dec, .a-obj, .empty, .p-puerta, .p-cifra, .p-ficha__b, .p-graf, .p-varas, .mk, .p-eval, .p-avz,
+.ch, .a-fila, .p-niv, .pz__gema, .pz__pasos, .probar__salida, .probar__cand, .pieza__fig, .ns-quien, .lf-m--ejecucion, .lf-m__aviso, .lf-m__error, .lf-prop__res, .lf-conv__resumen,
+.a-json, .a-md, .a-det, .a-obj, .p-diario__motivo, .p-semana__fila, .p-bench__b, .p-seg__inv, .lf-hilos__form, .lf-conv__ren, .p-seccion__calidad, .lf-md pre, .lf-md__tabla, .a-dec__ver, .a-dec__aviso, .p-cli__dir, .p-cli__vigilar, .mk__celda, .mk__pred {
+  border-radius: var(--r-tarjeta);
+}
+.lf-g { overflow: hidden; }
+.lf-g__lienzo { border-radius: 0; }
+.lf-m--yo .lf-m__cuerpo { border-radius: var(--r-hoja) var(--r-hoja) var(--r-leve) var(--r-hoja); }
+.lf-m__fig img, .lf-m__img, .lf-comp__img, .lf-comp__img img, .lf-g__png, .lf-g__ley, .lf-g__fecha, .a-sec__grupo, .lf-md code { border-radius: var(--r-leve); }
+.lf-g__ley { padding: 5px 8px; }
+
+/* ---------- radios: controles ---------- */
+.btn, .lf-seg, .lf-ctrl__mini, .a-filtro, .p-nivel__btn, .lf-tg, .lf-conv__hilos, .lf-hilos__nuevo, .a-tab, .lf-panel__x, .lf-panel__alt button, .p-rol, .lf-prop__botones .btn,
+input:not([type='checkbox']):not([type='radio']):not([type='range']), textarea, select, .probar__input { border-radius: var(--r-control); }
+.lf-seg { overflow: hidden; }
+.lf-seg button { border-radius: 0; }
+.lf-ctrl__mini, select.lf-ctrl__mini { border-radius: 8px; }
+.lf-panel__x, .lf-panel__alt button { border-radius: 6px; }
+.lf-comp__adj, .lf-comp__img button { border-radius: 50%; }
+/* el primario: hilo de oro con radio (border-image no sabe de esquinas) */
+/* `border-image: none` lo vacía el minificador (queda «border-image:;» y el navegador lo ignora): la larga sí llega */
+.btn { border-image-source: none; border-image-slice: 100%; border-image-width: 1; border-color: transparent; position: relative; isolation: isolate; }
+.btn::before {
+  content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none; z-index: 0;
+  background: linear-gradient(120deg, var(--btn-a), var(--btn-b) 45%, var(--btn-c));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask-composite: exclude;
+}
+.btn::after { border-radius: inherit; z-index: -1; }
+.btn > * { position: relative; z-index: 1; }
+.btn:hover { box-shadow: 0 0 22px -8px rgba(201,162,75,0.55), var(--vidrio-luz); }
+.btn--ghost:hover { box-shadow: var(--vidrio-luz); }
+.btn--esmeralda:hover { box-shadow: 0 0 22px -8px rgba(31,164,111,0.6), var(--vidrio-luz); }
+
+/* ---------- radios: cápsulas ---------- */
+.lf-chip, .p-chip, .p-plan, .lf-hilo__m em, .lf-tabj__g, .ch-sello, .p-imp__salir, .lf-tg, .p-yo__entrar, .a-pub, .p-estado, .lf-prop__estado, .lf-top__costo i { border-radius: var(--r-capsula); }
+.lf-chip { padding: 6px 12px; }
+.lf-g__rangos .lf-chip { padding: 5px 9px; }
+
+/* ---------- radios: hojas, cajones y menús ---------- */
+.p-admin-menu__lista, .lf-picker { border-radius: var(--r-hoja); }
+@media (max-width: 820px) {
+  .lf-lab__ctrl { border-radius: var(--r-hoja) var(--r-hoja) 0 0; background: var(--vidrio-denso); -webkit-backdrop-filter: blur(22px) saturate(150%); backdrop-filter: blur(22px) saturate(150%); box-shadow: var(--vidrio-luz), 0 -24px 60px -20px rgba(0,0,0,0.85); }
+  .lf-hilos { border-radius: 0 var(--r-hoja) var(--r-hoja) 0; background: var(--vidrio-denso); -webkit-backdrop-filter: blur(22px) saturate(150%); backdrop-filter: blur(22px) saturate(150%); box-shadow: var(--vidrio-luz), 20px 0 50px -20px rgba(0,0,0,0.8); }
+  .p-top__links.is-open { border-radius: 0 0 var(--r-hoja) var(--r-hoja); }
+}
+.lf-velo { background: rgba(7,8,9,0.5); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
+
+/* ---------- barras: el filo de luz arriba y la costura abajo ---------- */
+.p-top, .lf-top, .nav { border-bottom-color: transparent; }
+.p-top::after, .lf-top::after { bottom: 0; }
+
+/* ---------- la barra de escritura del chat, tipo Siri ---------- */
+.lf-comp { border-top: 0; background: transparent; padding: 6px clamp(12px, 3vw, 24px) max(14px, env(safe-area-inset-bottom)); }
+.lf-comp__fila { align-items: center; gap: 6px; padding: 6px 6px 6px 8px; border-radius: var(--r-capsula); box-shadow: var(--vidrio-luz), var(--vidrio-sombra); }
+.lf-comp textarea { background: transparent; border: 0; box-shadow: none; padding: 9px 10px; min-height: 36px; }
+.lf-comp textarea:focus { border: 0; box-shadow: none; }
+.lf-comp__adj { width: 36px; height: 36px; border: 0; color: var(--ceniza); background: rgba(236,230,216,0.05); backdrop-filter: none; -webkit-backdrop-filter: none; box-shadow: none; }
+.lf-comp__adj:hover { background: var(--oro-dim); }
+.lf-comp__enviar { padding: 9px 16px; border-radius: var(--r-capsula); }
+.lf-comp__imgs, .lf-comp__aviso { padding-inline: 10px; }
+/* mientras Luffy piensa, un hilo de luz recorre el borde: esmeralda que se vuelve oro. Sólo el hilo: sin halo, que se lee como mancha. */
+@property --lf-ang { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+.lf-comp.is-pensando .lf-comp__fila::before {
+  background: conic-gradient(from var(--lf-ang), transparent 0deg, transparent 230deg, var(--esmeralda) 290deg, var(--esmeralda-luz) 320deg, var(--oro-luz) 345deg, transparent 360deg);
+  animation: lf-hilo 1.7s linear infinite;
+}
+@keyframes lf-hilo { to { --lf-ang: 360deg; } }
+@supports not (background: conic-gradient(from var(--lf-ang), red, blue)) {
+  .lf-comp.is-pensando .lf-comp__fila::before { background: linear-gradient(90deg, var(--esmeralda), var(--oro-luz)); }
+}
+
+/* ---------- movimiento ---------- */
+@keyframes lf-entra { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.lf-main > *, .p-main > * { animation: lf-entra 0.28s var(--ease) both; }
+.lf-lab__ctrl, .lf-hilos { transition-timing-function: var(--ease-piedra); }
+@media (prefers-reduced-motion: reduce) {
+  .lf-main > *, .p-main > * { animation: none; }
+  .lf-comp.is-pensando .lf-comp__fila::before { animation: none; }

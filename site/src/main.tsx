@@ -10,6 +10,7 @@ import './styles/auth.css'
 import './styles/admin.css'
 import './styles/charts.css'
 import './styles/luffy.css'
+import './styles/pulida.css'
 import App from './App'
 
 /*
