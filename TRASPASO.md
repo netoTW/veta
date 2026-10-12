@@ -139,8 +139,10 @@ límite de error, archivado de la calibración.
 ### Alta
 000. **Pendientes tras la 6b** (`Mugiwara/PROMPT-VETA-pendientes.md`): bloque A (estabilidad y
     velocidad) y B (app instalable) desplegados el 12-oct; C (la oficina rehecha) hecho y con commit
-    local, **sin desplegar hasta que Pablo vea las capturas y el video** (`recursos/capturas/oficina/`).
-    Con su visto bueno: `bash scripts/desplegar.sh "Pendientes 6b, bloque C: la oficina"`.
+    local; desplegado el 12-oct a pedido de Pablo (Vercel lo publicó con retraso por un incidente
+    suyo de builds). **La oficina viva e interactiva** (ESTADO-WEB.md) está hecha, con commit local y
+    **sin desplegar hasta que Pablo vea el video** (`recursos/capturas/oficina-viva/video/`). Con su
+    visto bueno: `bash scripts/desplegar.sh "Repetir en la sala"`.
     **Pablo:** instalar la app en su iPhone (Safari → compartir → «Agregar a inicio») y en Android
     (Chrome → «Instalar app») y contar si abre a pantalla completa con la gema.
 00. **La curva y el efectivo de la cartera de Pablo** dependen de Mugiwara (§6): hoy suman la
@@ -231,7 +233,22 @@ límite de error, archivado de la calibración.
 - La capa `gatillos` de `/graficos/datos` declara `no_disponibles: [{serie: "gat", motivo: "ValueError: no
   hay gatillos activos con nivel de precio para este activo"}]` cuando simplemente no hay gatillos: una
   capa vacía no es un dato que falte. La web la oculta y quita el nombre de la excepción de los motivos.
-- **La oficina:** `fuente_leida` (el crawler de X) y `radar_ciclo` no dicen qué monedas tocaron. Con un campo
+- **La oficina viva (12-oct), lo que le falta del lado de Mugiwara** (el panel ya lo lee si llega):
+  1. `activos: ["WAL", …]` en `fuente_leida` (X, Telegram, listados, gobernanza), `jev`, `radar_ciclo`
+     (las candidatas) y `herramienta` (sacado de la entrada: `activo`, `simbolo`, `par`). Sin eso la araña
+     va al puerto de la fuente en vez de a la moneda, y el grosor de los hilos sólo cuenta alertas y órdenes.
+  2. `paso` en `herramienta`: la frase de `bot/progreso.paso_llano` con la moneda («revisando derivados de
+     WAL»). Hoy el panel la arma con su copia de la tabla, sin la moneda.
+  3. En `jev`, el resultado: `clases: {persona: 9, bot_informativo: 3, granja: 0}` (para el rótulo «X: 12
+     posts de WAL · 9 personas, 3 bots»); en `fuente_leida` de X, `n_leidos` y `n_nuevos` aparte del detalle.
+  4. `hilo_id` en `agente_terminado` (hoy se empareja por agente) y `de`/`para` si un agente le entrega a otro
+     que no sea Luffy.
+  5. La línea de tiempo de un turno: `GET /turnos?limite=30` (los turnos con su `mensaje_id`) y
+     `GET /turnos/{mensaje_id}/linea` → pasos ordenados `{hora, quien, tipo, nombre, paso, activos, ok,
+     duracion_s, costo_usd}`. Hoy la repetición se arma con los eventos (sin las entradas de cada herramienta).
+  6. Filtros en `GET /eventos/recientes`: `desde_hora`, `tipos=` / `excluir=jev` y `quien=`, para traer 24 h
+     sin bajar ~9000 eventos (casi todos tandas de Jev); y un resumen de Jev por hora.
+- (anterior) **La oficina:** `fuente_leida` (el crawler de X) y `radar_ciclo` no dicen qué monedas tocaron. Con un campo
   `activos: ["WAL", …]` la araña de la oficina caminaría también a esas (hoy sólo lo hace con las alertas,
   que traen `activo`). El panel ya lo lee si llega.
 - **Push (para cuando se quiera reemplazar Telegram):** el panel ya tiene el service worker que muestra el
@@ -287,6 +304,14 @@ Cada una costó un incidente. Están aquí para no repetirlas.
     el registro que el rol ve, no el primero: así se perdían los gráficos de STONK.
 
 ---
+13. **Vercel con desafío anti-bots (12-oct).** `www.vetalab.io` respondió 403 «Vercel Security
+   Checkpoint» (`x-vercel-mitigated: challenge`) a `curl` y a Chrome automatizado, también visible. La última
+   verificación de `desplegar.sh` («www.vetalab.io sirve esta build») falla aunque el despliegue esté bien.
+   Ese día, además, Vercel tuvo un incidente de builds y de integración con Git (el commit tardó ~25 min en
+   publicarse y el fragmento de la oficina dio 404 unos minutos más). Verificar con un navegador real (la
+   extensión de Chrome): leer la entrada del `/` y pedir el fragmento. Si el desafío es una regla puesta a
+   propósito en el firewall de Vercel, conviene excluir `/` y `/assets/*` para la verificación.
+
 
 ## 8. Cómo desplegar y verificar
 

@@ -791,6 +791,58 @@ siguen en verde. Un hallazgo con datos reales: los eventos de fuentes traen su p
 `grupo` y chocaba con el que juntaba a Jev; el aislante de tarjetas lo contuvo (sólo el registro
 se avisó) y quedó corregido, con un evento así en el simulador.
 
+### La oficina viva e interactiva (12-oct-2026)
+
+Pablo vio la oficina del bloque C linda pero estática: no se entendía si mostraba información, la
+araña parecía un ícono quieto y no se podía profundizar. Rehecha para que trabaje a la vista, **sin
+inventar nada**: todo lo que se mueve sale de un evento real de `GET /eventos`. Capturas y videos
+con datos reales en `recursos/capturas/oficina-viva/` (`scripts/capturar-oficina.mjs`,
+`scripts/video-oficina.mjs`). **Sin desplegar hasta que Pablo vea el video.**
+
+- **La araña siempre trabajando.** Cada lectura del crawler, cada tanda de Jev, cada ciclo del radar
+  y cada alerta la mandan a la ficha de la moneda que nombran; si el evento no nombra ninguna, va al
+  puerto de su fuente en una esquina de la pantalla (X · Telegram, Listados, Votaciones, Datos).
+  Camina dejando su seda, teje (refuerza el hilo) y muestra un rótulo corto de lo leído («X: 212
+  leídos, 31 nuevos», «Listados: 3 al día · Upbit: en pausa 60 min tras un 429», «alerta media:
+  ASTER · catalizador social»). Los viajes hacen cola; una ráfaga al mismo destino (Jev clasifica de a
+  cinco por segundo) se junta en uno. El grosor del hilo es la actividad de la moneda en las últimas
+  horas (media vida de 2 h); tres horas sin nada y la ficha se apaga. A las monedas de la terminal
+  se suman las que se movieron en el día.
+- **El proceso a la vista.** Sobre cada personaje, un globo en llano con lo que hace: los mismos
+  pasos del chat y de Telegram (la tabla de `mugiwara/bot/progreso.py`, copiada en
+  `oficina/historia.ts`), con la moneda si el evento la trae («revisando derivados de WAL…»,
+  «convocando al Cuant…», «clasificando 15 publicaciones…», «revisando listados…»). Un papel viaja
+  de escritorio a escritorio en cada entrega: Luffy → agente al convocarlo, agente → Luffy al terminar,
+  Crawler → Jev con las publicaciones, Crawler → Luffy cuando el radar trae candidatas. Bajo la sala,
+  lo mismo en letra legible (en el teléfono la sala es chica).
+- **Puesta al día.** Al abrir, lo que pasó de verdad en los últimos 10 minutos se pasa rápido por la
+  sala, con su aviso («Puesta al día · lo que pasó desde las 12:41»), y después sigue en vivo. Con datos
+  reales hay un evento cada uno a cinco minutos; sin esto, quien abre la oficina veía una sala quieta.
+- **Profundizar con un toque.** Un agente (en la sala o su tarjeta) abre una hoja con su día: Luffy,
+  sus turnos (modo, canal, herramientas, duración, costo, enlace al hilo y sus pasos al desplegarlo);
+  Cuant, Investigador y Estratega, sus encargos con herramientas; Jev, barras por hora y una línea por
+  hora; el Crawler, las lecturas de cada fuente por hora y los ciclos del radar. Una moneda abre su
+  ficha del terminal. Una fuente (servidor, antena, parabólica, un puerto o la línea de fuentes del
+  pie) abre su salud: estado, detalle, 48 tramos de media hora de verde, ámbar y rojo, cuántas
+  lecturas y el último error. Lo apagado a propósito («sin TALLY_API_KEY») no se pinta como fallo.
+- **Repetir un turno.** Desde la hoja de Luffy (o «Repetir un turno»), cualquier turno cerrado de las
+  últimas 24 h se reproduce paso a paso en la sala a 1×, 2×, 4× u 8×, con pausa, barra de avance, el
+  paso en curso y el enlace al hilo; la pantalla se marca «Repetición». Lo que llega en vivo mientras
+  tanto sigue entrando al registro; «Volver al vivo» recarga la foto.
+- **Fondo sutil.** Sin eventos, las luces del servidor parpadean, la antena emite cada tanto, los
+  monitores respiran y la araña tantea con una pata. Nada que parezca trabajo.
+
+**La historia de 24 h** (`oficina/historia.ts`) se trae después de pintar: `GET /eventos/recientes`
+pagina sólo hacia adelante, así que se pide de atrás hacia adelante en tandas de 1000, de a tres en
+paralelo, hasta pasar las 24 h (unos 9000 eventos reales al día, casi todos de Jev; tope 12 tandas).
+Si no alcanza, la hoja dice desde qué hora cubre. Pedido a Mugiwara un filtro para no bajar las tandas
+de Jev (`TRASPASO.md` §6).
+
+**Pruebas.** `probar-luffy.mjs` (simulador, con 20 h de historia y turnos completos): además de lo
+anterior, un globo aparece, la araña muestra un rótulo, tocar a Luffy abre su día con turnos, un turno
+se repite paso a paso y «Volver al vivo» lo cierra, tocar una fuente muestra su salud y tocar una
+moneda abre su ficha. Con datos reales: cero errores de consola a 1440 y 390 px.
+
 ## 8. Huecos del contrato abiertos
 
 Lista completa en `HUECOS-CONTRATO.md`. Lo que sigue abierto, con qué falta de cada uno:

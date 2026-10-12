@@ -1,4 +1,5 @@
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef } from 'react'
+import type React from 'react'
 import type { EstadoFuente } from '../tipos6b'
 
 /* ============================================================================
@@ -13,8 +14,11 @@ import type { EstadoFuente } from '../tipos6b'
    (exchanges y datos).
 
    Quién trabaja llega por prop (`trabajando`: teclea y se le enciende la pantalla);
-   lo demás, por una referencia: entregar(agente) (lleva un papel a Luffy),
-   fuente(nombre, ok), aMoneda(simbolo), barrer(). Las animaciones largas
+   lo demás, por una referencia: entregar(de, a) (un papel de un escritorio a
+   otro), fuente(nombre, ok), viajar({sym | puerto, rotulo}) (la araña camina,
+   teje el hilo y muestra lo que leyó; los viajes hacen cola y una ráfaga al mismo
+   destino se junta), barrer() y limpiar(). Los globos (qué hace cada uno, en
+   llano) llegan por prop. Se toca un agente, una moneda o una fuente. Las animaciones largas
    (la araña que camina, el papel que viaja, el barrido) van en un solo bucle de
    requestAnimationFrame que se apaga cuando no hay nada moviéndose, fuera de
    pantalla o con la pestaña oculta; el tecleo es CSS y se pausa igual. Con
@@ -22,13 +26,20 @@ import type { EstadoFuente } from '../tipos6b'
    ========================================================================== */
 
 export type IdAgente = 'luffy' | 'cuant' | 'investigador' | 'estratega' | 'jev' | 'crawler'
-export interface MonedaEscena { simbolo: string; tipo: 'pablo' | 'caja' | 'candidata' | 'gatillo' | 'vigilancia' }
+export interface MonedaEscena { simbolo: string; tipo: 'pablo' | 'caja' | 'candidata' | 'gatillo' | 'actividad' | 'vigilancia' }
 export interface FuenteEscena { nombre: string; etiqueta: string; estado: EstadoFuente }
+export type GrupoFuente = 'antena' | 'parabolica' | 'servidor'
+/** Los puertos de la tela: por dónde entra lo que lee cada fuente (la araña va ahí si lo leído no nombra una moneda). */
+export type Puerto = 'social' | 'datos' | 'anuncios' | 'votaciones'
 export interface ApiEscena {
-  entregar: (a: IdAgente) => void
+  /** un papel que viaja de un escritorio a otro (por omisión, a Luffy) */
+  entregar: (de: IdAgente, a?: IdAgente) => void
   fuente: (nombre: string, ok: boolean) => void
-  aMoneda: (simbolo: string) => void
+  /** la araña camina a la moneda (o al puerto), teje su hilo y muestra lo que leyó; false si no hay a dónde ir */
+  viajar: (v: { sym?: string; puerto?: Puerto; rotulo?: string | null }) => boolean
   barrer: () => void
+  /** para empezar una repetición: sin viajes ni papeles pendientes */
+  limpiar: () => void
 }
 
 /* ---------- geometría ---------- */
@@ -45,13 +56,20 @@ const PUESTO: Record<IdAgente, { x: number; y: number; z?: number }> = {
 }
 const PANTALLA = { x: 392, y: 22, w: 416, h: 214 }
 const CUBO = { x: PANTALLA.x + PANTALLA.w / 2, y: PANTALLA.y + 104 }
-const GRUPO_FUENTE: Record<string, 'antena' | 'parabolica' | 'servidor'> = {
+const GRUPO_FUENTE: Record<string, GrupoFuente> = {
   x: 'antena', telegram_fuente: 'antena', telegram: 'antena',
   binance: 'parabolica', upbit: 'parabolica', bithumb: 'parabolica', coinbase: 'parabolica', snapshot: 'parabolica', tally: 'parabolica', gobernanza: 'parabolica', listados: 'parabolica',
 }
-const grupoDe = (nombre: string) => GRUPO_FUENTE[nombre] ?? 'servidor'
+export const grupoDe = (nombre: string): GrupoFuente => GRUPO_FUENTE[nombre] ?? 'servidor'
+// en las esquinas de la pantalla, fuera del óvalo de las monedas
+export const PUERTO: Record<Puerto, { x: number; y: number; rotulo: string }> = {
+  social: { x: PANTALLA.x + 22, y: PANTALLA.y + 22, rotulo: 'X · TELEGRAM' }, anuncios: { x: PANTALLA.x + PANTALLA.w - 22, y: PANTALLA.y + 22, rotulo: 'LISTADOS' },
+  datos: { x: PANTALLA.x + 22, y: PANTALLA.y + PANTALLA.h - 20, rotulo: 'DATOS' }, votaciones: { x: PANTALLA.x + PANTALLA.w - 22, y: PANTALLA.y + PANTALLA.h - 20, rotulo: 'VOTACIONES' },
+}
+const PUERTO_DE: Record<string, Puerto> = { x: 'social', telegram_fuente: 'social', telegram: 'social', binance: 'anuncios', upbit: 'anuncios', bithumb: 'anuncios', coinbase: 'anuncios', listados: 'anuncios', snapshot: 'votaciones', tally: 'votaciones', gobernanza: 'votaciones' }
+export const puertoDe = (fuente: string, grupo?: string): Puerto => PUERTO_DE[fuente] ?? (grupo ? PUERTO_DE[grupo] : undefined) ?? 'datos'
 const LUZ: Record<EstadoFuente, string> = { al_dia: '#5FE0A6', atrasada: '#EAD189', caida: '#E0705F', apagada: '#3A3F43', sin_datos: '#5C605D' }
-const COLOR_MONEDA: Record<MonedaEscena['tipo'], string> = { pablo: '#5FE0A6', caja: '#5FE0A6', candidata: '#EAD189', gatillo: '#ECE6D8', vigilancia: '#8E918C' }
+const COLOR_MONEDA: Record<MonedaEscena['tipo'], string> = { pablo: '#5FE0A6', caja: '#5FE0A6', candidata: '#EAD189', gatillo: '#ECE6D8', actividad: '#C9A24B', vigilancia: '#8E918C' }
 
 /* ---------- piezas ---------- */
 /** La mesa: tapa en rombo y dos caras. `z` escala todo el puesto. */
@@ -127,9 +145,9 @@ function Manos({ id, x, y, k }: { id: IdAgente; x: number; y: number; k: number 
 }
 
 /** Una luz de estado con su nombre al lado. */
-function Luz({ x, y, f, rotulo = true }: { x: number; y: number; f: FuenteEscena; rotulo?: boolean }) {
+function Luz({ x, y, f, rotulo = true, i = 0 }: { x: number; y: number; f: FuenteEscena; rotulo?: boolean; i?: number }) {
   return (
-    <g className={`es-luz es-luz--${f.estado}`} data-fuente={f.nombre}>
+    <g className={`es-luz es-luz--${f.estado}`} data-fuente={f.nombre} style={{ animationDelay: `${(i * 1.37) % 5}s` }}>
       <title>{`${f.etiqueta}: ${f.estado.replace('_', ' ')}`}</title>
       <circle cx={x} cy={y} r={3.4} fill={LUZ[f.estado]} className="es-luz__p" />
       {rotulo && <text x={x + 8} y={y + 3} className="es-mini">{f.etiqueta}</text>}
@@ -140,16 +158,63 @@ function Luz({ x, y, f, rotulo = true }: { x: number; y: number; f: FuenteEscena
 const corto = (s: string) => s.replace(/\s*\(.*?\)\s*/g, ' ').replace(/^Binance futures$/i, 'Binance fut.').trim().slice(0, 13)
 
 /* ---------- la escena ---------- */
-export const Escena = forwardRef<ApiEscena, { monedas: MonedaEscena[]; fuentes: FuenteEscena[]; trabajando: Partial<Record<IdAgente, boolean>> }>(function Escena({ monedas, fuentes, trabajando }, ref) {
+type Viaje = { sym?: string; puerto?: Puerto; rotulo?: string | null }
+const CAPA_GLOBO: IdAgente[] = ['crawler', 'cuant', 'jev', 'investigador', 'estratega', 'luffy']
+/** Dónde sale el globo de cada uno: sobre la cabeza; el del Crawler, a su derecha (encima tiene las monedas de la pantalla). */
+const GLOBO: Record<IdAgente, { dx: number; dy: number; lado: 'arriba' | 'der' }> = {
+  crawler: { dx: 24, dy: -66, lado: 'der' }, cuant: { dx: 0, dy: -112, lado: 'arriba' }, jev: { dx: 0, dy: -112, lado: 'arriba' },
+  investigador: { dx: 0, dy: -112, lado: 'arriba' }, estratega: { dx: 0, dy: -112, lado: 'arriba' }, luffy: { dx: 0, dy: -124, lado: 'arriba' },
+}
+const recorte = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1).trimEnd()}…` : s)
+const MIN_X = 182, MAX_X = 1090
+
+function Globo({ id, texto, reciente }: { id: IdAgente; texto: string; reciente: boolean }) {
+  const p = PUESTO[id], z = p.z ?? 1, g = GLOBO[id]
+  const t = recorte(texto, 38), w = 26 + t.length * 6.65, h = 24
+  const ax = p.x + g.dx * z, ay = p.y + g.dy * z
+  let x = g.lado === 'der' ? ax + 8 : ax - w / 2
+  x = Math.max(MIN_X, Math.min(MAX_X - w, x))
+  const y = g.lado === 'der' ? ay - h / 2 : ay - h - 8
+  const cola = g.lado === 'der' ? `M${x + 1} ${ay - 5} L${ax} ${ay + 6} L${x + 1} ${ay + 4} Z` : `M${ax - 6} ${y + h - 1} L${ax} ${y + h + 8} L${ax + 6} ${y + h - 1} Z`
+  return (
+    <g className={`es-globo es-globo--${id} ${reciente ? 'is-reciente' : ''}`} data-prueba={`globo-${id}`} style={{ transformOrigin: `${ax}px ${ay}px` }}>
+      <path d={cola} fill="#101412" stroke="rgba(234,209,137,0.55)" strokeWidth="1" />
+      <rect x={x} y={y} width={w} height={h} rx={h / 2} fill="#101412" stroke="rgba(234,209,137,0.55)" strokeWidth="1" />
+      <path d={cola.replace(/Z$/, '')} fill="#101412" stroke="none" transform="translate(0 -1.2)" />
+      <circle cx={x + 12} cy={y + h / 2} r={2.6} className="es-globo__punto" />
+      <text x={x + 21} y={y + h / 2 + 3.8} className="es-globo__t">{t}</text>
+    </g>
+  )
+}
+
+export interface PropsEscena {
+  monedas: MonedaEscena[]; fuentes: FuenteEscena[]; trabajando: Partial<Record<IdAgente, boolean>>
+  /** actividad reciente por moneda: el grosor del hilo y si la ficha está encendida */
+  actividad?: Map<string, { peso: number; ultima: number }>
+  globos?: Partial<Record<IdAgente, { texto: string; t: number }>>
+  onAgente?: (a: IdAgente) => void; onMoneda?: (s: string) => void; onFuente?: (grupo: GrupoFuente | Puerto) => void
+  repeticion?: boolean
+}
+const tocable = (f?: () => void, etiqueta?: string) => (f ? { role: 'button', tabIndex: 0, 'aria-label': etiqueta, onClick: f, onKeyDown: (e: React.KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); f() } } } : {})
+
+export const Escena = forwardRef<ApiEscena, PropsEscena>(function Escena({ monedas, fuentes, trabajando, actividad, globos, onAgente, onMoneda, onFuente, repeticion }, ref) {
   const raiz = useRef<SVGSVGElement>(null)
   const arana = useRef<SVGGElement>(null)
+  const seda = useRef<SVGLineElement>(null)
+  const rotulo = useRef<SVGGElement>(null)
   const barrido = useRef<SVGLineElement>(null)
   const capaPapeles = useRef<SVGGElement>(null)
   const hilos = useRef<Map<string, SVGLineElement>>(new Map())
   const refuerzo = useRef<Map<string, number>>(new Map())
   const quieto = useRef(typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches)
+  const telefono = useRef(typeof matchMedia !== 'undefined' && matchMedia('(max-width: 760px)').matches)
   const visible = useRef(true)
-  const estado = useRef({ ax: CUBO.x, ay: CUBO.y, destino: null as null | { x: number; y: number; sym: string; vuelta: boolean }, barrer: 0, papeles: [] as { el: SVGGElement; x0: number; y0: number; x1: number; y1: number; t0: number }[], marco: 0 })
+  const estado = useRef({
+    ax: CUBO.x, ay: CUBO.y, sx: CUBO.x, sy: CUBO.y,
+    destino: null as null | { x: number; y: number; sym?: string; rotulo?: string | null; vuelta: boolean },
+    cola: [] as (Viaje & { x: number; y: number })[], espera: 0, rotuloHasta: 0,
+    barrer: 0, papeles: [] as { el: SVGGElement; x0: number; y0: number; x1: number; y1: number; t0: number; a: IdAgente }[], marco: 0,
+  })
 
   // las monedas, en un óvalo alrededor del centro de la pantalla
   const fichas = useMemo(() => {
@@ -166,32 +231,83 @@ export const Escena = forwardRef<ApiEscena, { monedas: MonedaEscena[]; fuentes: 
     return g
   }, [fuentes])
   const peor = (fs: FuenteEscena[]) => (fs.some((f) => f.estado === 'caida') ? 'caida' : fs.some((f) => f.estado === 'atrasada') ? 'atrasada' : fs.some((f) => f.estado === 'al_dia') ? 'al_dia' : 'apagada') as EstadoFuente
+  // el grosor de base de cada hilo: lo que se movió esa moneda en las últimas horas (más reciente, más grueso); tres horas sin nada, apagada
+  const base = useMemo(() => {
+    const m = new Map<string, { w: number; o: number; apagada: boolean }>(), ahora = Date.now()
+    for (const f of fichas) {
+      const a = actividad?.get(f.simbolo)
+      const apagada = !a || ahora - a.ultima > 3 * 3600_000
+      m.set(f.simbolo, { w: apagada ? 0.7 : 1 + Math.min(3.4, a.peso * 0.9), o: apagada ? 0.14 : 0.32 + Math.min(0.5, a.peso * 0.18), apagada })
+    }
+    return m
+  }, [fichas, actividad])
+  const baseRef = useRef(base)
+
+  const pintarHilo = (s: string, r: number) => {
+    const el = hilos.current.get(s), b = baseRef.current.get(s) ?? { w: 1, o: 0.3 }
+    if (el) { el.style.strokeWidth = String(b.w + r * 3); el.style.opacity = String(Math.min(1, b.o + r * 0.7)) }
+  }
+  useEffect(() => { baseRef.current = base; for (const f of fichas) pintarHilo(f.simbolo, refuerzo.current.get(f.simbolo) ?? 0) }, [base, fichas]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  /** El rótulo de lo que leyó, junto a la moneda o al puerto, sin salirse de la pantalla. */
+  const mostrarRotulo = (texto: string, x: number, y: number) => {
+    const g = rotulo.current; if (!g) return
+    const k = telefono.current ? 1.35 : 1, t = recorte(texto, telefono.current ? 32 : 44), w = (20 + t.length * 6.35) * k, h = 20 * k
+    const arriba = y > CUBO.y
+    let rx = x - w / 2; rx = Math.max(PANTALLA.x + 6, Math.min(PANTALLA.x + PANTALLA.w - 6 - w, rx))
+    const ry = arriba ? y - h - 8 * k : y + 28 * k
+    g.setAttribute('transform', `translate(${rx.toFixed(1)} ${Math.max(PANTALLA.y + 4, Math.min(PANTALLA.y + PANTALLA.h - h - 4, ry)).toFixed(1)}) scale(${k})`)
+    g.querySelector('rect')?.setAttribute('width', String(w / k))
+    const tx = g.querySelector('text'); if (tx) tx.textContent = t
+    g.classList.remove('is-visible'); void g.getBBox(); g.classList.add('is-visible')
+    estado.current.rotuloHasta = performance.now() + 3200
+  }
 
   /* el bucle: sólo corre mientras algo se mueve */
   const andar = useRef<() => void>(() => {})
   useEffect(() => {
     const e = estado.current
+    const siguiente = () => {
+      const v = e.cola.shift()
+      if (!v) return false
+      e.sx = e.ax; e.sy = e.ay
+      e.destino = { x: v.x, y: v.y, sym: v.sym, rotulo: v.rotulo, vuelta: false }
+      arana.current?.classList.add('is-andando')
+      return true
+    }
     const paso = (t: number) => {
       e.marco = 0
       let sigue = false
-      // la araña: camina hacia la moneda y vuelve al centro de la tela
-      if (e.destino && arana.current) {
+      // la araña: camina a la moneda (o al puerto de la fuente), teje, muestra lo que leyó y sigue con el próximo viaje o vuelve al centro
+      if (e.espera && t < e.espera) sigue = true
+      else if (e.espera) { e.espera = 0; if (!siguiente()) { e.destino = { x: CUBO.x, y: CUBO.y, vuelta: true }; e.sx = e.ax; e.sy = e.ay } sigue = true }
+      else if (!e.destino && e.cola.length) { siguiente(); sigue = true }
+      if (e.destino && arana.current && !e.espera) {
         const dx = e.destino.x - e.ax, dy = e.destino.y - e.ay, d = Math.hypot(dx, dy)
-        const v = 3.2
+        const v = e.cola.length > 2 ? 5.5 : 3.4
         if (d < v) {
           e.ax = e.destino.x; e.ay = e.destino.y
-          if (!e.destino.vuelta) { const s = e.destino.sym; refuerzo.current.set(s, 1); e.destino = { x: CUBO.x, y: CUBO.y, sym: s, vuelta: true } }
-          else { e.destino = null; arana.current.classList.remove('is-andando') }
+          if (!e.destino.vuelta) {
+            const s = e.destino.sym
+            if (s) refuerzo.current.set(s, 1)
+            if (e.destino.rotulo) mostrarRotulo(e.destino.rotulo, e.ax, e.ay)
+            e.espera = t + (e.cola.length > 2 ? 650 : 1300)
+            arana.current.classList.remove('is-andando'); arana.current.classList.add('is-teje')
+            setTimeout(() => arana.current?.classList.remove('is-teje'), 900)
+          } else { e.destino = null; arana.current.classList.remove('is-andando') }
         } else { e.ax += (dx / d) * v; e.ay += (dy / d) * v }
         const ang = Math.atan2(dy, dx) * 180 / Math.PI + 90
-        arana.current.setAttribute('transform', `translate(${e.ax.toFixed(1)} ${e.ay.toFixed(1)}) rotate(${e.destino ? ang.toFixed(0) : 0})`)
-        sigue = sigue || !!e.destino
+        arana.current.setAttribute('transform', `translate(${e.ax.toFixed(1)} ${e.ay.toFixed(1)}) rotate(${e.destino && !e.espera ? ang.toFixed(0) : 0})`)
+        // la seda que va dejando
+        if (seda.current) { seda.current.setAttribute('x1', String(e.sx)); seda.current.setAttribute('y1', String(e.sy)); seda.current.setAttribute('x2', e.ax.toFixed(1)); seda.current.setAttribute('y2', e.ay.toFixed(1)); seda.current.style.opacity = e.destino && !e.destino.vuelta ? '0.9' : '0' }
+        sigue = sigue || !!e.destino || !!e.espera
       }
-      // los hilos reforzados se apagan despacio
+      if (e.rotuloHasta && t > e.rotuloHasta) { rotulo.current?.classList.remove('is-visible'); e.rotuloHasta = 0 }
+      else if (e.rotuloHasta) sigue = true
+      // los hilos reforzados vuelven despacio a su grosor
       for (const [s, r] of refuerzo.current) {
-        const el = hilos.current.get(s)
-        const r2 = Math.max(0, r - 0.0016)
-        if (el) { el.style.strokeWidth = String(1 + r2 * 3.2); el.style.opacity = String(0.45 + r2 * 0.55) }
+        const r2 = Math.max(0, r - 0.004)
+        pintarHilo(s, r2)
         if (r2 <= 0) refuerzo.current.delete(s); else { refuerzo.current.set(s, r2); sigue = true }
       }
       // el barrido del radar
@@ -202,12 +318,12 @@ export const Escena = forwardRef<ApiEscena, { monedas: MonedaEscena[]; fuentes: 
         barrido.current.style.opacity = e.barrer > 0 ? '0.9' : '0'
         sigue = true
       }
-      // los papeles que van a Luffy
+      // los papeles que viajan de un escritorio a otro
       e.papeles = e.papeles.filter((p) => {
         const k = Math.min(1, (t - p.t0) / 1300)
         const x = p.x0 + (p.x1 - p.x0) * k, y = p.y0 + (p.y1 - p.y0) * k - Math.sin(k * Math.PI) * 60
         p.el.setAttribute('transform', `translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${(k * 340).toFixed(0)})`)
-        if (k >= 1) { p.el.remove(); raiz.current?.querySelector('.es-pj--luffy')?.classList.add('is-recibe'); setTimeout(() => raiz.current?.querySelector('.es-pj--luffy')?.classList.remove('is-recibe'), 900); return false }
+        if (k >= 1) { p.el.remove(); const r = raiz.current?.querySelector(`.es-pj--${p.a}`); r?.classList.add('is-recibe'); setTimeout(() => r?.classList.remove('is-recibe'), 900); return false }
         return true
       })
       sigue = sigue || e.papeles.length > 0
@@ -219,19 +335,22 @@ export const Escena = forwardRef<ApiEscena, { monedas: MonedaEscena[]; fuentes: 
     if (raiz.current) io.observe(raiz.current)
     const vis = () => { raiz.current?.classList.toggle('is-pausada', document.hidden); if (!document.hidden) andar.current() }
     document.addEventListener('visibilitychange', vis)
-    return () => { io.disconnect(); document.removeEventListener('visibilitychange', vis); if (e.marco) cancelAnimationFrame(e.marco) }
+    const mq = matchMedia('(max-width: 760px)'), alMq = () => { telefono.current = mq.matches }
+    mq.addEventListener('change', alMq)
+    return () => { io.disconnect(); document.removeEventListener('visibilitychange', vis); mq.removeEventListener('change', alMq); if (e.marco) cancelAnimationFrame(e.marco) }
   }, [])
 
   useImperativeHandle(ref, () => ({
-    entregar: (a) => {
-      const de = PUESTO[a], aL = PUESTO.luffy
-      if (!de || a === 'luffy' || !capaPapeles.current) return
-      if (quieto.current) return
+    entregar: (de, a = 'luffy') => {
+      const p0 = PUESTO[de], p1 = PUESTO[a]
+      if (!p0 || !p1 || de === a || !capaPapeles.current || quieto.current) return
+      // con la pestaña oculta no se apilan papeles
+      if (document.hidden || estado.current.papeles.length > 4) return
       const g = document.createElementNS('http://www.w3.org/2000/svg', 'g')
       g.setAttribute('class', 'es-papel')
       g.innerHTML = '<rect x="-7" y="-9" width="14" height="18" rx="1.5" fill="#ECE6D8"/><line x1="-4" y1="-4" x2="4" y2="-4" stroke="#8A6A2A" stroke-width="1.2"/><line x1="-4" y1="0" x2="4" y2="0" stroke="#8A6A2A" stroke-width="1.2"/><line x1="-4" y1="4" x2="2" y2="4" stroke="#8A6A2A" stroke-width="1.2"/>'
       capaPapeles.current.appendChild(g)
-      estado.current.papeles.push({ el: g, x0: de.x - 6, y0: de.y - 70, x1: aL.x - 6, y1: aL.y - 80, t0: performance.now() })
+      estado.current.papeles.push({ el: g, x0: p0.x - 6, y0: p0.y - 70 * (p0.z ?? 1), x1: p1.x - 6, y1: p1.y - 80 * (p1.z ?? 1), t0: performance.now(), a })
       andar.current()
     },
     fuente: (nombre, ok) => {
@@ -240,20 +359,33 @@ export const Escena = forwardRef<ApiEscena, { monedas: MonedaEscena[]; fuentes: 
       const obj = raiz.current?.querySelector(`[data-objeto="${grupoDe(nombre)}"]`)
       obj?.classList.add('is-lee'); setTimeout(() => obj?.classList.remove('is-lee'), 1600)
     },
-    aMoneda: (simbolo) => {
-      const f = porSimbolo.get(simbolo.toUpperCase())
-      if (!f) return
-      if (quieto.current) { refuerzo.current.set(f.simbolo, 1); const el = hilos.current.get(f.simbolo); if (el) { el.style.strokeWidth = '3'; el.style.opacity = '1' } return }
-      estado.current.destino = { x: f.x, y: f.y, sym: f.simbolo, vuelta: false }
-      arana.current?.classList.add('is-andando')
+    viajar: (v) => {
+      const f = v.sym ? porSimbolo.get(v.sym.toUpperCase()) : undefined
+      const destino = f ?? (v.puerto ? PUERTO[v.puerto] : v.rotulo ? CUBO : undefined)
+      if (!destino) return false
+      if (quieto.current || document.hidden || !visible.current) {
+        // sin viaje: el hilo se refuerza igual y el rótulo aparece donde corresponde
+        if (f) { refuerzo.current.set(f.simbolo, 1); pintarHilo(f.simbolo, 1) }
+        if (v.rotulo && !document.hidden) mostrarRotulo(v.rotulo, destino.x, destino.y)
+        return true
+      }
+      const e = estado.current
+      // una ráfaga (Jev clasifica de a cinco por segundo): el viaje al mismo destino que ya espera en la cola se junta con él
+      const igual = e.cola.find((c) => (f ? c.sym === f.simbolo : c.puerto === v.puerto && !c.sym))
+      if (igual) { if (v.rotulo) igual.rotulo = v.rotulo; return true }
+      if (e.cola.length >= 6) e.cola.shift()
+      e.cola.push({ sym: f?.simbolo, puerto: v.puerto, rotulo: v.rotulo, x: destino.x, y: destino.y + (f ? 0 : 0) })
       andar.current()
+      return true
     },
     barrer: () => { if (quieto.current) return; estado.current.barrer = 120; andar.current() },
+    limpiar: () => { const e = estado.current; e.cola = []; e.papeles.forEach((p) => p.el.remove()); e.papeles = []; rotulo.current?.classList.remove('is-visible') },
   }), [porSimbolo])
 
   const [fx, fy] = [CUBO.x, CUBO.y]
+  const ultimoGlobo = useMemo(() => Object.entries(globos ?? {}).sort((a, b) => (b[1]?.t ?? 0) - (a[1]?.t ?? 0))[0]?.[0], [globos])
   return (
-    <svg ref={raiz} className="es" viewBox="176 0 920 652" role="img" aria-label="La oficina de Luffy en vivo" data-prueba="escena">
+    <svg ref={raiz} className={`es ${repeticion ? 'is-repeticion' : ''}`} viewBox="176 0 920 652" role="group" aria-label="La oficina de Luffy en vivo" data-prueba="escena">
       <defs>
         <linearGradient id="es-muroI" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stopColor="#0E1012" /><stop offset="1" stopColor="#181B1E" /></linearGradient>
         <linearGradient id="es-muroD" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stopColor="#191C1F" /><stop offset="1" stopColor="#0D0F11" /></linearGradient>
@@ -281,9 +413,18 @@ export const Escena = forwardRef<ApiEscena, { monedas: MonedaEscena[]; fuentes: 
           {Array.from({ length: 12 }, (_, i) => { const a = (i / 12) * Math.PI * 2; return <line key={i} x1={fx} y1={fy} x2={fx + Math.cos(a) * 200} y2={fy + Math.sin(a) * 94} /> })}
         </g>
         <line ref={barrido} className="es-barrido" x1={fx} y1={fy} x2={fx} y2={fy - 90} />
+        {/* los puertos: por dónde entra cada fuente a la tela (la araña va ahí cuando lo que leyó no nombra una moneda) */}
+        {(Object.keys(PUERTO) as Puerto[]).map((k) => { const q = PUERTO[k]; return (
+          <g key={k} className="es-puerto" data-prueba={`puerto-${k}`} {...tocable(onFuente ? () => onFuente(k) : undefined, `Fuentes: ${q.rotulo}`)}>
+            <line x1={fx} y1={fy} x2={q.x} y2={q.y} className="es-puerto__hilo" />
+            <circle cx={q.x} cy={q.y} r={5} className="es-puerto__p" />
+            <text x={q.x + (q.x < fx ? 10 : -10)} y={q.y + 3.5} textAnchor={q.x < fx ? 'start' : 'end'} className="es-mini es-puerto__t">{q.rotulo}</text>
+          </g>
+        ) })}
         {fichas.map((f) => <line key={`h${f.simbolo}`} ref={(el) => { if (el) hilos.current.set(f.simbolo, el); else hilos.current.delete(f.simbolo) }} className="es-hilo" x1={fx} y1={fy} x2={f.x} y2={f.y} />)}
+        <line ref={seda} className="es-seda" x1={fx} y1={fy} x2={fx} y2={fy} />
         {fichas.map((f) => (
-          <g key={f.simbolo} className={`es-ficha es-ficha--${f.tipo}`} transform={`translate(${f.x} ${f.y})`} data-prueba={`ficha-${f.simbolo}`}>
+          <g key={f.simbolo} className={`es-ficha es-ficha--${f.tipo} ${base.get(f.simbolo)?.apagada ? 'is-apagada' : ''}`} transform={`translate(${f.x} ${f.y})`} data-prueba={`ficha-${f.simbolo}`} {...tocable(onMoneda ? () => onMoneda(f.simbolo) : undefined, `Abrir la ficha de ${f.simbolo}`)}>
             <g className="es-ficha__z">
               <line x1="0" y1="-4" x2="0" y2="2" stroke="rgba(234,209,137,0.6)" />
               {(() => { const t = f.simbolo.slice(0, 7), w = 26 + t.length * 7.6; return <>
@@ -301,10 +442,12 @@ export const Escena = forwardRef<ApiEscena, { monedas: MonedaEscena[]; fuentes: 
           <circle cx="0" cy="-5" r="4" fill="url(#es-oro)" />
           <circle cx="-1.5" cy="-6" r="0.9" fill="#0F5A3C" /><circle cx="1.5" cy="-6" r="0.9" fill="#0F5A3C" />
         </g>
-        <text x={PANTALLA.x + 14} y={PANTALLA.y + 20} className="es-mini es-mini--oro">CRAWLER · RADAR</text>
+        <g ref={rotulo} className="es-rotulo-arana" data-prueba="rotulo-arana" aria-live="polite">
+          <rect x="0" y="0" width="100" height="20" rx="5" />
+          <text x="9" y="13.6" className="es-rotulo-arana__t" />
+        </g>
       </g>
 
-      {/* las fuentes: el servidor (exchanges y datos), la antena (social) y la parabólica (anuncios y gobernanza) */}
       {/* la pizarra del Estratega, en el muro izquierdo */}
       <g className="es-pizarra">
         <polygon points="300,212 382,168 382,226 300,270" fill="#121517" stroke="rgba(201,162,75,0.45)" strokeWidth="1.4" />
@@ -312,29 +455,30 @@ export const Escena = forwardRef<ApiEscena, { monedas: MonedaEscena[]; fuentes: 
         <polyline points="308,248 334,238 376,210" fill="none" stroke="#EAD189" strokeWidth="1.1" strokeDasharray="4 4" opacity="0.7" />
         <circle cx="352" cy="222" r="3" fill="#EAD189" />
       </g>
-      <g className="es-objeto" data-objeto="servidor">
+      {/* las fuentes: el servidor (exchanges y datos), la antena (social) y la parabólica (anuncios y gobernanza) */}
+      <g className="es-objeto" data-objeto="servidor" data-prueba="objeto-servidor" {...tocable(onFuente ? () => onFuente('servidor') : undefined, 'Fuentes de datos: su salud')}>
         <polygon points="196,214 240,238 240,408 196,384" fill="#16191C" stroke="rgba(236,230,216,0.1)" />
         <polygon points="240,238 286,212 286,382 240,408" fill="#0E1012" />
         <polygon points="196,214 242,188 286,212 240,238" fill="#262B2F" stroke="rgba(201,162,75,0.35)" />
         {Array.from({ length: 8 }, (_, i) => <line key={i} x1={200} y1={246 + i * 19} x2={236} y2={266 + i * 19} stroke="rgba(236,230,216,0.06)" />)}
-        {grupos.servidor.slice(0, 8).map((f, i) => <Luz key={f.nombre} x={206 + (i % 2) * 14} y={252 + Math.floor(i / 2) * 36 + (i % 2) * 7.6} f={f} rotulo={false} />)}
+        {grupos.servidor.slice(0, 8).map((f, i) => <Luz key={f.nombre} x={206 + (i % 2) * 14} y={252 + Math.floor(i / 2) * 36 + (i % 2) * 7.6} f={f} rotulo={false} i={i} />)}
         <circle cx={270} cy={240} r={4} fill={LUZ[peor(grupos.servidor)]} className="es-objeto__luz" />
         <text x={240} y={432} textAnchor="middle" className="es-rotulo">Servidor</text>
       </g>
       {/* la antena (lo social), una torre de celosía sobre el servidor */}
-      <g className="es-objeto" data-objeto="antena">
+      <g className="es-objeto" data-objeto="antena" data-prueba="objeto-antena" {...tocable(onFuente ? () => onFuente('antena') : undefined, 'Fuentes sociales: su salud')}>
         <path d="M228 200 L241 92 L254 200 M231 176 L251 176 M234 150 L248 150 M237 124 L245 124 M231 176 L248 150 L237 124 M251 176 L234 150 L245 124" fill="none" stroke="#8E918C" strokeWidth="1.5" />
         <g className="es-ondas" fill="none" stroke="#5FE0A6" strokeWidth="1.3">{[10, 18, 26].map((r, i) => <path key={r} className={`es-onda es-onda--${i}`} d={`M${241 - r} ${88 - r * 0.4} Q241 ${88 - r * 1.1} ${241 + r} ${88 - r * 0.4}`} />)}</g>
         <circle cx={241} cy={90} r={4.5} fill={LUZ[peor(grupos.antena)]} className="es-objeto__luz" />
-        {grupos.antena.map((f, i) => <Luz key={f.nombre} x={262} y={116 + i * 14} f={f} />)}
+        {grupos.antena.map((f, i) => <Luz key={f.nombre} x={262} y={116 + i * 14} f={f} i={i} />)}
       </g>
-      <g className="es-objeto" data-objeto="parabolica">
+      <g className="es-objeto" data-objeto="parabolica" data-prueba="objeto-parabolica" {...tocable(onFuente ? () => onFuente('parabolica') : undefined, 'Anuncios y votaciones: su salud')}>
         <ellipse cx={1010} cy={388} rx={24} ry={9} fill="#15181B" />
         <line x1={1010} y1={386} x2={1006} y2={346} stroke="#5C605D" strokeWidth="3" />
-        <path d="M972 330 Q1004 372 1046 318 Q1010 316 972 330 Z" fill="#23282C" stroke="#8E918C" strokeWidth="1.4" />
+        <path className="es-plato" d="M972 330 Q1004 372 1046 318 Q1010 316 972 330 Z" fill="#23282C" stroke="#8E918C" strokeWidth="1.4" />
         <line x1={1009} y1={334} x2={1022} y2={308} stroke="#8E918C" strokeWidth="1.4" />
         <circle cx={1022} cy={306} r={4.5} fill={LUZ[peor(grupos.parabolica)]} className="es-objeto__luz" />
-        {grupos.parabolica.slice(0, 6).map((f, i) => <Luz key={f.nombre} x={1040 - (i % 2) * 0} y={346 + i * 13} f={f} />)}
+        {grupos.parabolica.slice(0, 6).map((f, i) => <Luz key={f.nombre} x={1040} y={346 + i * 13} f={f} i={i} />)}
         <text x={1010} y={436} textAnchor="middle" className="es-rotulo">Anuncios</text>
       </g>
 
@@ -345,8 +489,8 @@ export const Escena = forwardRef<ApiEscena, { monedas: MonedaEscena[]; fuentes: 
       {(['crawler', 'cuant', 'jev', 'investigador', 'estratega', 'luffy'] as IdAgente[]).map((id) => {
         const p = PUESTO[id], z = p.z ?? 1, k = 1.5 * z
         return (
-          <g key={id} className={`es-puesto es-puesto--${id} ${trabajando[id] ? 'is-trabajando' : ''}`} data-prueba={`agente-${id}`} data-trabajando={trabajando[id] ? 'si' : 'no'}>
-            <ellipse cx={p.x} cy={p.y + 26 * z} rx={72 * z} ry={18 * z} fill="rgba(0,0,0,0.38)" />
+          <g key={id} className={`es-puesto es-puesto--${id} ${trabajando[id] ? 'is-trabajando' : ''}`} data-prueba={`agente-${id}`} data-trabajando={trabajando[id] ? 'si' : 'no'} {...tocable(onAgente ? () => onAgente(id) : undefined, `${NOMBRE[id]}: su día`)}>
+            <ellipse cx={p.x} cy={p.y + 26 * z} rx={72 * z} ry={18 * z} fill="rgba(0,0,0,0.38)" className="es-puesto__sombra" />
             <Personaje id={id} x={p.x - 2 * z} y={p.y - (id === 'luffy' ? 30 : 14) * z} k={k} />
             <Escritorio x={p.x} y={p.y} z={z} ancho={id === 'luffy' ? 1.25 : 1} />
             {id === 'luffy' && <Monitor x={p.x - 52 * z} y={p.y - 30 * z} z={z * 0.9} />}
@@ -358,6 +502,9 @@ export const Escena = forwardRef<ApiEscena, { monedas: MonedaEscena[]; fuentes: 
         )
       })}
       <g ref={capaPapeles} />
+      {/* los globos, encima de todo: lo que cada uno está haciendo, en llano */}
+      <g className="es-globos">{CAPA_GLOBO.map((id) => { const g = globos?.[id]; return g ? <Globo key={`${id}${g.t}`} id={id} texto={g.texto} reciente={id === ultimoGlobo} /> : null })}</g>
+      {repeticion && <g className="es-marca-rep"><rect x={190} y={8} width={120} height={22} rx={11} /><text x={250} y={23} textAnchor="middle">REPETICIÓN</text></g>}
     </svg>
   )
 })

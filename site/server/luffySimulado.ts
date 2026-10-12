@@ -852,16 +852,16 @@ const TRABAJOS_SIM = [['reconciliacion', 'Reconciliación (Pablo y caja)', '15 m
 let eventoId = 50_400
 const GUION_EVENTOS: Record<string, unknown>[] = [
   { tipo: 'fuente_leida', proceso: 'social', fuente: 'x', n: 48, ok: true, detalle: 'crawler' }, { tipo: 'jev', proceso: 'social', proposito: 'clasificar_post', n: 48, costo_usd: 0.002, modelo: 'jev-1.13.0' },
-  { tipo: 'herramienta', proceso: 'api', nombre: 'exchange_ticker', quien: 'luffy', ok: true, duracion_s: 0.4, fuente: 'bingx' },
+  { tipo: 'herramienta', proceso: 'api', nombre: 'exchange_ticker', quien: 'luffy', ok: true, duracion_s: 0.4, fuente: 'bingx', hilo_id: H_MONITOR },
   { tipo: 'radar_ciclo', proceso: 'monitor', modo: 'squeeze', n_evaluados: 363, n_candidatas: 1, duracion_s: 12.4 }, { tipo: 'fuente_leida', proceso: 'monitor', fuente: 'binance_futures', n: 363, ok: true },
-  { tipo: 'turno_abierto', proceso: 'api', hilo_id: H_MONITOR, quien: 'luffy', modo: 'chat', origen: 'pablo', canal: 'panel' }, { tipo: 'agente_convocado', proceso: 'api', agente: 'cuant', hilo_id: H_MONITOR },
-  { tipo: 'herramienta', proceso: 'api', nombre: 'defillama_serie', quien: 'cuant', ok: true, duracion_s: 2.1, fuente: 'defillama' }, { tipo: 'agente_terminado', proceso: 'api', agente: 'cuant', costo_usd: 0.11, duracion_s: 18, ok: true },
+  { tipo: 'turno_abierto', proceso: 'api', hilo_id: H_MONITOR, quien: 'luffy', modo: 'chat', origen: 'pablo', canal: 'panel' }, { tipo: 'herramienta', proceso: 'api', nombre: 'derivados', quien: 'luffy', ok: true, duracion_s: 1.2, fuente: 'binance_futures', hilo_id: H_MONITOR, activos: ['WAL'] }, { tipo: 'agente_convocado', proceso: 'api', agente: 'cuant', hilo_id: H_MONITOR },
+  { tipo: 'herramienta', proceso: 'api', nombre: 'defillama_serie', quien: 'cuant', ok: true, duracion_s: 2.1, fuente: 'defillama', hilo_id: H_MONITOR, activos: ['WAL'] }, { tipo: 'agente_terminado', proceso: 'api', agente: 'cuant', costo_usd: 0.11, duracion_s: 18, ok: true },
   { tipo: 'turno_cerrado', proceso: 'api', hilo_id: H_MONITOR, tipo_turno: 'dato_grafico', modelo: 'claude-fable-5-1', costo_usd: 0.17, herramientas: 3, duracion_s: 34, mensaje_id: 1300 },
   { tipo: 'caja_ciclo', proceso: 'monitor', motivo: 'programado', corrio: false, propuestas: 0, costo_usd: 0 }, { tipo: 'reconciliacion', proceso: 'monitor', origen: 'caja', discrepancias: 0, eventos: 0 },
   { tipo: 'fuente_leida', proceso: 'monitor', fuente: 'defillama', n: 0, ok: false, detalle: 'tiempo agotado' }, { tipo: 'alerta', proceso: 'monitor', alerta_id: 913, activo: 'WAL', severidad: 'media' },
   { tipo: 'gatillo', proceso: 'social', id_corto: 'g10wgr', evento: 'despertado' }, { tipo: 'fuente_leida', proceso: 'social', fuente: 'snapshot', n: 390, ok: true },
   // la oficina rehecha: más trabajo de agentes y eventos que nombran monedas (`activos`, pedido a Mugiwara en v2.3)
-  { tipo: 'agente_convocado', proceso: 'api', agente: 'investigador', hilo_id: H_MONITOR }, { tipo: 'herramienta', proceso: 'api', nombre: 'web_buscar', quien: 'investigador', ok: true, duracion_s: 3.1, fuente: 'web' },
+  { tipo: 'agente_convocado', proceso: 'api', agente: 'investigador', hilo_id: H_MONITOR }, { tipo: 'herramienta', proceso: 'api', nombre: 'web_buscar', quien: 'investigador', ok: true, duracion_s: 3.1, fuente: 'web', hilo_id: H_MONITOR },
   { tipo: 'fuente_leida', proceso: 'social', fuente: 'x', n: 31, ok: true, detalle: '31 nuevos', activos: ['STRK', 'WAL'] }, { tipo: 'jev', proceso: 'social', proposito: 'clasificar_post', n: 31, costo_usd: 0.001, modelo: 'jev-1.13.0' },
   { tipo: 'agente_terminado', proceso: 'api', agente: 'investigador', costo_usd: 0.42, duracion_s: 41, ok: true },
   { tipo: 'agente_convocado', proceso: 'api', agente: 'estratega', hilo_id: H_MONITOR }, { tipo: 'radar_ciclo', proceso: 'monitor', modo: 'impulso', n_evaluados: 241, n_candidatas: 1, duracion_s: 9.8, activos: ['CFX'] },
@@ -1078,7 +1078,20 @@ const eventosStream = (c: { req: { raw: Request; query: (k: string) => string | 
   return new Response(stream, { headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no' } })
 }
 luffySimulado.get('/eventos', (c) => eventosStream(c))
-luffySimulado.get('/eventos/recientes', (c) => { const desde = Number(c.req.query('desde_id') ?? 0) || 0; const items = GUION_EVENTOS.slice(0, 6).map((e, k) => ({ id: eventoId - 5 + k, hora: hace(6 - k), ...e })).filter((e) => e.id > desde); return c.json({ items, ultimo_id: eventoId }) })
+/* la historia de la oficina (las hojas, los turnos para repetir y el grosor de los hilos): el guion repetido en las últimas 20 h */
+const HISTORIA_OFI: Record<string, unknown>[] = (() => {
+  const n = 300, t0 = Date.now() - 20 * 3600_000, out: Record<string, unknown>[] = []
+  let t = t0, enTurno = false
+  for (let k = 0; k < n; k++) {
+    const e = GUION_EVENTOS[k % GUION_EVENTOS.length]
+    if (e.tipo === 'turno_abierto') enTurno = true
+    t += enTurno ? 7_000 : 4 * 60_000
+    if (e.tipo === 'turno_cerrado') enTurno = false
+    out.push({ id: eventoId - n + k, hora: new Date(t).toISOString().replace(/\.\d{3}Z$/, '+00:00'), ...e })
+  }
+  return out
+})()
+luffySimulado.get('/eventos/recientes', (c) => { const desde = Number(c.req.query('desde_id') ?? 0) || 0, limite = Math.min(1000, Number(c.req.query('limite') ?? 200) || 200); const items = HISTORIA_OFI.filter((e) => (e.id as number) > desde).slice(0, limite); return c.json({ items, ultimo_id: items.length ? items[items.length - 1].id : desde, consultado_en: ahora(), fuente: 'eventos' }) })
 
 /* ---------- 8.6 informes ---------- */
 luffySimulado.get('/informes', (c) => { const lim = Number(c.req.query('limite') ?? 30) || 30; return c.json({ items: INFORMES_SIM.slice(0, lim), siguiente: null }) })
