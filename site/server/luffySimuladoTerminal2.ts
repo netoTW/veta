@@ -148,7 +148,7 @@ function ficha(m: Moneda, rango: string) {
   const pnl = pos ? r2((ult - pos.precio_medio) * pos.cantidad, 2) : null
   const sym = m.simbolo
   return {
-    activo: sym, nombre: m.nombre, descripcion: m.descripcion, categoria: m.categoria, operable_bingx: m.bingx, perp: m.perp, rango, intervalo: '1d',
+    activo: sym, nombre: m.nombre, descripcion: m.descripcion, categoria: m.categoria, operable_bingx: m.bingx, perp: m.perp, rango, intervalo: '1d', simulado: true,
     vitrina: { calculado_en: new Date().toISOString(), edad_s: 12, cada_s: 300, estado: 'fresco', duracion_ms: 42, error: null },
     encabezado: {
       precio: ult, cambio_24h_pct: r2((ult / cl[n - 2] - 1) * 100, 1),

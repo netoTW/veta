@@ -23,7 +23,7 @@ import { MapaLiq, Perfil, RielRadar, RotulosDer, Verticales } from './primitivas
 import type { Capa, Ficha2, Punto } from './contrato'
 
 export interface SerieV { id: string; etiqueta: string; color: string; api: ISeriesApi<SeriesType, Time>; unidad: string; forma: 'linea' | 'barra' | 'vela'; /** para las apiladas: el valor propio, no el acumulado que se dibuja */ valor?: (t: number | null) => number | null }
-export interface Vivo2 { chart: IChartApi; series: SerieV[]; ancla: ISeriesApi<SeriesType, Time>; capas?: (c: Set<Capa>) => void; destruir: () => void }
+export interface Vivo2 { chart: IChartApi; series: SerieV[]; ancla: ISeriesApi<SeriesType, Time>; capas?: (c: Set<Capa>) => void; /** el precio en vivo mueve la vela en curso */ alPrecio?: (p: number) => void; destruir: () => void }
 const tt = (s: number) => s as UTCTimestamp
 const orden = <T extends { time: UTCTimestamp }>(xs: T[]) => { xs.sort((a, b) => a.time - b.time); return xs.filter((x, i) => !i || x.time !== xs[i - 1].time) }
 const lineas = (ps: Punto[]) => orden(ps.map(([t, v]) => ({ time: tt(t), value: v })))
@@ -55,7 +55,18 @@ export function precio(el: HTMLElement, f: Ficha2, op: { capas: Set<Capa>; compa
   velas.setData(orden(m.velas.map((v) => ({ time: tt(v.t), open: v.o, high: v.h, low: v.l, close: v.c }))))
   const series: SerieV[] = [{ id: 'precio', etiqueta: 'Precio', color: C.hueso, api: velas, unidad: '', forma: 'vela' }]
   const ultimo = m.velas[m.velas.length - 1]?.c ?? null
-  if (ultimo !== null) velas.createPriceLine({ price: ultimo, color: rgba(C.hueso, 0.55), lineWidth: 1, lineStyle: LineStyle.Solid, axisLabelVisible: true, title: '', axisLabelColor: C.hueso, axisLabelTextColor: C.roca })
+  const actual = ultimo !== null ? velas.createPriceLine({ price: ultimo, color: rgba(C.hueso, 0.55), lineWidth: 1, lineStyle: LineStyle.Solid, axisLabelVisible: true, title: '', axisLabelColor: C.hueso, axisLabelTextColor: C.roca }) : null
+  // la vela en curso: la última se estira con cada precio; pasado su período, abre la siguiente
+  let enCurso = m.velas.length ? { ...m.velas[m.velas.length - 1] } : null
+  const periodo = m.velas.length > 1 ? m.velas[m.velas.length - 1].t - m.velas[m.velas.length - 2].t : 86_400
+  const alPrecio = (p: number) => {
+    if (!enCurso) return
+    const ahora = Date.now() / 1000
+    if (ahora >= enCurso.t + periodo) enCurso = { t: enCurso.t + periodo, o: enCurso.c, h: Math.max(enCurso.c, p), l: Math.min(enCurso.c, p), c: p, v: null }
+    else enCurso = { ...enCurso, h: Math.max(enCurso.h, p), l: Math.min(enCurso.l, p), c: p }
+    try { velas.update({ time: tt(enCurso.t), open: enCurso.o, high: enCurso.h, low: enCurso.l, close: enCurso.c }) } catch { /* fuera de orden: se ignora */ }
+    actual?.applyOptions({ price: p })
+  }
   // «comparar contra»: la otra serie reescalada al precio de esta moneda al inicio del rango
   if (op.comparar?.puntos.length && m.velas.length) {
     const base = op.comparar.puntos.find((p) => p[0] >= m.velas[0].t) ?? op.comparar.puntos[0]
@@ -88,7 +99,7 @@ export function precio(el: HTMLElement, f: Ficha2, op: { capas: Set<Capa>; compa
   }
   capas(op.capas)
   chart.timeScale().fitContent()
-  return { chart, series, ancla: velas, capas, destruir: () => chart.remove() }
+  return { chart, series, ancla: velas, capas, alPrecio, destruir: () => chart.remove() }
 }
 
 /* ---------- A · flujo: delta acumulado e interés abierto ---------- */

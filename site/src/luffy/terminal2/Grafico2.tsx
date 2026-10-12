@@ -49,16 +49,21 @@ export function Grafico2({ construir, alto, sincronia, deps, prueba, leyendaExtr
     let x0 = 0, y0 = 0, horizontal: boolean | null = null
     const tiempoEn = (cx: number) => { const r = el.getBoundingClientRect(); let izq = 0; try { izq = vv.chart.priceScale('left').width() } catch { /* sin eje izquierdo */ } const t = vv.chart.timeScale().coordinateToTime(cx - r.left - izq); return typeof t === 'number' ? t : null }
     const poner = (cx: number) => { const t = tiempoEn(cx); for (const f of oyentes) f(t, true) }
-    const inicio = (e: TouchEvent) => { if (e.touches.length !== 1) return; x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; horizontal = null; poner(x0) }
+    // con un dedo la cruz es sólo ésta: la del toque largo de la librería llegaba tarde y quedaba en otra fecha.
+    // Con dos dedos, el zoom sigue siendo de la librería.
+    const inicio = (e: TouchEvent) => { if (e.touches.length !== 1) return; e.stopPropagation(); x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; horizontal = null; poner(x0) }
     const mover = (e: TouchEvent) => {
       if (e.touches.length !== 1) return
+      e.stopPropagation()
       const dx = e.touches[0].clientX - x0, dy = e.touches[0].clientY - y0
       if (horizontal === null && Math.hypot(dx, dy) > 6) horizontal = Math.abs(dx) > Math.abs(dy)
       if (horizontal) { e.preventDefault(); poner(e.touches[0].clientX) }
     }
-    el.addEventListener('touchstart', inicio, { passive: true })
-    el.addEventListener('touchmove', mover, { passive: false })
-    return () => { soltar(); oyentes.delete(oir); el.removeEventListener('touchstart', inicio); el.removeEventListener('touchmove', mover); try { vv.chart.unsubscribeCrosshairMove(alCruz) } catch { /* ya destruido */ } alVivo?.(null); vv.destruir(); vivo.current = null }
+    const fin = (e: TouchEvent) => { if (e.touches.length === 0 && e.changedTouches.length === 1) e.stopPropagation() }
+    el.addEventListener('touchstart', inicio, { passive: true, capture: true })
+    el.addEventListener('touchmove', mover, { passive: false, capture: true })
+    el.addEventListener('touchend', fin, { capture: true })
+    return () => { soltar(); oyentes.delete(oir); el.removeEventListener('touchstart', inicio, { capture: true }); el.removeEventListener('touchmove', mover, { capture: true }); el.removeEventListener('touchend', fin, { capture: true }); try { vv.chart.unsubscribeCrosshairMove(alCruz) } catch { /* ya destruido */ } alVivo?.(null); vv.destruir(); vivo.current = null }
   }, deps) // eslint-disable-line react-hooks/exhaustive-deps
   if (fallo) return <div className="t2-g t2-g--falla" style={{ minHeight: alto }} data-prueba={prueba}><p>No se pudo dibujar este gráfico: {fallo}</p></div>
   return (

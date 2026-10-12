@@ -190,3 +190,14 @@
 .t2-g__rombo { width: 7px; height: 7px; background: var(--oro); transform: rotate(45deg); }
 .t2-antes { font-size: 11px; color: var(--ceniza); border: 1px solid rgba(236, 230, 216, 0.14); border-radius: 999px; padding: 1px 8px; }
 .t2-antes.is-antes { color: var(--esmeralda-luz); border-color: rgba(95, 224, 166, 0.45); }
+
+/* el precio en vivo */
+.t2-vivo { display: inline-flex; align-items: center; gap: 7px; font-size: 10px; letter-spacing: 0.12em !important; color: var(--ceniza-2); }
+.t2-vivo::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.t2-vivo.is-vivo { color: var(--esmeralda-luz); }
+.t2-vivo.is-vivo::before { box-shadow: 0 0 8px var(--esmeralda-luz); animation: t2-late 1.6s ease-in-out infinite; }
+@keyframes t2-late { 50% { opacity: 0.35; } }
+@media (prefers-reduced-motion: reduce) { .t2-vivo.is-vivo::before { animation: none; } }
+.t2-cab__precio { transition: color 0.6s; }
+.t2-cab__precio.is-sube { color: var(--esmeralda-luz); transition: none; }
+.t2-cab__precio.is-baja { color: var(--rojo-luz); transition: none; }

@@ -843,6 +843,13 @@ anterior, un globo aparece, la araña muestra un rótulo, tocar a Luffy abre su 
 se repite paso a paso y «Volver al vivo» lo cierra, tocar una fuente muestra su salud y tocar una
 moneda abre su ficha. Con datos reales: cero errores de consola a 1440 y 390 px.
 
+### La oficina viva, desplegada (12-oct-2026)
+
+Con el visto bueno de Pablo sobre el video. Lo único que no le gustó, la antena de palitos, quedó rehecha con el
+cuidado del servidor y la parabólica: un mástil de roca pulida en dos caras (luz y sombra) sobre una base en la
+tapa del servidor, el filo y tres anillos de oro finos (la mitad de atrás tenue), un collar a media altura y el
+emisor con su luz de estado y las ondas.
+
 ### Terminal v2, adelantado con datos simulados (12-oct-2026)
 
 La pantalla que reemplaza la ficha del terminal (`Mugiwara/PROMPT-TERMINAL-v2-veta.md`, maqueta aprobada
@@ -894,6 +901,19 @@ gráficos, las tablas con su scroll y rótulos cortos en el gráfico angosto.
 secciones, cada capa apagada y prendida (el gráfico cambia y vuelve), comparar contra BTC, la cruz
 compartida, los derivados con el funding real, ↓ ↑, la moneda sin perpetuo, la no operable, el laboratorio y,
 a 390 px: sin desborde, la lista en hoja, controles fijos y tabla con scroll. Sin errores de consola.
+
+**Precio en vivo (12-oct, pedido de Pablo).** El último precio, el cambio de 24 h y la vela en curso se mueven
+al segundo con el ticker del websocket público de la bolsa, directo desde el navegador (`terminal2/vivo.ts`):
+BingX primero (donde opera Pablo; manda cada mensaje en gzip y pide «Pong»), Binance si la moneda no se opera
+en BingX, y la otra si la elegida no manda nada en 6 s. Se reconecta sola, se pausa con la pestaña oculta y el
+encabezado dice «EN VIVO · BINGX» (o Binance); el precio destella verde o rojo al cambiar. La vela en curso es la
+última del gráfico (se estira con cada precio y, pasado su período, abre la siguiente), así que no depende de a
+qué hora corta cada bolsa la vela diaria. Con datos de ejemplo (`simulado: true`) no se conecta, salvo con
+`?vivo=1`. Probado contra las bolsas reales: WAL y KMNO por BingX, HYPE por Binance.
+
+**La cruz con el dedo:** la cruz del toque largo de la librería competía con la propia y quedaba unos días
+corrida; con un dedo ahora sólo está la propia (con dos, el zoom sigue siendo de la librería). Prueba en
+`probar-terminal2.mjs`: el arrastre deja todos los gráficos en la misma fecha, sin mover la página.
 
 **Falta, para cerrarlo:** conectar con el contrato real (ajustar `contrato.ts` y el simulador), capturas con
 datos reales de WAL y de una moneda sin perpetuo, pasar `/luffy/terminal` a esta pantalla y desplegar.

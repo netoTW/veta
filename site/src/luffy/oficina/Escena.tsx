@@ -392,6 +392,8 @@ export const Escena = forwardRef<ApiEscena, PropsEscena>(function Escena({ moned
         <radialGradient id="es-suelo" cx="50%" cy="45%" r="60%"><stop offset="0" stopColor="#1B1F22" /><stop offset="1" stopColor="#0E1012" /></radialGradient>
         <radialGradient id="es-pantalla" cx="50%" cy="50%" r="65%"><stop offset="0" stopColor="#0B1F17" /><stop offset="1" stopColor="#050A08" /></radialGradient>
         <radialGradient id="es-oro" cx="35%" cy="30%" r="70%"><stop offset="0" stopColor="#F6E2A6" /><stop offset="0.6" stopColor="#C9A24B" /><stop offset="1" stopColor="#7A5C22" /></radialGradient>
+        <linearGradient id="es-mastilI" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stopColor="#14171A" /><stop offset="1" stopColor="#2B3035" /></linearGradient>
+        <linearGradient id="es-mastilD" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stopColor="#1A1D20" /><stop offset="1" stopColor="#0C0E10" /></linearGradient>
         <filter id="es-brillo" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3" result="b" /><feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
       </defs>
 
@@ -465,11 +467,34 @@ export const Escena = forwardRef<ApiEscena, PropsEscena>(function Escena({ moned
         <circle cx={270} cy={240} r={4} fill={LUZ[peor(grupos.servidor)]} className="es-objeto__luz" />
         <text x={240} y={432} textAnchor="middle" className="es-rotulo">Servidor</text>
       </g>
-      {/* la antena (lo social), una torre de celosía sobre el servidor */}
+      {/* la antena (lo social): un mástil de roca pulida sobre el servidor, como él en dos caras (luz y sombra),
+          con el filo y dos anillos de oro finos y el emisor con su luz de estado arriba */}
       <g className="es-objeto" data-objeto="antena" data-prueba="objeto-antena" {...tocable(onFuente ? () => onFuente('antena') : undefined, 'Fuentes sociales: su salud')}>
-        <path d="M228 200 L241 92 L254 200 M231 176 L251 176 M234 150 L248 150 M237 124 L245 124 M231 176 L248 150 L237 124 M251 176 L234 150 L245 124" fill="none" stroke="#8E918C" strokeWidth="1.5" />
-        <g className="es-ondas" fill="none" stroke="#5FE0A6" strokeWidth="1.3">{[10, 18, 26].map((r, i) => <path key={r} className={`es-onda es-onda--${i}`} d={`M${241 - r} ${88 - r * 0.4} Q241 ${88 - r * 1.1} ${241 + r} ${88 - r * 0.4}`} />)}</g>
-        <circle cx={241} cy={90} r={4.5} fill={LUZ[peor(grupos.antena)]} className="es-objeto__luz" />
+        {/* la base, apoyada en la tapa del servidor */}
+        <polygon points="227,206 241,198 255,206 241,214" fill="#262B2F" stroke="rgba(201,162,75,0.4)" strokeWidth="1" />
+        <polygon points="227,206 241,214 241,218 227,210" fill="#16191C" />
+        <polygon points="241,214 255,206 255,210 241,218" fill="#0E1012" />
+        {/* el mástil, afinándose hacia arriba: cara de luz a la izquierda, de sombra a la derecha, el filo en oro */}
+        <polygon points="232,206.5 241,211 241,104.2 237.2,102.3" fill="url(#es-mastilI)" />
+        <polygon points="241,211 250,206.5 244.8,102.3 241,104.2" fill="url(#es-mastilD)" />
+        <line x1="241" y1="211" x2="241" y2="104.2" stroke="rgba(234,209,137,0.55)" strokeWidth="0.9" />
+        <line x1="232" y1="206.5" x2="237.2" y2="102.3" stroke="rgba(236,230,216,0.14)" strokeWidth="0.8" />
+        {/* el collar a media altura: un tramo más ancho, con la tapa en oro */}
+        <polygon points="234.2,160 241,163.6 247.8,160 241,156.4" fill="#2B3035" stroke="rgba(201,162,75,0.6)" strokeWidth="0.9" />
+        <polygon points="234.2,160 241,163.6 241,168.6 234.2,165" fill="#1A1D20" />
+        <polygon points="241,163.6 247.8,160 247.8,165 241,168.6" fill="#0E1012" />
+        {/* los anillos: la mitad de atrás tenue, la de adelante en oro */}
+        {[[186, 11.5, 4.4], [134, 8.6, 3.4], [116, 7.4, 2.9]].map(([y, rx, ry]) => (
+          <g key={y}>
+            <path d={`M${241 - rx} ${y} Q241 ${y - ry * 2} ${241 + rx} ${y}`} fill="none" stroke="rgba(201,162,75,0.28)" strokeWidth="1" />
+            <path d={`M${241 - rx} ${y} Q241 ${y + ry * 2} ${241 + rx} ${y}`} fill="none" stroke="#C9A24B" strokeWidth="1.3" />
+          </g>
+        ))}
+        {/* el emisor: una cápsula pulida con la luz de estado */}
+        <rect x="237.4" y="90" width="7.2" height="14" rx="3.6" fill="#262B2F" stroke="rgba(234,209,137,0.6)" strokeWidth="0.9" />
+        <g className="es-ondas" fill="none" stroke="#5FE0A6" strokeWidth="1.2" strokeLinecap="round">{[11, 19, 27].map((r, i) => <path key={r} className={`es-onda es-onda--${i}`} d={`M${241 - r} ${90 - r * 0.35} Q241 ${90 - r * 1.05} ${241 + r} ${90 - r * 0.35}`} />)}</g>
+        <circle cx={241} cy={90} r={4.6} fill={LUZ[peor(grupos.antena)]} className="es-objeto__luz" />
+        <circle cx={239.6} cy={88.6} r={1.3} fill="#F2FFF9" opacity="0.55" />
         {grupos.antena.map((f, i) => <Luz key={f.nombre} x={262} y={116 + i * 14} f={f} i={i} />)}
       </g>
       <g className="es-objeto" data-objeto="parabolica" data-prueba="objeto-parabolica" {...tocable(onFuente ? () => onFuente('parabolica') : undefined, 'Anuncios y votaciones: su salud')}>

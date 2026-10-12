@@ -123,6 +123,17 @@ console.log('\nTERMINAL v2 · teléfono (390 px)')
   ok((await ctrl.evaluate((el) => getComputedStyle(el).position)) === 'sticky', 'los controles comunes quedan fijos arriba de los gráficos')
   const tabla = await p.locator('[data-prueba="escenarios2"]').evaluate((el) => ({ sw: el.scrollWidth, cw: el.clientWidth, o: getComputedStyle(el).overflowX }))
   ok(tabla.o === 'auto' && tabla.sw > tabla.cw, 'la tabla de escenarios tiene su propio scroll')
+  // la cruz con el dedo: un arrastre horizontal la mueve en todos los gráficos, a la misma fecha, sin mover la página
+  {
+    const el = p.locator('[data-prueba="grafico-precio2"] .t2-g__lienzo'); await el.scrollIntoViewIfNeeded(); await espera(200)
+    const bb = await el.boundingBox(), cdp = await ctx.newCDPSession(p), y = bb.y + bb.height / 2, sy = await p.evaluate(() => scrollY)
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: bb.x + 80, y }] })
+    for (let i = 1; i <= 10; i++) { await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: bb.x + 80 + i * 14, y }] }); await espera(60) }
+    await espera(200)
+    const f1 = await p.locator('[data-prueba="grafico-precio2"] .t2-g__fecha').innerText(), f2 = await p.locator('[data-prueba="grafico-flujo2"] .t2-g__fecha').innerText()
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+    ok(f1 !== 'último' && f1 === f2 && sy === await p.evaluate(() => scrollY), `la cruz con el dedo, en todos los gráficos a la misma fecha (${f1} · ${f2})`)
+  }
   await p.evaluate(() => window.scrollTo(0, 0)); await espera(200)
   await p.locator('.t2-cab__monedas').click(); await espera(500)
   ok(await p.locator('.t2-lista.is-open').count() === 1, 'la lista de monedas se abre en hoja')

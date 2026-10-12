@@ -143,10 +143,8 @@ límite de error, archivado de la calibración.
     capturas reales (WAL y una sin perpetuo), apuntar «Terminal» del menú a la v2 y desplegar.
 000. **Pendientes tras la 6b** (`Mugiwara/PROMPT-VETA-pendientes.md`): bloque A (estabilidad y
     velocidad) y B (app instalable) desplegados el 12-oct; C (la oficina rehecha) hecho y con commit
-    local; desplegado el 12-oct a pedido de Pablo (Vercel lo publicó con retraso por un incidente
-    suyo de builds). **La oficina viva e interactiva** (ESTADO-WEB.md) está hecha, con commit local y
-    **sin desplegar hasta que Pablo vea el video** (`recursos/capturas/oficina-viva/video/`). Con su
-    visto bueno: `bash scripts/desplegar.sh "Repetir en la sala"`.
+    local; desplegado el 12-oct. La oficina viva e interactiva, con su visto bueno y la antena rehecha,
+    también (ESTADO-WEB.md).
     **Pablo:** instalar la app en su iPhone (Safari → compartir → «Agregar a inicio») y en Android
     (Chrome → «Instalar app») y contar si abre a pantalla completa con la gema.
 00. **La curva y el efectivo de la cartera de Pablo** dependen de Mugiwara (§6): hoy suman la
@@ -319,7 +317,8 @@ Cada una costó un incidente. Están aquí para no repetirlas.
    Ese día, además, Vercel tuvo un incidente de builds y de integración con Git (el commit tardó ~25 min en
    publicarse y el fragmento de la oficina dio 404 unos minutos más). Verificar con un navegador real (la
    extensión de Chrome): leer la entrada del `/` y pedir el fragmento. Si el desafío es una regla puesta a
-   propósito en el firewall de Vercel, conviene excluir `/` y `/assets/*` para la verificación.
+   propósito en el firewall de Vercel, conviene excluir `/` y `/assets/*` para la verificación. Desde el 12-oct
+   `desplegar.sh`, cuando ve el desafío, toma como prueba el estado «Vercel – veta: success» del commit en GitHub.
 
 
 ## 8. Cómo desplegar y verificar

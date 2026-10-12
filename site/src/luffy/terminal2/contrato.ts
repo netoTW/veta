@@ -41,6 +41,8 @@ export interface NivelPrecio { tipo: 'stop' | 'gatillo' | 'entrada'; capa: Capa;
 export interface Ficha2 {
   activo: string; nombre: string; descripcion: string; categoria: string | null; operable_bingx: boolean; perp: boolean
   rango: string; pendiente: boolean; reintentar_en_s: number | null; calculado_en: string | null; viejo: boolean
+  /** datos de ejemplo (el simulador): no se mezclan con el precio en vivo */
+  simulado: boolean
   encabezado: {
     precio: number | null; cambio_24h_pct: number | null; cifras: Cifra[]
     posiciones: { origen: 'pablo' | 'caja'; estado: string; precio_medio: number | null; pnl_usdt: number | null; simulado: boolean }[]
@@ -135,7 +137,7 @@ export function adaptarFicha(c: unknown): Ficha2 {
   return {
     activo: (str(o.activo) ?? '').toUpperCase(), nombre: str(o.nombre) ?? '', descripcion: str(o.descripcion) ?? '', categoria: str(o.categoria),
     operable_bingx: o.operable_bingx !== false, perp: bool(o.perp), rango: str(o.rango) ?? '90d', pendiente: bool(o.pendiente),
-    reintentar_en_s: num(o.reintentar_en_s), calculado_en: str(vit.calculado_en), viejo: vit.estado === 'viejo',
+    reintentar_en_s: num(o.reintentar_en_s), calculado_en: str(vit.calculado_en), viejo: vit.estado === 'viejo', simulado: bool(o.simulado),
     encabezado: {
       precio: num(enc.precio), cambio_24h_pct: num(enc.cambio_24h_pct), cifras: cifras(enc.cifras, 'encabezado', faltan),
       posiciones: arr(enc.posiciones).map((p) => { const q = obj(p); return { origen: q.origen === 'caja' ? 'caja' as const : 'pablo' as const, estado: str(q.estado) ?? 'abierta', precio_medio: num(q.precio_medio), pnl_usdt: num(q.pnl_usdt), simulado: bool(q.simulado) } }),

@@ -9,6 +9,7 @@ import { Sincronia } from '../charts/sincronia'
 import { fmt, fmtFecha, fmtHora, fmtPrecio } from '../formato'
 import { EmptyState } from '../../ui/EmptyState'
 import { terminal2 } from './api'
+import { escucharPrecio, type Bolsa, type EstadoVivo, type Tic } from './vivo'
 import { Grafico2, AlVerse } from './Grafico2'
 import * as G from './graficos'
 import type { Capa, Cifra, Ficha2, Fila2, Filtro2, Orden2, Punto, Rango2 } from './contrato'
@@ -166,6 +167,24 @@ function Ficha({ activo, rango, setRango, fila, filas, abrirLista }: { activo: s
     return () => { v = false; if (otraVez) clearTimeout(otraVez) }
   }, [activo, rango, intento])
   useEffect(() => { guardar('luffy.t2.capas', [...capas]); precioVivo.current?.capas?.(capas) }, [capas])
+  // el precio en vivo, del websocket público de la bolsa (no con datos de ejemplo, salvo que se pida con ?vivo=1)
+  const [tic, setTic] = useState<Tic | null>(null)
+  const [enVivo, setEnVivo] = useState<{ estado: EstadoVivo; bolsa: Bolsa | null }>({ estado: 'conectando', bolsa: null })
+  const [latido, setLatido] = useState<'sube' | 'baja' | null>(null)
+  const conVivo = !!ficha && (!ficha.simulado || new URLSearchParams(location.search).get('vivo') === '1')
+  const operable = ficha?.operable_bingx ?? fila?.operable_bingx ?? true
+  useEffect(() => {
+    if (!conVivo) return
+    setTic(null)
+    let previo: number | null = null, apagar: ReturnType<typeof setTimeout> | null = null
+    const fin = escucharPrecio(activo, operable ? 'bingx' : 'binance', (t) => {
+      setTic(t); precioVivo.current?.alPrecio?.(t.precio)
+      // un destello del color de la subida o la bajada, cuando cambia
+      if (previo !== null && t.precio !== previo) { setLatido(t.precio > previo ? 'sube' : 'baja'); if (apagar) clearTimeout(apagar); apagar = setTimeout(() => setLatido(null), 700) }
+      previo = t.precio
+    }, (estado, bolsa) => setEnVivo({ estado, bolsa }))
+    return () => { fin(); if (apagar) clearTimeout(apagar) }
+  }, [activo, conVivo, operable])
   useEffect(() => { guardar('luffy.t2.comparar', comparar) }, [comparar])
   // «otra moneda»: sus cierres en el mismo rango, de su ficha (guardada o pedida)
   useEffect(() => {
@@ -187,7 +206,7 @@ function Ficha({ activo, rango, setRango, fila, filas, abrirLista }: { activo: s
   const BotonLab = ({ spec, titulo, id }: { spec: Record<string, unknown> | null; titulo: string; id: string }) => spec ? <button type="button" className="t2-cap t2-cap--oro" onClick={() => alLab(spec, titulo)} disabled={abriendo === titulo} data-prueba={`lab2-${id}`}>{abriendo === titulo ? 'ABRIENDO…' : 'ABRIR EN EL LABORATORIO'}</button> : null
 
   const falta = (donde: string) => ficha?.no_disponibles.find((n) => n.donde === donde)?.motivo ?? null
-  const precio = ficha?.encabezado.precio ?? fila?.precio ?? null, cambio = ficha?.encabezado.cambio_24h_pct ?? fila?.cambio_24h_pct ?? null
+  const precio = tic?.precio ?? ficha?.encabezado.precio ?? fila?.precio ?? null, cambio = tic?.cambio_pct ?? ficha?.encabezado.cambio_24h_pct ?? fila?.cambio_24h_pct ?? null
   const e = ficha?.encabezado
   const otras = filas.filter((x) => x.simbolo !== activo)
   const tel = G.esTelefono()
@@ -200,8 +219,9 @@ function Ficha({ activo, rango, setRango, fila, filas, abrirLista }: { activo: s
           <div className="t2-cab__id">
             <h1>{activo}</h1>
             <span className="t2-cab__nombre">{ficha?.nombre || fila?.nombre}{ficha?.descripcion ? ` · ${ficha.descripcion}` : ''}{ficha && !ficha.operable_bingx ? <em className="t2-noopera t2m"> · NO SE OPERA EN BINGX</em> : null}</span>
-            <span className="t2-cab__precio t2m">{fmtPrecio(precio)}</span>
+            <span className={`t2-cab__precio t2m ${latido ? `is-${latido}` : ""}`}>{fmtPrecio(precio)}</span>
             <span className={`t2-cab__cambio t2m ${tonoDe(cambio)}`}>{signo(cambio)} 24 h</span>
+            {conVivo && <span className={`t2-vivo t2m is-${enVivo.estado}`} data-prueba="en-vivo" title={enVivo.estado === 'vivo' ? `Precio al segundo, del websocket público de ${enVivo.bolsa === 'bingx' ? 'BingX' : 'Binance'}` : undefined}>{enVivo.estado === 'vivo' ? `EN VIVO · ${enVivo.bolsa === 'bingx' ? 'BINGX' : 'BINANCE'}` : enVivo.estado === 'conectando' ? 'CONECTANDO…' : enVivo.estado === 'pausado' ? 'EN PAUSA' : 'SIN PRECIO EN VIVO'}</span>}
           </div>
           {e && <Cifras items={e.cifras} cab prueba="cifras-cab" />}
           <div className="t2-cab__chips">
@@ -242,7 +262,7 @@ function Ficha({ activo, rango, setRango, fila, filas, abrirLista }: { activo: s
           <Seccion n={2} nombre="Movimiento actual" pregunta="¿Quién mueve el precio y dónde está la fuerza?" prueba="sec-movimiento"
             lado={ficha.movimiento.liquidaciones ? <span className="t2-chip t2-chip--oro t2m" data-prueba="calidad-mapa">MAPA DE LIQUIDACIONES · ESTIMADO{ficha.movimiento.liquidaciones.calibrado ? ` · CALIBRADO${ficha.movimiento.liquidaciones.vs_azar !== null ? `: ${fmt(ficha.movimiento.liquidaciones.vs_azar)}× MEJOR QUE EL AZAR` : ''}` : ' · SIN CALIBRAR'}</span> : falta('movimiento.liquidaciones') ? <span className="t2-chip t2m">{falta('movimiento.liquidaciones')!.toUpperCase()}</span> : null}>
             {ficha.movimiento.velas.length ? <>
-              <Grafico2 prueba="grafico-precio2" alto={tel ? 300 : 360} sincronia={sincronia} deps={[ficha, cmp]} alVivo={(v) => { precioVivo.current = v; v?.capas?.(capas) }}
+              <Grafico2 prueba="grafico-precio2" alto={tel ? 300 : 360} sincronia={sincronia} deps={[ficha, cmp]} alVivo={(v) => { precioVivo.current = v; v?.capas?.(capas); if (v && tic) v.alPrecio?.(tic.precio) }}
                 construir={(el) => G.precio(el, ficha, { capas, comparar: cmp })}
                 leyendaExtra={<>{capas.has('radar') && ficha.movimiento.marcas.some((x) => x.tipo === 'radar') && <span className="t2-g__s"><i className="t2-g__rombo" />Marcas del radar, al pie</span>}{ficha.movimiento.perfil.poc !== null && <span className="t2-g__s"><i className="t2-g__m" style={{ background: 'rgba(201,162,75,0.5)' }} />Mayor volumen {fmtPrecio(ficha.movimiento.perfil.poc)}</span>}</>} />
               <AlVerse alto={150} ya><Grafico2 prueba="grafico-flujo2" alto={tel ? 130 : 150} sincronia={sincronia} deps={[ficha]} construir={(el) => G.flujo(el, ficha)}
