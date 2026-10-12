@@ -14,16 +14,16 @@
 .lf-comp__fila, .lf-comp__adj,
 .p-admin-menu__lista, .p-top__links.is-open, .lf-picker, .p-rol, .ch-tip {
   background: var(--vidrio);
-  -webkit-backdrop-filter: blur(18px) saturate(150%); backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(26px) saturate(170%); backdrop-filter: blur(26px) saturate(170%);
   box-shadow: var(--vidrio-luz);
 }
-.p-top, .nav, .lf-top { background: var(--vidrio-denso); }
+.p-top, .nav, .lf-top { background: rgba(12, 14, 16, 0.58); box-shadow: inset 0 1px 0 rgba(236,230,216,0.16), 0 10px 30px -18px rgba(0,0,0,0.9); }
 .p-admin-menu__lista, .lf-picker, .ch-tip { box-shadow: var(--vidrio-luz), var(--vidrio-sombra); }
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .p-top, .nav, .lf-top, .lf-comp__fila, .lf-comp__adj, .p-admin-menu__lista, .p-top__links.is-open, .lf-picker, .p-rol, .ch-tip, .lf-hilos, .lf-lab__ctrl { background: var(--vidrio-solido); }
 }
 /* el hilo metálico como borde, con radio: una capa enmascarada al borde */
-.hilo-metal, .lf-comp__fila, .p-admin-menu__lista, .lf-picker, .lf-prop, .lf-tabj, .p-card, .p-puerta, .a-dec, .empty, .lf-lab__ctrl, .lf-hilos.is-open {
+.hilo-metal, .lf-comp__fila, .p-admin-menu__lista, .lf-picker, .lf-prop, .lf-tabj, .p-card, .p-puerta, .a-dec, .empty {
   position: relative; isolation: isolate;
 }
 .lf-comp__fila::before, .p-admin-menu__lista::before, .lf-picker::before, .lf-tabj::before, .p-puerta::after, .a-dec::after, .empty::before {
@@ -87,8 +87,12 @@ input:not([type='checkbox']):not([type='radio']):not([type='range']), textarea, 
 .p-top::after, .lf-top::after { bottom: 0; }
 
 /* ---------- la barra de escritura del chat, tipo Siri ---------- */
-.lf-comp { border-top: 0; background: transparent; padding: 6px clamp(12px, 3vw, 24px) max(14px, env(safe-area-inset-bottom)); }
-.lf-comp__fila { align-items: center; gap: 6px; padding: 6px 6px 6px 8px; border-radius: var(--r-capsula); box-shadow: var(--vidrio-luz), var(--vidrio-sombra); }
+.lf-conv { position: relative; grid-template-rows: auto auto minmax(0, 1fr); }
+.lf-conv__lista { padding-bottom: 108px; }
+.lf-comp { position: absolute; left: 0; right: 0; bottom: 0; z-index: 5; border-top: 0; background: transparent; padding: 6px clamp(12px, 3vw, 24px) max(14px, env(safe-area-inset-bottom)); pointer-events: none; }
+.lf-comp > * { pointer-events: auto; }
+.lf-comp__fila { align-items: center; gap: 6px; padding: 6px 6px 6px 8px; border-radius: var(--r-capsula); background: rgba(21, 24, 27, 0.56); -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%); box-shadow: inset 0 1px 0 rgba(236,230,216,0.22), inset 0 -1px 0 rgba(0,0,0,0.25), 0 18px 40px -16px rgba(0,0,0,0.85); }
+.lf-comp__fila::before { padding: 1px; background: linear-gradient(135deg, rgba(234,209,137,0.55), rgba(201,162,75,0.28) 40%, rgba(236,230,216,0.12) 60%, rgba(138,106,42,0.6)); }
 .lf-comp textarea { background: transparent; border: 0; box-shadow: none; padding: 9px 10px; min-height: 36px; }
 .lf-comp textarea:focus { border: 0; box-shadow: none; }
 .lf-comp__adj { width: 36px; height: 36px; border: 0; color: var(--ceniza); background: rgba(236,230,216,0.05); backdrop-filter: none; -webkit-backdrop-filter: none; box-shadow: none; }
@@ -98,9 +102,12 @@ input:not([type='checkbox']):not([type='radio']):not([type='range']), textarea, 
 /* mientras Luffy piensa, un hilo de luz recorre el borde: esmeralda que se vuelve oro. Sólo el hilo: sin halo, que se lee como mancha. */
 @property --lf-ang { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
 .lf-comp.is-pensando .lf-comp__fila::before {
-  background: conic-gradient(from var(--lf-ang), transparent 0deg, transparent 230deg, var(--esmeralda) 290deg, var(--esmeralda-luz) 320deg, var(--oro-luz) 345deg, transparent 360deg);
-  animation: lf-hilo 1.7s linear infinite;
+  padding: 2px;
+  background: conic-gradient(from var(--lf-ang), transparent 0deg, transparent 150deg, var(--esmeralda) 200deg, var(--esmeralda-luz) 232deg, #fff2c8 250deg, var(--oro-luz) 268deg, transparent 300deg, transparent 330deg, rgba(95,224,166,0.7) 348deg, transparent 360deg);
+  filter: drop-shadow(0 0 5px rgba(95,224,166,0.75)) drop-shadow(0 0 10px rgba(234,209,137,0.35));
+  animation: lf-hilo 1.4s linear infinite;
 }
+.lf-comp.is-pensando .lf-comp__fila { box-shadow: inset 0 1px 0 rgba(236,230,216,0.22), 0 0 0 1px rgba(31,164,111,0.08), 0 18px 44px -14px rgba(31,164,111,0.35); }
 @keyframes lf-hilo { to { --lf-ang: 360deg; } }
 @supports not (background: conic-gradient(from var(--lf-ang), red, blue)) {
   .lf-comp.is-pensando .lf-comp__fila::before { background: linear-gradient(90deg, var(--esmeralda), var(--oro-luz)); }
