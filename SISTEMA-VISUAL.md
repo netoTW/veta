@@ -623,5 +623,10 @@ carga la última y viste los selectores existentes.
 - **Rendimiento:** el desenfoque sólo en elementos fijos o de pocos píxeles; nada de vidrio en
   listas largas ni en tarjetas, para mantener 60 fps al hacer scroll en el chat y en el terminal.
 
+- **Gráficos: nada encima de las velas.** Ninguna etiqueta de marcador («Radar», «Compra»,
+  «Stop») se monta sobre las velas. Compras y ventas, flecha sin texto en su vela; stops, punto
+  en su precio; señales del radar, rombos oro en un riel al pie del panel de precio, con su
+  propio margen. El texto se lee junto a la fecha al pasar la cruz y en la lista bajo el gráfico.
+
 Capturas antes/después: `recursos/capturas/pulida/antes-despues-*.png` (portada, chat, barra
 pensando, hoja del laboratorio, gemas; escritorio y teléfono).

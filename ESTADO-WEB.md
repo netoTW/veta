@@ -596,9 +596,11 @@ turno y por día contra el presupuesto; alertas paginadas con filtros), **Oficin
 canvas 2D con Luffy al centro, agentes y fuentes; hilos que se encienden con los eventos del SSE;
 se pausa con la pestaña oculta y no repinta sin cambios) e **Informes** (`Informes.tsx`).
 
-**Marcadores sin texto sobre las velas.** Compras, ventas, stops y marcas del radar se dibujan
-sólo como forma; la etiqueta («Compra 84,71 USDT a 0,038», «Radar: impulso v1») aparece junto a la
-fecha al pasar la cruz por esa vela, y la lista completa sigue debajo del gráfico.
+**Nada de texto ni de señales sobre las velas.** Compras, ventas y stops se dibujan sólo como
+forma en su vela; las señales del radar van a un **riel al pie del panel de precio** (un rombo por
+vela, con el número si hay varias; `Riel` en `charts/primitivas.ts`), con margen inferior propio
+para que ninguna vela lo toque. En ningún caso la etiqueta («Compra 84,71 USDT a 0,038», «Radar: impulso v1») va encima: aparece junto a
+la fecha al pasar la cruz por esa vela, y la lista completa sigue debajo del gráfico.
 
 **Pruebas.** `scripts/probar-luffy.mjs` (Playwright, Chrome del sistema): los cinco perfiles
 contra `/api/luffy/*` (404 salvo admin), un suscriptor pro en `/luffy` (no existe), y con el
@@ -608,6 +610,17 @@ de su categoría y la posición de Pablo, guardarlo en un tablero y verlo en Tab
 pantallas a 1440 y a 390 px sin desborde. Casos guiados de la 6b (simulador): abrir WAL en el
 terminal, cambiar de moneda con el teclado, arrastrar el stop y cancelar la propuesta, abrir
 derivados en el laboratorio; declarar STONK y verla en la cartera; y las nueve vistas a 390 px.
+Contra la API real (`VETA_LUFFY=http`, túnel al 8800) corre todo lo que sólo mira, terminal
+incluido; arrastrar el stop y declarar se saltan porque escribirían propuestas reales. Las
+esperas no dependen de que la red quede en reposo: la ficha real tarda de 3 a 6 s y precarga
+las vecinas.
+
+**Con datos reales (12-oct, Mugiwara `d6d0c03`).** Verde contra la API real; capturas en
+`recursos/capturas/6b-real/`. Ajustes que dejó la prueba: ejecuciones pedidas por par (el
+servidor exige `par`), gasto de estilo con los campos reales, familias inversas en rojo en el
+radar, seguimiento vacío oculto, códigos en texto, bitácora y decisiones de la caja recortadas
+con «ver más», capas vacías sin aviso. La curva de Pablo hoy suma la caja: es del servidor y
+está pedido (`TRASPASO.md` §6).
 Corre dentro de `npm run invariantes`; con una carpeta como argumento deja capturas
 (`recursos/capturas/luffy/`). `scripts/shots-6b.mjs` captura las vistas nuevas y
 `scripts/shots-pulida.mjs` el antes/después del acabado.

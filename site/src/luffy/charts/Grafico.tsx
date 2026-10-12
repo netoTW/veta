@@ -3,7 +3,7 @@ import type { Datos, Spec } from '../tipos'
 import { ErrorLuffy, luffy } from '../api'
 import { dibujar, type Vivo } from './lwc'
 import type { Sincronia } from './sincronia'
-import { fmt, fmtFecha, RANGO_LABEL } from '../formato'
+import { esCapaVacia, fmt, fmtFecha, motivoLlano, RANGO_LABEL } from '../formato'
 
 /* ============================================================================
    Un gráfico del contrato, interactivo: por spec o por spec_id. Pide los datos,
@@ -100,7 +100,7 @@ export function Grafico({ spec, specId, onSpec, onDatos, alto, compacto = false,
   const rangoActual = specEfectivo?.rango ?? '90d'
   const series = vivo.current?.series ?? []
   const fuentes = useMemo(() => [...new Set((datos?.fuentes ?? []).map((f) => f.fuente.split(/[\s(:]/)[0]))].filter(Boolean), [datos])
-  const noDisp = datos?.no_disponibles ?? []
+  const noDisp = (datos?.no_disponibles ?? []).filter((n) => !esCapaVacia(n.motivo))
   const nivelesInfo = (datos?.niveles ?? []).filter((n) => n.tipo !== 'precio_actual')
   const tops = useMemo(() => { const out: number[] = []; let acc = 0; alturas.forEach((h, i) => { out.push(acc); acc += h + (i < alturas.length - 1 ? 1 : 0) }); return out }, [alturas])
 
@@ -152,7 +152,7 @@ export function Grafico({ spec, specId, onSpec, onDatos, alto, compacto = false,
           {datos!.zonas.map((z, i) => <span key={`z${i}`} className="lf-g__marca lf-g__marca--esm">▮ {z.etiqueta}: {fmt(z.desde)}–{fmt(z.hasta)}</span>)}
         </div>
       )}
-      {noDisp.length > 0 && <p className="lf-g__nota">Sin datos: {noDisp.map((n) => `${n.serie} (${n.motivo})`).join(' · ')}</p>}
+      {noDisp.length > 0 && <p className="lf-g__nota">Sin datos: {noDisp.map((n) => `${n.serie} (${motivoLlano(n.motivo)})`).join(' · ')}</p>}
       {datos && (
         <p className="lf-g__pie mono">
           {fuentes.length ? <>Fuentes: {fuentes.join(' · ')} · {fmtFecha(datos.consultado_en, true)}</> : null}

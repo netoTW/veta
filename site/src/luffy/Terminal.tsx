@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Plegable } from './Plegable'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { luffy } from './api'
 import { luffy6b, ErrorLuffy6b } from './api6b'
@@ -170,7 +171,7 @@ function Ficha({ activo, rango, setRango, sincronia, abrirLista, fila, onTocar, 
               <div className="lf-fam">
                 {Object.entries(radar.familias).map(([k, f]) => (
                   <div key={k} className={`lf-fam__f ${f.cumple ? 'is-on' : ''} ${f.cumple_inverso ? 'is-inverso' : ''}`}>
-                    <span className="lf-fam__n mono"><i className="lf-gema" />{NOMBRE_FAMILIA[k] ?? k} · {f.etiqueta}{f.z !== null ? <em> z {fmt(f.z)}</em> : null}</span>
+                    <span className="lf-fam__n mono"><i className="lf-gema" />{NOMBRE_FAMILIA[k] ?? k}{f.etiqueta && f.etiqueta.toLowerCase() !== k && f.etiqueta.toLowerCase() !== (NOMBRE_FAMILIA[k] ?? '').toLowerCase() ? ` · ${f.etiqueta}` : ''}{f.z !== null ? <em> z {fmt(f.z)}</em> : null}</span>
                     {f.motivo ? <span className="lf-fam__m">{f.motivo}</span> : <>
                       <span className="lf-fam__c"><small>valor</small><b className="num">{valorFamilia(f.valor)}</b></span>
                       {Object.entries(f.detalle).filter(([, v]) => typeof v === 'number' || typeof v === 'string').slice(0, 3).map(([dk, dv]) => <span key={dk} className="lf-fam__c"><small>{etiquetaDetalle(dk)}</small><b className="num">{cifraDetalle(dk, dv)}</b></span>)}
@@ -192,7 +193,7 @@ function Ficha({ activo, rango, setRango, sincronia, abrirLista, fila, onTocar, 
           </section>
           <section className="lf-tarj">
             <h3 className="mono">Bitácora y teorías</h3>
-            {ficha.bitacora.map((b) => <p key={b.id} className="lf-nota"><em className="mono">bitácora · {b.tipo}{b.origen ? ` · ${b.origen}` : ''} · {fmtFecha(b.fecha, true)}{b.resultado ? ` · ${b.resultado}` : ''}</em>{b.tesis}{b.hilo_id && <> <Link to={`/luffy/h/${b.hilo_id}`} className="lf-nota__ir mono">ver hilo</Link></>}</p>)}
+            <Plegable items={ficha.bitacora} tope={4} texto="Ver toda la bitácora" pintar={(b) => <p key={b.id} className="lf-nota"><em className="mono">bitácora · {b.tipo}{b.origen ? ` · ${b.origen}` : ''} · {fmtFecha(b.fecha, true)}{b.resultado ? ` · ${b.resultado}` : ''}</em>{b.tesis}{b.hilo_id && <> <Link to={`/luffy/h/${b.hilo_id}`} className="lf-nota__ir mono">ver hilo</Link></>}</p>} />
             {ficha.teorias.map((t) => <p key={t.id} className="lf-nota"><em className="mono">teoría · {t.estado}{t.confianza ? ` · confianza ${t.confianza}` : ''}</em><b>{t.titulo}</b> · {t.hipotesis}</p>)}
             {!ficha.bitacora.length && !ficha.teorias.length && <p className="lf-ctrl__nota mono">Nada todavía.</p>}
             {ficha.hilos.length > 0 && <p className="lf-ctrl__nota mono">Hilos: {ficha.hilos.map((h, i) => <span key={h.id}>{i > 0 && ' · '}<Link to={`/luffy/h/${h.id}`} className="lf-nota__ir">{h.titulo}</Link> ({hace(h.actualizado)})</span>)}</p>}

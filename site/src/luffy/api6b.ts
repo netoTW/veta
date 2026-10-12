@@ -47,7 +47,12 @@ export const luffy6b = {
   borrarMovimiento: (id: number) => pedir<{ ok: boolean }>(`/cartera/movimientos/${id}`, { metodo: 'DELETE' }),
   declarar: (d: Declaracion) => pedir<Propuesta>('/posiciones/declarar', { cuerpo: { origen: 'pablo', ...d } }),
   ordenes: (estado: 'abiertas' | 'historial' = 'abiertas', limite = 100) => pedir<Ordenes>(`/exchange/ordenes${qs({ estado, limite: estado === 'historial' ? limite : undefined })}`),
-  fills: (limite = 100, par?: string) => pedir<Fills>(`/exchange/fills${qs({ par, limite })}`),
+  /** El servidor exige `par` (sin él responde 422): se piden por par y se juntan. */
+  fills: (par: string, limite = 100) => pedir<Fills>(`/exchange/fills${qs({ par, limite })}`),
+  async fillsDe(pares: string[], limite = 30): Promise<Fills['fills']> {
+    const rs = await Promise.all([...new Set(pares)].map((p) => luffy6b.fills(p, limite).then((r) => r.fills.map((f) => ({ ...f, par: f.par ?? r.par ?? p })), () => [])))
+    return rs.flat().sort((a, b) => b.hora.localeCompare(a.hora))
+  },
   comisiones: (desde: string, hasta: string, origen = 'pablo') => pedir<Comisiones>(`/exchange/comisiones${qs({ desde, hasta, origen })}`),
   /** Una acción sobre el exchange: siempre vuelve como propuesta (o dos, en «modificar»), que se confirma como las del chat. */
   async proponer(a: AccionExchange): Promise<RespuestaPropuestas> {

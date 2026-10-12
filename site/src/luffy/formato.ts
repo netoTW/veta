@@ -54,3 +54,8 @@ export function quedan(iso: string | null | undefined): string | null {
 }
 export const RANGO_LABEL: Record<string, string> = { '30d': '30 d', '60d': '60 d', '90d': '90 d', '3m': '3 m', '6m': '6 m', '1y': '1 a', max: 'máx' }
 export const INTERVALO_LABEL: Record<string, string> = { '1h': '1 h', '4h': '4 h', '1d': '1 d', '1w': '1 sem' }
+
+/** Un motivo de «sin datos» en llano: sin el nombre de la excepción de Python delante. */
+export const motivoLlano = (m: string | null | undefined) => (m ?? '').replace(/\b[A-Z][A-Za-z]*(Error|Exception)\s*:\s*/g, '').trim()
+/** Una capa vacía (no hay gatillos con nivel de precio) no es un dato que falte: no se avisa. */
+export const esCapaVacia = (m: string | null | undefined) => /no hay gatillos activos/i.test(m ?? '')

@@ -946,7 +946,7 @@ luffySimulado.get('/exchange/ordenes', (c) => {
   const par = c.req.query('par')
   return c.json({ estado, ordenes: ordenes.filter((o) => !par || o.par.startsWith(par.toUpperCase())), consultado_en: ahora(), fuente: 'bingx' })
 })
-luffySimulado.get('/exchange/fills', (c) => { const par = c.req.query('par'); const lim = Number(c.req.query('limite') ?? 100) || 100; return c.json({ par: par ?? null, fills: FILLS_SIM.filter((f) => !par || f.par.startsWith(par.toUpperCase())).slice(0, lim), consultado_en: ahora(), fuente: 'bingx:myTrades' }) })
+luffySimulado.get('/exchange/fills', (c) => { const par = c.req.query('par'); if (!par) return c.json({ detail: [{ type: 'missing', loc: ['query', 'par'], msg: 'Field required', input: null }] }, 422); const lim = Number(c.req.query('limite') ?? 100) || 100; return c.json({ par: par ?? null, fills: FILLS_SIM.filter((f) => !par || f.par.startsWith(par.toUpperCase())).slice(0, lim), consultado_en: ahora(), fuente: 'bingx:myTrades' }) })
 luffySimulado.get('/exchange/comisiones', (c) => {
   const desde = c.req.query('desde') ?? diaAtras(30), hasta = c.req.query('hasta') ?? diaAtras(0), origen = c.req.query('origen') ?? 'pablo'
   const fs = FILLS_SIM.filter((f) => f.propuesta?.origen === origen && f.hora.slice(0, 10) >= desde && f.hora.slice(0, 10) <= hasta)

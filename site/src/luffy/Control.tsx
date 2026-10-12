@@ -91,7 +91,7 @@ function ManualVivo() {
       </section>
       <section className="lf-tarj">
         <h3 className="mono">Versiones<em>{m.vigente ? `vigente v${m.vigente.version}` : ''}</em></h3>
-        {m.vigente && <><p className="lf-nota">{m.vigente.resumen}</p><button type="button" className="lf-chip" onClick={() => setVerTexto((v) => !v)}>{verTexto ? 'Ocultar' : 'Leer'} el manual vigente</button>{verTexto && <pre className="lf-diff">{m.vigente.texto}</pre>}</>}
+        {m.vigente && <>{m.vigente.resumen && <p className="lf-nota">{m.vigente.resumen}</p>}<button type="button" className="lf-chip" onClick={() => setVerTexto((v) => !v)}>{verTexto ? 'Ocultar' : 'Leer'} el manual vigente</button>{verTexto && <pre className="lf-diff">{m.vigente.texto}</pre>}</>}
         {m.versiones.map((v, i) => (
           <div key={v.id} className="lf-gat">
             <div><p className="lf-gat__t"><b>v{v.version}</b>{v.vigente ? ' · vigente' : ''} · {v.resumen}</p><p className="lf-gat__m mono">{v.origen} · {fmtFecha(v.creada, true)}</p></div>
@@ -136,12 +136,12 @@ function Gasto() {
         <section className="lf-tarj"><h3 className="mono">Por día<em><span className="lf-seg lf-seg--mini">{[14, 30, 60].map((d) => <button key={d} type="button" className={dias === d ? 'is-on' : ''} onClick={() => setDias(d)}>{d} d</button>)}</span></em></h3>{c.por_dia?.length ? <><div ref={ref} className="lf-gasto" /><p className="lf-ctrl__nota mono">Luffy en esmeralda · Jev, Haiku y Sonnet en hueso · hora de Chile</p></> : <p className="lf-ctrl__nota mono">El servidor todavía no entrega el gasto por día.</p>}</section>
         <section className="lf-tarj"><h3 className="mono">Por tipo de turno, agente y modelo<em>mes en curso</em></h3>
           <div className="lf-tabla__scroll"><table className="lf-tabla"><tbody>
-            {(c.por_tipo ?? []).map((t) => <tr key={t.tipo_turno}><td>Luffy · {t.etiqueta}<small>{t.n} turnos · {fmtUsd(t.promedio_usd)} cada uno{t.iteraciones !== null ? ` · ${String(t.iteraciones).replace('.', ',')} vueltas` : ''}</small></td><td className="num">{fmtUsd(t.costo_usd)}</td></tr>)}
+            {(c.por_tipo ?? []).map((t) => <tr key={t.tipo_turno}><td>Luffy · {t.etiqueta}<small>{t.n} turnos · {fmtUsd(t.promedio_usd)} cada uno{t.iteraciones ? ` · ${String(t.iteraciones).replace('.', ',')} vuelta${t.iteraciones === 1 ? '' : 's'}` : ''}</small></td><td className="num">{fmtUsd(t.costo_usd)}</td></tr>)}
             {(c.agentes ?? []).map((a) => <tr key={a.quien}><td>{a.quien}<small>{a.n} encargos</small></td><td className="num">{fmtUsd(a.costo_usd)}</td></tr>)}
             {(c.jev?.por_modelo ?? []).map((t) => <tr key={t.modelo}><td>{t.modelo}<small>{t.n.toLocaleString('es-ES')} llamadas</small></td><td className="num">{fmtUsd(t.costo_usd)}</td></tr>)}
             {!c.por_tipo && (c.por_modelo ?? []).map((t) => <tr key={t.modelo}><td>{t.modelo}<small>{t.n} respuestas</small></td><td className="num">{fmtUsd(t.costo_usd)}</td></tr>)}
           </tbody></table></div>
-          {c.estilo && <p className="lf-ctrl__nota mono">Reescrituras de estilo: {c.estilo.reescritos} de {c.estilo.turnos} turnos ({String(c.estilo.tasa_pct).replace('.', ',')} %) · {fmtUsd(c.estilo.costo_usd)}</p>}
+          {c.estilo && <p className="lf-ctrl__nota mono">Reescrituras de estilo: {c.estilo.reescrituras ?? c.estilo.reescritos ?? 0} de {c.estilo.turnos} turnos ({String(c.estilo.porcentaje ?? c.estilo.tasa_pct ?? 0).replace('.', ',')} %) · {fmtUsd(c.estilo.costo_extra_usd ?? c.estilo.costo_usd ?? 0)}{c.estilo.lectura ? ` · ${c.estilo.lectura}` : ''}</p>}
         </section>
       </div>
     </>

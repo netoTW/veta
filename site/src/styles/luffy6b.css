@@ -251,3 +251,7 @@
 .lf-teoria__ev em.mono { font-style: normal; color: var(--ceniza-2); font-size: 0.56rem; }
 .lf-ofi__estado a { color: var(--oro-luz); }
 .lf-ofi__estado { right: 12px; line-height: 1.5; }
+
+/* listas largas recortadas (bitácora, decisiones de la caja) */
+.lf-mas { display: inline-flex; align-items: center; margin-top: 10px; padding: 6px 12px; border: 1px solid var(--hilo-suave); border-radius: var(--r-capsula); background: transparent; color: var(--ceniza); font-size: 0.56rem; letter-spacing: 0.14em; text-transform: uppercase; cursor: pointer; }
+.lf-mas:hover { color: var(--hueso); border-color: var(--hilo-metal); }

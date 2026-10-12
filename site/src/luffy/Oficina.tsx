@@ -128,7 +128,7 @@ export function Oficina() {
           <section className="lf-tarj"><h3 className="mono">Registro de actividad<em>{eventos.length ? `${eventos.length} eventos` : ''}</em></h3>
             <div className="lf-ofi__registro">{eventos.map((e) => { const d = describir(e); return d ? <div key={e.clave} className="lf-ev"><span className="mono">{fmtHora(e.hora).slice(-5)}</span><span><i className={d.clase}>{d.texto}</i></span></div> : null })}{!eventos.length && <p className="lf-ctrl__nota mono">Esperando eventos…</p>}</div>
           </section>
-          <section className="lf-tarj"><h3 className="mono">Trabajos programados</h3>{(estado?.trabajos ?? []).map((t) => <p key={t.nombre} className="lf-nota" style={{ fontSize: '0.8rem' }}><b>{t.etiqueta ?? t.nombre}</b> <em className="mono" style={{ display: 'inline' }}>· cada {t.cada}{t.ultima ? ` · último ${hace(t.ultima)}` : ''}{t.estado && t.estado !== 'ok' ? ` · ${t.estado}` : ''}</em></p>)}</section>
+          <section className="lf-tarj"><h3 className="mono">Trabajos programados</h3>{(estado?.trabajos ?? []).map((t) => <p key={t.nombre} className="lf-nota" style={{ fontSize: '0.8rem' }}><b>{t.etiqueta ?? t.nombre}</b> <em className="mono" style={{ display: 'inline' }}>· cada {t.cada}{t.ultima ? ` · último ${hace(t.ultima)}` : ''}{t.estado && t.estado !== 'ok' ? ` · ${t.estado.replace(/_/g, ' ')}` : ''}</em></p>)}</section>
         </div>
       </div>
     </div>

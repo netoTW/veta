@@ -2,6 +2,7 @@
    Primitivas de lightweight-charts: lo que la librería no trae y el contrato pide.
      Banda     una zona de precio (zona de compra, de riesgo) como franja
      Eventos   líneas verticales con etiqueta en una fecha
+     Riel      señales del radar en una franja al pie del panel, fuera de las velas
      Perfil    histograma horizontal por precio (perfil de volumen, imán de liquidaciones)
    Cada una calcula coordenadas en updateAllViews y sólo pinta en draw.
    ========================================================================== */
@@ -65,6 +66,26 @@ export class Eventos extends Base {
   private eventos: Evento[]
   constructor(eventos: Evento[]) { super(); this.eventos = eventos }
   updateAllViews() { if (!this.chart) return; const ts = this.chart.timeScale(); this.xs = this.eventos.flatMap((e) => { const x = ts.timeToCoordinate(e.t as UTCTimestamp); return x === null ? [] : [{ x, e }] }) }
+  paneViews() { return [this.vista] }
+}
+
+/* ---------- riel de señales ----------
+   Las señales del radar no van sobre las velas: un rombo por vela en una franja al pie
+   del panel, con el número si hay varias. La etiqueta se lee en la fecha, al pasar la cruz. */
+export class Riel extends Base {
+  private xs: { x: number; n: number }[] = []
+  private vista = new Vista('top', (ctx, w, h) => {
+    const y = h - 9
+    ctx.strokeStyle = rgba(C.oro, 0.16); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke()
+    ctx.font = `500 9px ${FUENTE_MONO}`; ctx.textBaseline = 'middle'
+    for (const { x, n } of this.xs) {
+      ctx.fillStyle = C.oroLuz; ctx.beginPath(); ctx.moveTo(x, y - 4); ctx.lineTo(x + 4, y); ctx.lineTo(x, y + 4); ctx.lineTo(x - 4, y); ctx.closePath(); ctx.fill()
+      if (n > 1) { ctx.fillStyle = C.oroLuz; ctx.fillText(String(n), x + 6, y) }
+    }
+  })
+  private marcas: Map<number, number>
+  constructor(marcas: Map<number, number>) { super(); this.marcas = marcas }
+  updateAllViews() { if (!this.chart) return; const ts = this.chart.timeScale(); this.xs = [...this.marcas].flatMap(([t, n]) => { const x = ts.timeToCoordinate(t as UTCTimestamp); return x === null ? [] : [{ x, n }] }) }
   paneViews() { return [this.vista] }
 }
 

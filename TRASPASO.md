@@ -86,10 +86,15 @@ firma.
 `SISTEMA-VISUAL.md` §20). Navegación nueva, terminal por moneda con gráficos sincronizados y
 stop arrastrable, cartera y exchange con propuestas, caja, radar, control, oficina en vivo e
 informes. **Cotejado con `CONTRATO-PANEL.md` v2.1** (§8) el 12-oct: tipos, cliente, simulador y pantallas
-con las formas exactas. **Falta que Mugiwara despliegue su backend de la 6b**: a la fecha todas sus
-rutas nuevas dan 404 en el servidor (el código está sin commitear en su repo). Cuando esté:
-`scripts/probar-luffy.mjs` y `scripts/shots-6b.mjs` contra la API real (túnel al 8800 y
-`VETA_LUFFY=http`), revisar capturas y anotar aquí lo que difiera. Capturas: `recursos/capturas/6b/`.
+con las formas exactas. **Conectado con datos reales el 12-oct** (Mugiwara `d6d0c03`): las
+pruebas pasan contra la API real (con datos reales sólo se mira: arrastrar el stop y declarar
+STONK quedan para el simulador, porque escribirían propuestas reales) y las nueve vistas se
+revisaron en escritorio y a 390 px. Diferencias reales ya absorbidas en el front y en el
+simulador: `/exchange/fills` exige `par` (se pide por par y se junta), `costo.estilo` trae
+`reescrituras / porcentaje / costo_extra_usd / lectura`, el `regimen` de las candidatas es un
+objeto, sus familias usan `inverso`, `seguimiento` puede venir `{}`, `manual.vigente` no trae
+`resumen`, `riesgo_por_operacion_pct` puede ser `null`. Capturas: `recursos/capturas/6b-real/`
+y `recursos/capturas/luffy-real/` (las del simulador, en `6b/`).
 
 **Fase 6a (11-oct): el panel de Mugiwara en `/luffy`** (`ESTADO-WEB.md` §7ter). Puente
 `/api/luffy/*` sólo para el admin real (el resto, 404), SSE sin buffer, chat con los hilos de
@@ -132,8 +137,8 @@ límite de error, archivado de la calibración.
 ## 4. Pendientes, por prioridad
 
 ### Alta
-00. **Conectar la 6b con datos reales** cuando Mugiwara despliegue (hoy 404): correr `probar-luffy.mjs`
-    y `shots-6b.mjs` contra la API real, revisar las capturas y corregir lo que difiera del contrato.
+00. **La curva y el efectivo de la cartera de Pablo** dependen de Mugiwara (§6): hoy suman la
+    caja. Cuando lo corrija, volver a sacar `shots-6b.mjs` con datos reales y mirar la cartera.
 0. **Encender Luffy en producción** (fase 6a): `MUGIWARA_API_TOKEN` en `/opt/veta-web/site/.env`,
    copiar `despliegue/Caddyfile` a `/etc/caddy/Caddyfile` y recargar Caddy; esperar a que la
    sesión de Mugiwara despliegue su backend de la 6a. Después: capturas con datos reales y
@@ -195,6 +200,21 @@ límite de error, archivado de la calibración.
   tras la migración 018 en una conexión del pool. Una hora antes la misma petición traía la entrada y el
   stop de WAL; a las 00:10 volvía a traerlos. Se cura reiniciando el servicio o descartando los planes
   (`DISCARD ALL`) al migrar. La web enseña el motivo tal cual en la nota del gráfico.
+- **6b, prueba real del 12-oct.** `GET /cartera/curva?origen=pablo` suma la cuenta entera de BingX,
+  caja incluida: puntos 89,83 → 88,93 → 102,52 USDT («rendimiento +13,83 USDT, +15,59 %»), mientras
+  `GET /cartera?origen=pablo` da `valor_total_usdt 16,98` sin posiciones. El salto del 12-oct es la
+  entrada de la caja en WAL (2228,74 a 0,038). Además, los 16,98 USDT libres salen como efectivo de
+  Pablo y también dentro de la caja (99,27 USDT con 83,09 en WAL): se cuentan dos veces. La curva y el
+  efectivo de Pablo tienen que excluir lo asignado a la caja.
+- `/exchange/fills` exige `par` (422 sin él); el contrato lo da como opcional. La web pide un par a la
+  vez y junta. Si se quiere una sola llamada, que `par` sea opcional.
+- `costo.estilo` llega como `{turnos, reescrituras, mejoraron, porcentaje, costo_extra_usd, umbral_pct,
+  lectura}`; el contrato dice `{turnos, reescritos, tasa_pct, costo_usd}`. La web lee los dos; conviene
+  alinear el contrato.
+- La capa `gatillos` de `/graficos/datos` declara `no_disponibles: [{serie: "gat", motivo: "ValueError: no
+  hay gatillos activos con nivel de precio para este activo"}]` cuando simplemente no hay gatillos: una
+  capa vacía no es un dato que falte. La web la oculta y quita el nombre de la excepción de los motivos.
+- `por_que` de las candidatas llega a veces como código (`confluencia_solida`); la web lo pasa a texto.
 - Las velas diarias de BingX vienen con `t` a las 16:00 UTC (no a las 00:00); el panel coloca cada marcador en
   la vela abierta en ese momento, así que funciona, pero conviene decirlo en el contrato.
 

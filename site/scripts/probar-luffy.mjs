@@ -14,6 +14,7 @@
 import { chromium, devices } from 'playwright'
 import { mkdirSync } from 'node:fs'
 import { BASE, PERFILES, cookiesDeTodos, env } from './sesiones.mjs'
+async function ir(p, url) { await p.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 }); await p.waitForLoadState('networkidle', { timeout: 20000 }).catch(() => {}) }
 
 const OUT = process.argv[2] ?? ''
 if (OUT) mkdirSync(OUT, { recursive: true })
@@ -70,7 +71,7 @@ console.log('\nLUFFY · un suscriptor pro no ve nada')
   const { ctx, p } = await contexto(false)
   await entrar(ctx, 'pro@veta.local', env.VETA_DEMO_PASSWORD)
   for (const r of ['/luffy', '/luffy/laboratorio', '/luffy/tableros']) {
-    await p.goto(`${BASE}${r}`, { waitUntil: 'networkidle' }); await espera(500)
+    await ir(p, `${BASE}${r}`); await espera(500)
     const t = await p.evaluate(() => document.body.innerText)
     ok(/esta página no existe/i.test(t) && !/luffy|mugiwara|hilos|tablero/i.test(t), `${r}: «no existe», sin nombrar nada`)
   }
@@ -82,12 +83,12 @@ console.log('\nLUFFY · admin, escritorio')
 {
   const { ctx, p } = await contexto(false)
   await entrar(ctx, env.VETA_ADMIN_EMAIL, env.VETA_ADMIN_PASSWORD)
-  await p.goto(`${BASE}/luffy`, { waitUntil: 'networkidle' })
+  await ir(p, `${BASE}/luffy`)
   await p.waitForSelector('.lf-hilo', { timeout: 20000 })
   ok((await p.locator('.lf-hilo').count()) >= 1, 'la lista de hilos carga')
   await espera(800); await foto(p, '01-chat')
   if (hiloStonk) {
-    await p.goto(`${BASE}/luffy/h/${hiloStonk}`, { waitUntil: 'networkidle' })
+    await ir(p, `${BASE}/luffy/h/${hiloStonk}`)
     await p.waitForSelector('.lf-g canvas', { timeout: 30000 })
     ok(true, 'el gráfico del mensaje se dibuja interactivo (canvas)')
     const leyendas = await p.locator('.lf-g__ley').count()
@@ -109,7 +110,7 @@ console.log('\nLUFFY · admin, escritorio')
     }
     // ---------- caso guiado ----------
     console.log('\nLUFFY · caso guiado: STONK desde el mensaje → categoría → posición → tablero')
-    await p.goto(`${BASE}/luffy/h/${hiloStonk}`, { waitUntil: 'networkidle' })
+    await ir(p, `${BASE}/luffy/h/${hiloStonk}`)
     await p.waitForSelector('.lf-g canvas', { timeout: 30000 })
     await p.locator('.lf-g a:has-text("Abrir en el laboratorio")').first().click()
     await p.waitForURL(/\/luffy\/laboratorio\//, { timeout: 15000 })
@@ -130,40 +131,40 @@ console.log('\nLUFFY · admin, escritorio')
       await p.click('[data-prueba="guardar-tablero"]')
       await p.waitForSelector('.lf-lab__msg', { timeout: 15000 })
       ok(/guardado/i.test(await p.locator('.lf-lab__msg').innerText()), 'guardado en un tablero')
-      await p.goto(`${BASE}/luffy/tableros`, { waitUntil: 'networkidle' })
+      await ir(p, `${BASE}/luffy/tableros`)
       await p.waitForSelector('[data-prueba="tablero"]', { timeout: 20000 })
       ok((await p.locator(`[data-prueba="tablero"][data-nombre="${NOMBRE}"]`).count()) >= 1, 'el tablero nuevo aparece en Tableros')
       await p.waitForSelector('[data-prueba="tablero"] canvas', { timeout: 30000 })
       await espera(1200); await foto(p, '07-tableros', true)
     } else {
-      await p.goto(`${BASE}/luffy/tableros`, { waitUntil: 'networkidle' }); await espera(1500); await foto(p, '07-tableros', true)
+      await ir(p, `${BASE}/luffy/tableros`); await espera(1500); await foto(p, '07-tableros', true)
     }
   } else {
     // sin un gráfico con spec_id en los hilos (API real recién desplegada): el laboratorio se abre de cero con datos reales
     console.log('  · ningún hilo trae todavía un gráfico con spec_id: el caso guiado se corre sólo con el simulador')
-    await p.goto(`${BASE}/luffy/laboratorio`, { waitUntil: 'networkidle' })
+    await ir(p, `${BASE}/luffy/laboratorio`)
     await p.waitForSelector('.lf-lab__lienzo .lf-g canvas', { timeout: 60000 })
     ok(true, 'el laboratorio abre un gráfico nuevo con datos reales')
     await p.selectOption('.lf-ctrl select[aria-label="Origen de las posiciones"]', 'ambos')
     // sólo los que no estén ya encendidos (el selector enciende entradas, salidas y stop)
     for (const k of ['entradas', 'salidas', 'stop', 'stops_historial', 'pnl']) { const chip = p.locator(`[data-prueba="pos-${k}"]`); if (!(await chip.getAttribute('class'))?.includes('is-on')) await chip.click() }
-    await espera(1500); await p.waitForLoadState('networkidle'); await espera(1200)
+    await espera(1500); await p.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => {}); await espera(1200)
     const marcas = await p.locator('.lf-lab__lienzo .lf-g__marcas').innerText().catch(() => '')
     const nota = await p.locator('.lf-lab__lienzo .lf-g__nota').innerText().catch(() => '')
     if (!marcas && /posiciones \(/.test(nota)) console.log(`  · mugiwara-api no entregó las posiciones (no es del front): ${nota.slice(0, 140)}`)
     else ok(/compra/i.test(marcas) && /stop/i.test(marcas), `la posición de la caja queda encima con datos reales: ${marcas.replace(/\n/g, ' · ').slice(0, 100)}`)
     await foto(p, '05-lab-real')
-    await p.goto(`${BASE}/luffy/tableros`, { waitUntil: 'networkidle' }); await espera(2500); await foto(p, '07-tableros', true)
+    await ir(p, `${BASE}/luffy/tableros`); await espera(2500); await foto(p, '07-tableros', true)
   }
   await ctx.close()
 }
 
-/* ---------- 6b: terminal, cartera y stop desde el gráfico (simulador) ---------- */
-if (SIM) {
+/* ---------- 6b: terminal (también real, sólo lectura); stop y declarar sólo en el simulador ---------- */
+{
   console.log('\nLUFFY · 6b · terminal: WAL, teclado y derivados al laboratorio')
   const { ctx, p } = await contexto(false)
   await entrar(ctx, env.VETA_ADMIN_EMAIL, env.VETA_ADMIN_PASSWORD)
-  await p.goto(`${BASE}/luffy/terminal/WAL`, { waitUntil: 'networkidle' })
+  await ir(p, `${BASE}/luffy/terminal/WAL`)
   await p.waitForSelector('[data-prueba="seccion-precio"] canvas', { timeout: 40000 })
   ok((await p.locator('.lf-ficha__sym').innerText()).startsWith('WAL'), 'la ficha de WAL abre con sus gráficos')
   ok((await p.locator('.lf-ficha__graficos canvas').count()) >= 3, `secciones dibujadas: ${await p.locator('.lf-ficha__graficos canvas').count()} lienzos`)
@@ -175,7 +176,8 @@ if (SIM) {
   ok(true, `↓ cambia de moneda sin recargar (${otra})`)
   await p.keyboard.press('ArrowUp'); await p.waitForURL(/\/luffy\/terminal\/WAL$/, { timeout: 10000 })
   await p.waitForSelector('[data-prueba="seccion-precio"] canvas', { timeout: 40000 })
-  // el stop se arrastra en el gráfico y genera una propuesta, que se cancela
+  // el stop se arrastra en el gráfico y genera una propuesta, que se cancela (con datos reales no se escribe)
+  if (SIM) {
   const asa = p.locator('[data-prueba="asa-stop"]')
   await asa.waitFor({ timeout: 15000 })
   const caja = await asa.boundingBox()
@@ -187,12 +189,14 @@ if (SIM) {
   await p.click('.lf-ficha__prop .lf-prop__cancelar')
   await p.waitForFunction(() => /cancelada/i.test(document.querySelector('.lf-ficha__prop .lf-prop__estado')?.textContent ?? ''), null, { timeout: 15000 })
   ok(true, 'la propuesta de mover el stop se cancela')
+  }
   await p.click('[data-prueba="lab-derivados"]'); await p.waitForURL(/\/luffy\/laboratorio\//, { timeout: 15000 })
   await p.waitForSelector('.lf-lab__lienzo .lf-g canvas', { timeout: 40000 })
   ok(/apalanca|funding/i.test(await p.locator('.lf-lab__lienzo .lf-g__titulo').innerText()), 'derivados se abre en el laboratorio para editarlo')
   await foto(p, '12-lab-derivados')
+  if (SIM) {
   console.log('\nLUFFY · 6b · cartera: declarar STONK y verla')
-  await p.goto(`${BASE}/luffy/cartera`, { waitUntil: 'networkidle' })
+  await ir(p, `${BASE}/luffy/cartera`)
   // la cartera de Pablo empieza sin STONK: la tenencia es previa y no tiene fills (CONTRATO-PANEL.md §8.2)
   await p.waitForSelector('[data-prueba="declarar"]', { timeout: 20000 })
   ok((await p.locator('[data-prueba="posicion"][data-activo="STONK"]').count()) === 0, 'antes de declarar, STONK no está en la cartera')
@@ -207,6 +211,7 @@ if (SIM) {
   await p.waitForFunction(() => [...document.querySelectorAll('[data-prueba="posicion"][data-activo="STONK"]')].some((e) => /declarada/.test(e.textContent ?? '')), null, { timeout: 15000 })
   ok(true, 'STONK aparece en la cartera como declarada')
   await foto(p, '13-cartera-declarada', true)
+  }
   await ctx.close()
 }
 
@@ -216,7 +221,7 @@ console.log('\nLUFFY · admin, teléfono (390 px)')
   await entrar(ctx, env.VETA_ADMIN_EMAIL, env.VETA_ADMIN_PASSWORD)
   const rutas = [['m01-chat', hiloStonk ? `/luffy/h/${hiloStonk}` : '/luffy'], ['m03-lab', specStonk ? `/luffy/laboratorio/${specStonk}` : '/luffy/laboratorio'], ['m05-tableros', '/luffy/tableros'], ['m06-terminal', '/luffy/terminal/WAL'], ['m07-cartera', '/luffy/cartera'], ['m08-radar', '/luffy/radar'], ['m09-control', '/luffy/control'], ['m10-oficina', '/luffy/oficina'], ['m11-informes', '/luffy/informes']]
   for (const [nombre, r] of rutas) {
-    await p.goto(`${BASE}${r}`, { waitUntil: 'networkidle' })
+    await ir(p, `${BASE}${r}`)
     await p.waitForSelector('.lf-g canvas, .lf-hilo, [data-prueba="tablero"], [data-prueba="posicion"], [data-prueba="candidata"], [data-prueba="gatillo"], .lf-ev, .lf-inf__sec', { timeout: 30000 }).catch(() => {})
     await espera(1200)
     ok(await sinDesborde(p), `${r}: sin desborde horizontal a 390 px`)

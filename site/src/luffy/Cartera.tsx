@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { luffy6b, ErrorLuffy6b } from './api6b'
-import type { AccionExchange, Caja, Cartera as CarteraT, Comisiones, CurvaCapital, Fills, Ordenes, PosicionCartera } from './tipos6b'
+import type { AccionExchange, Caja, Cartera as CarteraT, Comisiones, CurvaCapital, Fill, Ordenes, PosicionCartera } from './tipos6b'
 import type { Propuesta } from './tipos'
 import { TarjetaPropuesta } from './Chat'
 import { fmt, fmtFecha, fmtHora, fmtPrecio, fmtUsd, hace } from './formato'
 import { EmptyState } from '../ui/EmptyState'
 import { echarts, BASE_ECHARTS } from './charts/echarts'
 import { C, rgba } from './charts/tema'
+import { Plegable } from './Plegable'
 
 /* ============================================================================
    Cartera (CONTRATO-PANEL.md §8.2 y §8.4): la de Pablo y la caja. Posiciones
@@ -146,15 +147,17 @@ function Cerradas({ c }: { c: CarteraT }) {
 function CarteraPablo() {
   const [c, setC] = useState<CarteraT | null>(null)
   const [ordenes, setOrdenes] = useState<Ordenes | null>(null)
-  const [fills, setFills] = useState<Fills | null>(null)
+  const [fills, setFills] = useState<Fill[] | null>(null)
   const [comis, setComis] = useState<Comisiones | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [propuestas, setPropuestas] = useState<Propuesta[]>([])
   const [formulario, setFormulario] = useState<'declarar' | 'orden' | null>(null)
   const cargar = useCallback(async () => {
-    try { setC(await luffy6b.cartera('pablo')); setError(null) } catch (e) { setError(e instanceof ErrorLuffy6b ? e.message : String(e)) }
-    luffy6b.ordenes('abiertas').then(setOrdenes, () => setOrdenes(null))
-    luffy6b.fills(50).then(setFills, () => setFills(null))
+    let cart: CarteraT | null = null, ords: Ordenes | null = null
+    try { cart = await luffy6b.cartera('pablo'); setC(cart); setError(null) } catch (e) { setError(e instanceof ErrorLuffy6b ? e.message : String(e)) }
+    try { ords = await luffy6b.ordenes('abiertas'); setOrdenes(ords) } catch { setOrdenes(null) }
+    const pares = [...(cart?.posiciones ?? []).map((p) => `${p.activo}-USDT`), ...(cart?.cerradas_recientes ?? []).map((p) => `${p.activo}-USDT`), ...(ords?.ordenes ?? []).map((o) => o.par)]
+    luffy6b.fillsDe(pares).then(setFills, () => setFills(null))
     luffy6b.comisiones(haceDias(30), hoy(), 'pablo').then(setComis, () => setComis(null))
   }, [])
   useEffect(() => { void cargar() }, [cargar])
@@ -188,10 +191,10 @@ function CarteraPablo() {
       </section>
       <div className="lf-dos">
         <section className="lf-tarj">
-          <h3 className="mono">Ejecuciones recientes<em>{fills ? `${fills.fills.length} · bingx` : ''}</em></h3>
-          {fills?.fills.length ? (
+          <h3 className="mono">Ejecuciones recientes<em>{fills ? `${fills.length} · bingx` : ''}</em></h3>
+          {fills?.length ? (
             <div className="lf-tabla__scroll"><table className="lf-tabla"><thead><tr><th>Hora</th><th>Par</th><th>Lado</th><th className="num">Precio</th><th className="num">Total</th><th className="num">Comisión</th></tr></thead>
-              <tbody>{fills.fills.map((f) => <tr key={f.id}><td><small>{fmtFecha(f.hora, true)}</small></td><td><b>{f.par ?? fills.par ?? '—'}</b><small>{f.propuesta ? `#${f.propuesta.id_corto} · ${f.propuesta.origen}` : 'externa'}</small></td><td className={f.lado === 'compra' ? 'is-pos' : 'is-neg'}>{f.lado}<small>{f.maker ? 'maker' : 'taker'}</small></td><td className="num">{fmtPrecio(f.precio)}</td><td className="num">{fmt(f.total_usdt, 'USDT')}</td><td className="num">{fmt(f.comision)} {f.comision_activo}</td></tr>)}</tbody></table></div>
+              <tbody>{fills.map((f) => <tr key={f.id}><td><small>{fmtFecha(f.hora, true)}</small></td><td><b>{f.par ?? '—'}</b><small>{f.propuesta ? `#${f.propuesta.id_corto} · ${f.propuesta.origen}` : 'externa'}</small></td><td className={f.lado === 'compra' ? 'is-pos' : 'is-neg'}>{f.lado}<small>{f.maker ? 'maker' : 'taker'}</small></td><td className="num">{fmtPrecio(f.precio)}</td><td className="num">{fmt(f.total_usdt, 'USDT')}</td><td className="num">{fmt(Math.abs(f.comision))} {f.comision_activo ?? 'USDT'}</td></tr>)}</tbody></table></div>
           ) : <p className="lf-ctrl__nota mono">Sin ejecuciones.</p>}
         </section>
         <section className="lf-tarj">
@@ -284,7 +287,7 @@ function CarteraCaja() {
           {m.plan && <p className="lf-ctrl__nota mono">Plan: {m.plan}</p>}
           <div className="lf-expo__ley">
             <span><small className="mono">pérdida máxima</small> {fmt(m.perdida_max_pct)} % ({fmt(m.perdida_max_usdt, 'USDT')}) · actual {fmt(m.perdida_actual_usdt, 'USDT')}</span>
-            <span><small className="mono">riesgo por operación</small> {fmt(m.riesgo_por_operacion_pct)} %</span>
+            {m.riesgo_por_operacion_pct !== null && m.riesgo_por_operacion_pct !== undefined && <span><small className="mono">riesgo por operación</small> {fmt(m.riesgo_por_operacion_pct)} %</span>}
             <span><small className="mono">sin stop</small> {m.permite_sin_stop ? 'permitido' : 'nunca'}</span>
             {m.cerrar_al_perder && <span><small className="mono">al tocar la pérdida máxima</small> cierra todo</span>}
             {m.universo_vetado.length > 0 && <span><small className="mono">vetado</small> {m.universo_vetado.join(', ')}</span>}
@@ -301,7 +304,7 @@ function CarteraCaja() {
       <section className="lf-tarj"><h3 className="mono">Posiciones de la caja<em>se miran, no se operan: las lleva Luffy</em></h3><TablaPosiciones posiciones={cartera.posiciones} /></section>
       <div className="lf-dos"><TarjetaCurva origen="caja" /><Exposicion c={cartera} /></div>
       <section className="lf-tarj"><h3 className="mono">Decisiones de cada ciclo<em>{caja.ciclos ? `cada ${fmt(caja.ciclos.cada_h)} h · último ${hace(caja.ciclos.ultimo)}${caja.ciclos.proximo ? ` · próximo ${fmtHora(caja.ciclos.proximo)}` : ''}` : ''}</em></h3>
-        <div className="lf-decis">{caja.decisiones.map((d, i) => <div key={i} className="lf-decis__d"><span className="mono">{fmtHora(d.fecha)}</span><span className="lf-decis__a"><b className={d.accion === 'salir' || d.accion === 'fin_mision' || d.accion === 'quitar_stop' ? 'is-salir' : d.accion === 'mover_stop' ? 'is-mover' : d.accion === 'esperar' || d.accion === 'pausa' ? 'is-esperar' : ''}>{d.accion.replace(/_/g, ' ')}{d.activo && d.activo !== 'CAJA' ? ` ${d.activo}` : ''}</b> · {d.tesis}{d.orden ? <em className="mono"> · #{d.orden.id_corto} {d.orden.estado}</em> : null}{d.modo ? <em className="mono"> · modo {d.modo} v{d.modo_version}</em> : null}</span></div>)}</div>
+        <div className="lf-decis"><Plegable items={caja.decisiones} tope={10} texto="Ver todas las decisiones" pintar={(d, i) => <div key={i} className="lf-decis__d"><span className="mono">{fmtHora(d.fecha)}</span><span className="lf-decis__a"><b className={d.accion === 'salir' || d.accion === 'fin_mision' || d.accion === 'quitar_stop' ? 'is-salir' : d.accion === 'mover_stop' ? 'is-mover' : d.accion === 'esperar' || d.accion === 'pausa' ? 'is-esperar' : ''}>{d.accion.replace(/_/g, ' ')}{d.activo && d.activo !== 'CAJA' ? ` ${d.activo}` : ''}</b> · {d.tesis}{d.orden ? <em className="mono"> · #{d.orden.id_corto} {d.orden.estado}</em> : null}{d.modo ? <em className="mono"> · modo {d.modo} v{d.modo_version}</em> : null}</span></div>} /></div>
       </section>
       <Cerradas c={cartera} />
     </>

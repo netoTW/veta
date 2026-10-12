@@ -3,7 +3,7 @@ import { Link, NavLink, useParams } from 'react-router-dom'
 import { luffy6b, ErrorLuffy6b } from './api6b'
 import type { Bitacora, Informe, InformeItem, Revision, Teoria } from './tipos6b'
 import { Grafico } from './charts/Grafico'
-import { Md } from './md'
+import { Md, aTextoPlano } from './md'
 import { fmtFecha, fmtUsd } from './formato'
 import { EmptyState } from '../ui/EmptyState'
 
@@ -28,7 +28,7 @@ export function Informes() {
       </div>
       {pestana === 'diarios' && (
         <div className="lf-inf">
-          <section className="lf-tarj lf-inf__lista"><h3 className="mono">Por día</h3>{lista.map((i) => <NavLink key={i.id} to={`/luffy/informes/${i.fecha}`} className={i.fecha === activa ? 'is-active' : ''} end><em>{fmtFecha(i.fecha)}{i.enviado ? ' · enviado' : ''}</em>{i.resumen}</NavLink>)}{!lista.length && <p className="lf-ctrl__nota mono">Todavía no hay informes.</p>}</section>
+          <section className="lf-tarj lf-inf__lista"><h3 className="mono">Por día</h3>{lista.map((i) => <NavLink key={i.id} to={`/luffy/informes/${i.fecha}`} className={i.fecha === activa ? 'is-active' : ''} end><em>{fmtFecha(i.fecha)}{i.enviado ? ' · enviado' : ''}</em>{aTextoPlano(i.resumen ?? '')}</NavLink>)}{!lista.length && <p className="lf-ctrl__nota mono">Todavía no hay informes.</p>}</section>
           <div className="lf-ficha__graficos">
             {!activa ? null : !informe ? <div className="lf-lab__vacio"><span className="lf-gema is-latiendo" /></div> : (
               <>

@@ -85,7 +85,8 @@ export interface OrdenExchange {
   propuesta: { id_corto: string; accion: string; origen: string; rol: 'orden' | 'stop' | 'tramo' } | null
 }
 export interface Ordenes { estado: 'abiertas' | 'historial'; ordenes: OrdenExchange[]; consultado_en: string; fuente: string }
-export interface Fill { id: string; orden_id: string; par?: string; lado: string; precio: number; cantidad: number; total_usdt: number; comision: number; comision_activo: string; maker: boolean; hora: string; propuesta: { id_corto: string; origen: string } | null }
+/** `comision` llega como la da BingX: negativa y en el activo que cobró (−2,23 WAL). */
+export interface Fill { id: string; orden_id: string; par?: string; lado: string; precio: number; cantidad: number; total_usdt: number; comision: number; comision_activo: string | null; maker: boolean; hora: string; propuesta: { id_corto: string; origen: string; accion?: string; rol?: string } | null }
 export interface Fills { par: string | null; fills: Fill[]; consultado_en: string; fuente: string }
 export interface Comisiones { periodo: { desde: string; hasta: string }; origen: string; total_usdt: number; n_fills: number; por_activo: { activo: string; comision_usdt: number; n_fills: number; volumen_usdt: number }[]; tasas: { par: string; maker_pct: number; taker_pct: number }[]; consultado_en: string; fuente: string }
 export type AccionExchange =
@@ -101,8 +102,8 @@ export interface RespuestaPropuestas { propuestas: Propuesta[]; propuesta: Propu
 export interface Seguimiento { fecha: string; ret_pct: Num; ret_btc_pct: Num; exceso_pct: Num }
 export interface Candidata {
   id: number; fecha: string; activo: string; modo: string; version: string; score: number; rango: number; decision: string; p_merece: Num; por_que: string | null
-  precio_ref: Num; btc_ref: Num; confluencia: Confluencia; familias: Record<string, Pick<Familia, 'valor' | 'z' | 'cumple' | 'detalle'>>
-  etiquetas: EtiquetaRiesgo[]; regimen: string | null; corrida_ts: string | null; hilo_id: string | null; seguimiento: Record<string, Seguimiento>; linea_estudio: string | null
+  precio_ref: Num; btc_ref?: Num; confluencia: Confluencia; familias: Record<string, Pick<Familia, 'valor' | 'z' | 'cumple'> & { detalle?: Record<string, unknown>; inverso?: boolean; motivo?: string | null }>
+  etiquetas: EtiquetaRiesgo[]; regimen: string | { lectura?: string } | null; corrida_ts: string | null; hilo_id: string | null; seguimiento: Record<string, Seguimiento>; linea_estudio: string | null
 }
 export interface Candidatas { desde: string; hasta: string; modo: string | null; candidatas: Candidata[]; consultado_en: string; fuente: string }
 export interface RendimientoHorizonte { n: number; cobertura_pct: Num; exceso_medio_pct: Num; mediana_pct: Num; acierto_pct: Num }
@@ -136,7 +137,7 @@ export interface Caja {
   consultado_en: string; fuente: string
 }
 export interface Manual {
-  vigente: { id: number; version: string; origen: string; resumen: string; creada: string; texto: string } | null
+  vigente: { id: number; version: string; origen?: string; resumen?: string; creada: string; texto: string } | null
   versiones: { id: number; version: string; origen: string; resumen: string; vigente: boolean; creada: string }[]
   propuestas_pendientes: { id: number; revision_id: number | null; seccion: string; texto_nuevo: string; motivo: string; creada: string }[]
   consultado_en: string; fuente: string
@@ -150,7 +151,8 @@ export interface CostoAmpliado {
   por_tipo?: { tipo_turno: string; etiqueta: string; n: number; costo_usd: number; promedio_usd: number; iteraciones: Num }[]
   por_dia?: { dia: string; luffy_usd: number; jev_usd: number; total_usd: number; turnos: number }[]
   agentes?: { quien: string; n: number; costo_usd: number }[]
-  estilo?: { turnos: number; reescritos: number; tasa_pct: number; costo_usd: number }
+  /** El contrato dice {turnos, reescritos, tasa_pct, costo_usd}; el servidor manda {turnos, reescrituras, porcentaje, costo_extra_usd, lectura}: se leen los dos. */
+  estilo?: { turnos: number; reescritos?: number; reescrituras?: number; tasa_pct?: number; porcentaje?: number; costo_usd?: number; costo_extra_usd?: number; lectura?: string }
   umbrales?: { presupuesto_api_usd: number; aviso_usd: number; degradar_usd: number; estado: 'normal' | 'aviso' | 'degradado' }
 }
 export interface AlertaFeed { id: number; clave: string; tipo: string; activo: string | null; severidad: 'alta' | 'media' | 'baja' | string; texto: string; valor: Num; datos: Record<string, unknown>; enviada_en: string; canal: string; atendida: boolean }

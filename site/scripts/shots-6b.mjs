@@ -2,6 +2,7 @@
 import { chromium, devices } from 'playwright'
 import { mkdirSync } from 'node:fs'
 import { BASE, env } from './sesiones.mjs'
+async function ir(p, url) { await p.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 }); await p.waitForLoadState('networkidle', { timeout: 20000 }).catch(() => {}) }
 const OUT = process.argv[2] ?? '../recursos/capturas/6b'
 mkdirSync(OUT, { recursive: true })
 const b = await chromium.launch({ channel: 'chrome', headless: true, args: ['--no-sandbox'] })
@@ -14,21 +15,21 @@ const VISTAS = [
   ['caja', '/luffy/cartera', async (p) => { await p.click('[data-prueba="pestana-caja"]'); await p.waitForSelector('.lf-decis', { timeout: 20000 }); await espera(1500) }],
   ['radar', '/luffy/radar', async (p) => { await p.waitForSelector('[data-prueba="candidata"]', { timeout: 20000 }); await espera(600) }],
   ['modos', '/luffy/radar', async (p) => { await p.click('.lf-tabs button:nth-child(2)'); await p.waitForSelector('[data-prueba="modo"]', { timeout: 20000 }); await espera(400) }],
-  ['control', '/luffy/control', async (p) => { await p.waitForSelector('[data-prueba="gatillo"]', { timeout: 20000 }); await espera(400) }],
+  ['control', '/luffy/control', async (p) => { await p.waitForSelector('[data-prueba="gatillo"], .lf-tarj', { timeout: 20000 }); await espera(400) }],
   ['gasto', '/luffy/control', async (p) => { await p.click('.lf-tabs button:nth-child(3)'); await p.waitForSelector('.lf-gasto canvas', { timeout: 20000 }); await espera(900) }],
-  ['oficina', '/luffy/oficina', async (p) => { await p.waitForSelector('.lf-ev', { timeout: 20000 }); await espera(5000) }],
-  ['informes', '/luffy/informes', async (p) => { await p.waitForSelector('.lf-ficha__graficos canvas', { timeout: 40000 }); await espera(1500) }],
+  ['oficina', '/luffy/oficina', async (p) => { await p.waitForSelector('.lf-ev, .lf-tarj', { timeout: 20000 }); await espera(5000) }],
+  ['informes', '/luffy/informes', async (p) => { await p.waitForSelector('.lf-ficha__graficos canvas, .lf-inf__sec', { timeout: 40000 }); await espera(1500) }],
 ]
 for (const movil of [false, true]) {
   const { c, p } = await ctx(movil)
   for (const [nombre, ruta, prepara] of VISTAS) {
-    await p.goto(`${BASE}${ruta}`, { waitUntil: 'networkidle' })
+    await ir(p, `${BASE}${ruta}`)
     try { await prepara(p) } catch (e) { console.log('  !', nombre, String(e.message).slice(0, 80)) }
     const desborde = await p.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 2)
     await p.screenshot({ path: `${OUT}/${movil ? 'm' : 'd'}-${nombre}.png`, fullPage: !movil })
     console.log('  ·', `${movil ? 'm' : 'd'}-${nombre}`, desborde ? '¡DESBORDA!' : '')
   }
-  if (movil) { await p.goto(`${BASE}/luffy/terminal/WAL`, { waitUntil: 'networkidle' }); await p.click('.lf-ficha__monedas'); await espera(600); await p.screenshot({ path: `${OUT}/m-terminal-monedas.png` }); await p.click('.lf-velo', { position: { x: 200, y: 40 } }); await p.click('.lf-abajo__mas'); await espera(500); await p.screenshot({ path: `${OUT}/m-mas.png` }); console.log('  · m-terminal-monedas, m-mas') }
+  if (movil) { await ir(p, `${BASE}/luffy/terminal/WAL`); await p.click('.lf-ficha__monedas'); await espera(600); await p.screenshot({ path: `${OUT}/m-terminal-monedas.png` }); await p.click('.lf-velo', { position: { x: 200, y: 40 } }); await p.click('.lf-abajo__mas'); await espera(500); await p.screenshot({ path: `${OUT}/m-mas.png` }); console.log('  · m-terminal-monedas, m-mas') }
   await c.close()
 }
 await b.close()

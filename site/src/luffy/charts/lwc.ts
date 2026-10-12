@@ -16,7 +16,7 @@
 import { AreaSeries, BaselineSeries, CandlestickSeries, ColorType, CrosshairMode, HistogramSeries, LineSeries, LineStyle, PriceScaleMode, createChart, createSeriesMarkers, type Coordinate, type IChartApi, type IPaneApi, type ISeriesApi, type MouseEventParams, type SeriesMarker, type SeriesType, type Time, type UTCTimestamp } from 'lightweight-charts'
 import type { Datos, Marcador, SerieDatos } from '../tipos'
 import { C, FUENTE_MONO, colorSerie, rgba } from './tema'
-import { Banda, Eventos, PerfilPrecio, Rotulos, type Rotulo } from './primitivas'
+import { Banda, Eventos, PerfilPrecio, Riel, Rotulos, type Rotulo } from './primitivas'
 import { fmt } from '../formato'
 
 export interface SerieViva { id: string; etiqueta: string; color: string; unidad: string; panel: string; api: ISeriesApi<SeriesType, Time> | null; ultimo: number | null; formato: SerieDatos['formato'] }
@@ -131,6 +131,8 @@ export function dibujar(el: HTMLElement, d: Datos, op: Opciones): Vivo {
   /* ---------- marcadores de posiciones y del radar ---------- */
   const porTiempo = new Map<number, string[]>()
   const porSerie = new Map<string, Marcador[]>()
+  // señales (radar y demás) por panel: van al riel del pie, no sobre las velas
+  const rieles = new Map<string, Map<number, number>>()
   for (const m of d.marcadores) { if (!porSerie.has(m.serie)) porSerie.set(m.serie, []); porSerie.get(m.serie)!.push(m) }
   for (const [serieId, ms] of porSerie) {
     const api = vivas.find((v) => v.id === serieId)?.api ?? ancla.get(d.series.find((s) => s.id === serieId)?.panel ?? '') ?? ancla.get(paneles[0]?.id ?? '')
@@ -139,17 +141,19 @@ export function dibujar(el: HTMLElement, d: Datos, op: Opciones): Vivo {
     // el marcador cae en la vela que estaba abierta en ese momento
     const ajustar = (x: number) => { let r = tiempos[0] ?? t(x); for (const tt of tiempos) { if (tt <= x) r = tt; else break } return r }
     // sólo la forma sobre el gráfico: el texto se montaba sobre las velas. La etiqueta va a la cruz.
-    const marcas: SeriesMarker<Time>[] = ms.map((m) => {
+    const panelId = vivas.find((v) => v.id === serieId)?.panel ?? d.series.find((s) => s.id === serieId)?.panel ?? paneles[0]?.id ?? ''
+    const marcas: SeriesMarker<Time>[] = ms.flatMap((m): SeriesMarker<Time>[] => {
       const precio = m.valor ?? m.precio
       const tt = ajustar(m.t)
       const lista = porTiempo.get(tt as number) ?? []; lista.push(m.etiqueta); porTiempo.set(tt as number, lista)
-      if (m.tipo === 'entrada') return { time: tt, position: 'belowBar', shape: 'arrowUp', color: C.esmLuz, size: 1.1 }
-      if (m.tipo === 'salida') return { time: tt, position: 'aboveBar', shape: 'arrowDown', color: C.hueso, size: 1.1 }
-      if (m.tipo === 'stop_historial') return { time: tt, position: 'atPriceMiddle', shape: 'circle', color: C.rojoLuz, size: 0.55, price: precio }
-      return { time: tt, position: 'belowBar', shape: 'circle', color: C.oroLuz, size: 0.7 }
+      if (m.tipo === 'entrada') return [{ time: tt, position: 'belowBar', shape: 'arrowUp', color: C.esmLuz, size: 1.1 }]
+      if (m.tipo === 'salida') return [{ time: tt, position: 'aboveBar', shape: 'arrowDown', color: C.hueso, size: 1.1 }]
+      if (m.tipo === 'stop_historial') return [{ time: tt, position: 'atPriceMiddle', shape: 'circle', color: C.rojoLuz, size: 0.55, price: precio }]
+      const r = rieles.get(panelId) ?? new Map<number, number>(); r.set(tt as number, (r.get(tt as number) ?? 0) + 1); rieles.set(panelId, r)
+      return []
     })
     marcas.sort((a, b) => (a.time as number) - (b.time as number))
-    createSeriesMarkers(api, marcas)
+    if (marcas.length) createSeriesMarkers(api, marcas)
   }
 
   /* ---------- niveles, zonas, eventos y perfiles ---------- */
@@ -174,6 +178,7 @@ export function dibujar(el: HTMLElement, d: Datos, op: Opciones): Vivo {
   const zonasPorPanel = new Map<string, typeof d.zonas>()
   for (const z of d.zonas) { if (!zonasPorPanel.has(z.panel)) zonasPorPanel.set(z.panel, []); zonasPorPanel.get(z.panel)!.push(z) }
   for (const [pid, zs] of zonasPorPanel) ancla.get(pid)?.attachPrimitive(new Banda(zs.map((z) => ({ desde: z.desde, hasta: z.hasta, etiqueta: z.etiqueta, tipo: z.tipo }))))
+  for (const [panelId, r] of rieles) ancla.get(panelId)?.attachPrimitive(new Riel(r))
   if (d.eventos.length) ancla.get(paneles[0]?.id ?? '')?.attachPrimitive(new Eventos(d.eventos.map((e) => ({ t: e.t, etiqueta: e.etiqueta }))))
   for (const s of d.series) if (s.formato === 'por_precio' && s.puntos.length) ancla.get(s.panel)?.attachPrimitive(new PerfilPrecio({ puntos: s.puntos, tipo: s.tipo, etiqueta: s.etiqueta }))
 
@@ -202,7 +207,7 @@ export function dibujar(el: HTMLElement, d: Datos, op: Opciones): Vivo {
         const alto = chart.panes()[pv.indice]?.getHeight() ?? 0
         if (!alto) return
         const top = Math.min(0.6, Math.max(0.08, ((alturasLeyenda[i] ?? 0) + 12) / alto))
-        for (const v of vivas) if (v.panel === pv.id && v.api) v.api.priceScale().applyOptions({ scaleMargins: { top, bottom: 0.08 } })
+        for (const v of vivas) if (v.panel === pv.id && v.api) v.api.priceScale().applyOptions({ scaleMargins: { top, bottom: rieles.has(pv.id) ? Math.min(0.3, Math.max(0.1, 24 / alto)) : 0.08 } })
       })
     },
     destruir: () => { chart.unsubscribeCrosshairMove(alCruz); chart.remove() },
