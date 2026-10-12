@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import type { Datos, Spec } from '../tipos'
 import { ErrorLuffy, luffy } from '../api'
 import { dibujar, type Vivo } from './lwc'
+import type { Sincronia } from './sincronia'
 import { fmt, fmtFecha, RANGO_LABEL } from '../formato'
 
 /* ============================================================================
@@ -18,10 +19,14 @@ interface Props {
   onDatos?: (d: Datos) => void
   alto?: number; compacto?: boolean; interactivo?: boolean; rangos?: boolean
   acciones?: ReactNode; png?: string; className?: string
+  /** Varios gráficos que se mueven juntos (cruz, zoom y rango): la ficha del terminal. */
+  sincronia?: Sincronia
+  /** Si viene, la línea del stop vigente se puede arrastrar; al soltar, llega el precio nuevo (para proponer moverlo). */
+  onMoverStop?: (activo: string, precio: number) => void
 }
 const RANGOS = ['30d', '60d', '90d', '6m', '1y', 'max']
 
-export function Grafico({ spec, specId, onSpec, onDatos, alto, compacto = false, interactivo = true, rangos = true, acciones, png, className = '' }: Props) {
+export function Grafico({ spec, specId, onSpec, onDatos, alto, compacto = false, interactivo = true, rangos = true, acciones, png, className = '', sincronia, onMoverStop }: Props) {
   const [specResuelto, setSpecResuelto] = useState<Spec | null>(null)
   const [rangoLocal, setRangoLocal] = useState<string | null>(null)
   const [datos, setDatos] = useState<Datos | null>(null)
@@ -32,6 +37,8 @@ export function Grafico({ spec, specId, onSpec, onDatos, alto, compacto = false,
   const [alturas, setAlturas] = useState<number[]>([])
   const [anchosIzq, setAnchosIzq] = useState<number[]>([])
   const [panelesVivos, setPanelesVivos] = useState<{ id: string; indice: number }[]>([])
+  const [asa, setAsa] = useState<{ top: number; precio: number; activo: boolean } | null>(null)
+  const arrastre = useRef<{ y0: number; precio0: number } | null>(null)
   const lienzo = useRef<HTMLDivElement>(null)
   const capa = useRef<HTMLDivElement>(null)
   const vivo = useRef<Vivo | null>(null)
@@ -68,7 +75,12 @@ export function Grafico({ spec, specId, onSpec, onDatos, alto, compacto = false,
     setAlturas(v.alturas()); setAnchosIzq(v.anchosIzq())
     const leyendas = [...(capa.current?.querySelectorAll<HTMLElement>('.lf-g__ley') ?? [])].map((e) => e.offsetHeight)
     v.fijarMargenes(leyendas)
+    if (v.stop) { const i = v.paneles.findIndex((p) => p.id === v.stop!.panel); const y = v.stop.y(); const top0 = v.alturas().slice(0, Math.max(0, i)).reduce((a, h) => a + h + 1, 0); setAsa(y === null ? null : { top: top0 + y, precio: v.stop.precio, activo: false }) } else setAsa(null)
   }, [])
+  // arrastrar el stop: pointer events sobre el asa; mientras dura, el chart no se desplaza
+  const alBajar = (e: React.PointerEvent<HTMLDivElement>) => { const v = vivo.current; if (!v?.stop || !onMoverStop) return; e.preventDefault(); (e.target as HTMLElement).setPointerCapture(e.pointerId); arrastre.current = { y0: e.clientY, precio0: v.stop.precio }; v.chart.applyOptions({ handleScroll: false, handleScale: false }); setAsa((a) => (a ? { ...a, activo: true } : a)) }
+  const alMover = (e: React.PointerEvent<HTMLDivElement>) => { const v = vivo.current, d = arrastre.current; if (!v?.stop || !d) return; const y0 = v.stop.y(); if (y0 === null) return; const p = v.stop.precioEn(y0 + (e.clientY - d.y0)); if (p === null || p <= 0) return; v.stop.mover(p); setAsa((a) => (a ? { ...a, top: a.top + (e.clientY - d.y0), precio: p } : a)); d.y0 = e.clientY }
+  const alSoltar = () => { const v = vivo.current, d = arrastre.current; arrastre.current = null; if (!v?.stop || !d) return; v.chart.applyOptions({ handleScroll: interactivo, handleScale: interactivo }); const y = v.stop.y(); const p = y === null ? null : v.stop.precioEn(y); setAsa((a) => (a ? { ...a, activo: false } : a)); if (p !== null && Math.abs(p - d.precio0) / d.precio0 > 0.001) onMoverStop?.(v.stop.activo, Number(p.toPrecision(5))); else v.stop.mover(d.precio0) }
   useEffect(() => {
     const el = lienzo.current
     if (!el || !datos) return
@@ -78,8 +90,9 @@ export function Grafico({ spec, specId, onSpec, onDatos, alto, compacto = false,
     setPanelesVivos(v.paneles)
     const t1 = setTimeout(medir, 40), t2 = setTimeout(medir, 400)
     const ro = new ResizeObserver(() => medir()); ro.observe(el)
-    return () => { clearTimeout(t1); clearTimeout(t2); ro.disconnect(); v.destruir(); vivo.current = null }
-  }, [datos, interactivo, compacto, medir])
+    const soltar = sincronia ? sincronia.registrar(v.chart, v.series.find((s) => s.api)?.api ?? null) : null
+    return () => { clearTimeout(t1); clearTimeout(t2); ro.disconnect(); soltar?.(); v.destruir(); vivo.current = null }
+  }, [datos, interactivo, compacto, medir, sincronia])
 
   const cambiarRango = (r: string) => { if (!specEfectivo) return; if (onSpec) onSpec({ ...specEfectivo, rango: r }); else setRangoLocal(r) }
   const nPaneles = Math.max(1, panelesVivos.length || datos?.paneles.filter((p) => p.series.length).length || 2)
@@ -122,6 +135,11 @@ export function Grafico({ spec, specId, onSpec, onDatos, alto, compacto = false,
           ) })}
           {tCruz !== null && <span className="lf-g__fecha mono">{fmtFecha(tCruz, datos?.rango.intervalo === '1h' || datos?.rango.intervalo === '4h')}</span>}
         </div>
+        {asa && onMoverStop && (
+          <div className={`lf-g__arrastre ${asa.activo ? 'is-activo' : ''}`} style={{ top: asa.top }} onPointerDown={alBajar} onPointerMove={alMover} onPointerUp={alSoltar} onPointerCancel={alSoltar} title="Arrastra para proponer mover el stop" data-prueba="asa-stop">
+            {asa.activo && <span className="lf-g__arrastre-tip" style={{ top: 7 }}>stop {fmt(asa.precio)}</span>}
+          </div>
+        )}
         {cargando && <div className="lf-g__velo"><span className="lf-gema is-latiendo" /></div>}
       </div>
       {(nivelesInfo.length > 0 || (datos?.zonas.length ?? 0) > 0 || (datos?.marcadores.length ?? 0) > 0) && (

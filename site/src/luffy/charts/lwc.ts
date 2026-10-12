@@ -13,7 +13,7 @@
    Las series en otra escala (eje 2: base 100, %, ratio) van en su propio eje, a
    la izquierda; las leyendas se corren para no pisarlo.
    ========================================================================== */
-import { AreaSeries, BaselineSeries, CandlestickSeries, ColorType, CrosshairMode, HistogramSeries, LineSeries, LineStyle, PriceScaleMode, createChart, createSeriesMarkers, type IChartApi, type IPaneApi, type ISeriesApi, type MouseEventParams, type SeriesMarker, type SeriesType, type Time, type UTCTimestamp } from 'lightweight-charts'
+import { AreaSeries, BaselineSeries, CandlestickSeries, ColorType, CrosshairMode, HistogramSeries, LineSeries, LineStyle, PriceScaleMode, createChart, createSeriesMarkers, type Coordinate, type IChartApi, type IPaneApi, type ISeriesApi, type MouseEventParams, type SeriesMarker, type SeriesType, type Time, type UTCTimestamp } from 'lightweight-charts'
 import type { Datos, Marcador, SerieDatos } from '../tipos'
 import { C, FUENTE_MONO, colorSerie, rgba } from './tema'
 import { Banda, Eventos, PerfilPrecio, Rotulos, type Rotulo } from './primitivas'
@@ -23,6 +23,8 @@ export interface SerieViva { id: string; etiqueta: string; color: string; unidad
 export interface PanelVivo { id: string; indice: number }
 export interface Vivo {
   chart: IChartApi; series: SerieViva[]; paneles: PanelVivo[]
+  /** El stop vigente de la cartera, si el panel lo trae: para arrastrarlo y proponer moverlo. */
+  stop: StopVivo | null
   /** Altura de cada pane, en el orden de `paneles`. */
   alturas: () => number[]
   /** Ancho del eje de la izquierda (eje 2) de cada pane, para correr la leyenda. */
@@ -32,6 +34,8 @@ export interface Vivo {
   destruir: () => void
 }
 export interface Opciones { interactivo: boolean; onCruz?: (valores: Map<string, number | null>, t: number | null) => void; intervalo: string; compacto?: boolean }
+/** El stop vigente, arrastrable: su línea, la serie que lo ancla y cómo leer y escribir su coordenada. */
+export interface StopVivo { activo: string; precio: number; panel: string; y: () => number | null; precioEn: (y: number) => number | null; mover: (precio: number) => void }
 
 const t = (s: number) => s as UTCTimestamp
 /** Datos ordenados y sin tiempos repetidos: lo exige la librería. */
@@ -144,12 +148,17 @@ export function dibujar(el: HTMLElement, d: Datos, op: Opciones): Vivo {
 
   /* ---------- niveles, zonas, eventos y perfiles ---------- */
   const rotulosPorPanel = new Map<string, Rotulo[]>()
+  let stop: StopVivo | null = null
   for (const n of d.niveles) {
     const api = ancla.get(n.panel); if (!api) continue
     const e = ESTILO_NIVEL[n.tipo] ?? ESTILO_NIVEL.nivel
     const actual = n.tipo === 'precio_actual'
     const precio = n.valor ?? n.precio
-    api.createPriceLine({ price: precio, color: e.color, lineWidth: 1, lineStyle: e.estilo, axisLabelVisible: actual, title: '', axisLabelColor: e.color, axisLabelTextColor: C.roca })
+    const linea = api.createPriceLine({ price: precio, color: e.color, lineWidth: 1, lineStyle: e.estilo, axisLabelVisible: actual, title: '', axisLabelColor: e.color, axisLabelTextColor: C.roca })
+    if (n.tipo === 'stop' && !stop && !n.valor) {
+      const activo = d.series.find((x) => x.panel === n.panel && x.activo)?.activo ?? d.spec.activos[0]
+      stop = { activo, precio: n.precio, panel: n.panel, y: () => api.priceToCoordinate(linea.options().price), precioEn: (y) => api.coordinateToPrice(y as Coordinate), mover: (p) => linea.applyOptions({ price: p }) }
+    }
     if (actual) continue
     const corto = n.tipo === 'gatillo' ? (n.etiqueta.match(/^Gatillo #\d+/)?.[0] ?? 'Gatillo') : e.titulo || n.etiqueta.replace(/\s[\d.,]+$/, '').slice(0, 26)
     if (!rotulosPorPanel.has(n.panel)) rotulosPorPanel.set(n.panel, [])
@@ -179,7 +188,7 @@ export function dibujar(el: HTMLElement, d: Datos, op: Opciones): Vivo {
 
   const anchoIzq = (pane: IPaneApi<Time> | undefined) => { try { const ps = (pane as { priceScale?: (id: string) => { width: () => number; options: () => { visible?: boolean } } } | undefined)?.priceScale?.('left'); return ps && ps.options().visible ? ps.width() : 0 } catch { return 0 } }
   return {
-    chart, series: vivas, paneles,
+    chart, series: vivas, paneles, stop,
     alturas: () => paneles.map((pv) => chart.panes()[pv.indice]?.getHeight() ?? 0),
     anchosIzq: () => paneles.map((pv) => anchoIzq(chart.panes()[pv.indice])),
     fijarMargenes: (alturasLeyenda) => {

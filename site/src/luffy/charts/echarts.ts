@@ -1,11 +1,11 @@
 /* ECharts sólo con lo que se usa: barras, rejilla, tooltip y lienzo. */
 import * as echarts from 'echarts/core'
-import { BarChart } from 'echarts/charts'
-import { GridComponent, TooltipComponent } from 'echarts/components'
+import { BarChart, LineChart } from 'echarts/charts'
+import { GridComponent, LegendComponent, TooltipComponent } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
 import { C, FUENTE_MONO } from './tema'
 
-echarts.use([BarChart, GridComponent, TooltipComponent, CanvasRenderer])
+echarts.use([BarChart, LineChart, GridComponent, LegendComponent, TooltipComponent, CanvasRenderer])
 export { echarts }
 
 export const BASE_ECHARTS = {

@@ -143,6 +143,12 @@ lo que cambia es lo que devuelve el servidor.
 | `/luffy`, `/luffy/h/:hilo` | el chat con Luffy (Mugiwara): los mismos hilos de Telegram, respuesta en streaming, gráficos interactivos y órdenes propuestas | **admin real** (para el resto no existe: 404) |
 | `/luffy/laboratorio[/:spec]`, `/luffy/laboratorio/t/:tablero` | el laboratorio de gráficos: series del catálogo, benchmarks, transformaciones, posiciones encima, paneles sincronizados | **admin real** |
 | `/luffy/tableros` | los gráficos guardados | **admin real** |
+| `/luffy/terminal[/:activo]` | el terminal por moneda: lista con filtros y búsqueda; la ficha (precio y volumen con posiciones, gatillos y marcas del radar; derivados; fundamento contra la categoría; atención), ficha del radar, catalizadores, notas; mover el stop arrastrándolo | **admin real** |
+| `/luffy/cartera` | la cartera de Pablo (posiciones, curva de capital, exposición, exchange: órdenes, historial, comisiones, propuestas) y la caja (misión, decisiones, pausar, cancelar, pánico) | **admin real** |
+| `/luffy/radar` | candidatas por modo con seguimiento, y los modos con su estudio y track record; aprobar o rechazar modos propuestos | **admin real** |
+| `/luffy/control` | gatillos, manual vivo, gasto y alertas | **admin real** |
+| `/luffy/oficina` | la oficina en vivo (SSE): Luffy, agentes y fuentes | **admin real** |
+| `/luffy/informes[/:fecha]` | informes diarios con gráficos, revisiones de la caja, bitácora y teorías | **admin real** |
 
 ---
 
@@ -538,13 +544,65 @@ inferior («Ajustar»).
 **Tableros.** `GET /tableros` por grupo, vista previa dibujada al entrar en pantalla, abrir en
 el laboratorio, renombrar, subir/bajar (`PUT /tableros/orden`) y borrar en dos pasos.
 
+### Fase 6b: el panel completo (12-oct-2026)
+
+**Sistema visual v2 «roca pulida»** (`SISTEMA-VISUAL.md` §20, `src/styles/pulida.css`): radios,
+vidrio en la carcasa, hilo metálico, barra de escritura tipo Siri. Aplicado por tokens a todo el
+sitio.
+
+**Navegación** (`LuffyShell.tsx`): escritorio con Chat, Terminal, Cartera, Radar y «Más»
+(Laboratorio, Tableros, Control, Oficina, Informes); teléfono con barra inferior de vidrio y
+hoja «Más».
+
+**Contrato v2, supuesto.** Lo que el panel espera de `mugiwara-api` para el terminal, la
+cartera, el exchange, la caja, el radar, el control, la oficina y los informes está en
+`src/luffy/tipos6b.ts` con la forma que describe `PROMPT-FASE-6b-mugiwara.md`, y el simulador
+(`server/luffySimulado.ts`, parte 6b) lo sirve con datos de semilla fija. **Cuando llegue
+`CONTRATO-PANEL.md` v2, lo que difiera se ajusta en `tipos6b.ts` y en el simulador, no en las
+pantallas.** El cliente es `src/luffy/api6b.ts`. Rutas usadas: `/terminal/universo`,
+`/terminal/{activo}`, `/terminal/{activo}/preguntar`, `/cartera`, `/cartera/curva`,
+`/posiciones/declarar`, `/exchange/ordenes`, `/exchange/historial`, `/exchange/proponer`,
+`/caja`, `/caja/mision/{id}/{pausar|reanudar|cancelar}`, `/panico`, `/radar/candidatas`,
+`/radar/modos`, `/modos/{id}/{v}/decidir`, `/gatillos` (GET, PATCH, DELETE), `/manual`,
+`/manual/diff`, `/manual/propuestas/{id}/decidir`, `/costo` (ampliado), `/alertas` (paginado
+con `pagina`), `/oficina/estado`, `/eventos` (SSE), `/informes`, `/informes/{fecha}`.
+
+**Terminal** (`Terminal.tsx`): lista con filtros (mis posiciones, caja, candidatas, vigilancia,
+gatillos, todo) y búsqueda; la ficha se arma sin recargar y se recuerda 45 s; ↑ ↓ cambian de
+moneda en escritorio, deslizar sobre la cabecera en el teléfono (donde la lista es una hoja);
+la siguiente y la anterior se precargan. Las cuatro secciones son specs v2 que vienen del
+servidor (plantillas versionadas) y se dibujan con `Grafico`; todas comparten una
+`Sincronia` (`charts/sincronia.ts`): cruz, zoom y rango visible se mueven juntos, y el rango
+de la ficha manda sobre todas. Cada sección se abre en el laboratorio (guarda el spec y
+navega); «Preguntarle a Luffy» crea o reutiliza un hilo del activo. **El stop vigente se
+arrastra en el gráfico de precio** (asa sobre la línea, `onMoverStop` de `Grafico`) y al soltar
+crea una propuesta de mover el stop, que se confirma en dos pasos con la misma tarjeta del
+chat.
+
+**Cartera** (`Cartera.tsx`): dos pestañas. La de Pablo: posiciones con mandato, PnL, stop y
+distancia, peso; curva de capital con aportes y drawdown (ECharts); exposición; órdenes abiertas,
+historial y comisiones del exchange; cancelar, modificar, mover stop y orden nueva generan una
+propuesta; declarar una posición previa (STONK) crea la propuesta y pide confirmación. La caja:
+misión, límites, decisiones de cada ciclo con su porqué, pausar o cancelar la misión y pánico
+(los dos con confirmación); se mira, no se opera. Lo simulado se etiqueta siempre.
+
+**Radar** (`Radar.tsx`), **Control** (`Control.tsx`: gatillos con pausar, reanudar y borrar y
+«Cambiar con Luffy» que abre el hilo; manual con versiones, diff y propuestas; gasto por tipo de
+turno y por día contra el presupuesto; alertas paginadas con filtros), **Oficina** (`Oficina.tsx`:
+canvas 2D con Luffy al centro, agentes y fuentes; hilos que se encienden con los eventos del SSE;
+se pausa con la pestaña oculta y no repinta sin cambios) e **Informes** (`Informes.tsx`).
+
 **Pruebas.** `scripts/probar-luffy.mjs` (Playwright, Chrome del sistema): los cinco perfiles
 contra `/api/luffy/*` (404 salvo admin), un suscriptor pro en `/luffy` (no existe), y con el
 simulador: chat con el gráfico dentro del mensaje, un turno en streaming con el paso visible,
 el **caso guiado** (abrir el gráfico de ingresos de STONK desde el mensaje, agregar la mediana
 de su categoría y la posición de Pablo, guardarlo en un tablero y verlo en Tableros) y las tres
-pantallas a 1440 y a 390 px sin desborde. Corre dentro de `npm run invariantes`; con una
-carpeta como argumento deja capturas (`recursos/capturas/luffy/`).
+pantallas a 1440 y a 390 px sin desborde. Casos guiados de la 6b (simulador): abrir WAL en el
+terminal, cambiar de moneda con el teclado, arrastrar el stop y cancelar la propuesta, abrir
+derivados en el laboratorio; declarar STONK y verla en la cartera; y las nueve vistas a 390 px.
+Corre dentro de `npm run invariantes`; con una carpeta como argumento deja capturas
+(`recursos/capturas/luffy/`). `scripts/shots-6b.mjs` captura las vistas nuevas y
+`scripts/shots-pulida.mjs` el antes/después del acabado.
 
 ## 8. Huecos del contrato abiertos
 

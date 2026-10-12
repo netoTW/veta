@@ -158,18 +158,70 @@ console.log('\nLUFFY · admin, escritorio')
   await ctx.close()
 }
 
+/* ---------- 6b: terminal, cartera y stop desde el gráfico (simulador) ---------- */
+if (SIM) {
+  console.log('\nLUFFY · 6b · terminal: WAL, teclado y derivados al laboratorio')
+  const { ctx, p } = await contexto(false)
+  await entrar(ctx, env.VETA_ADMIN_EMAIL, env.VETA_ADMIN_PASSWORD)
+  await p.goto(`${BASE}/luffy/terminal/WAL`, { waitUntil: 'networkidle' })
+  await p.waitForSelector('[data-prueba="seccion-precio"] canvas', { timeout: 40000 })
+  ok((await p.locator('.lf-ficha__sym').innerText()).startsWith('WAL'), 'la ficha de WAL abre con sus gráficos')
+  ok((await p.locator('.lf-ficha__graficos canvas').count()) >= 3, `secciones dibujadas: ${await p.locator('.lf-ficha__graficos canvas').count()} lienzos`)
+  await foto(p, '10-terminal-wal', true)
+  await p.keyboard.press('ArrowDown'); await p.waitForURL((u) => /\/luffy\/terminal\/[A-Z0-9]+$/.test(u.pathname) && !u.pathname.endsWith('/WAL'), { timeout: 10000 })
+  const otra = p.url().split('/').pop()
+  await p.waitForFunction((s) => (document.querySelector('.lf-ficha__sym')?.textContent ?? '').startsWith(s), otra, { timeout: 15000 })
+  await p.waitForSelector('[data-prueba="seccion-precio"] canvas', { timeout: 40000 })
+  ok(true, `↓ cambia de moneda sin recargar (${otra})`)
+  await p.keyboard.press('ArrowUp'); await p.waitForURL(/\/luffy\/terminal\/WAL$/, { timeout: 10000 })
+  await p.waitForSelector('[data-prueba="seccion-precio"] canvas', { timeout: 40000 })
+  // el stop se arrastra en el gráfico y genera una propuesta, que se cancela
+  const asa = p.locator('[data-prueba="asa-stop"]')
+  await asa.waitFor({ timeout: 15000 })
+  const caja = await asa.boundingBox()
+  await p.mouse.move(caja.x + caja.width / 2, caja.y + caja.height / 2); await p.mouse.down(); await p.mouse.move(caja.x + caja.width / 2, caja.y + caja.height / 2 - 40, { steps: 8 }); await p.mouse.up()
+  await p.waitForSelector('.lf-ficha__prop .lf-prop', { timeout: 15000 })
+  const bloque = await p.locator('.lf-ficha__prop .lf-prop__bloque').innerText()
+  ok(/MOVER STOP/i.test(bloque), `arrastrar el stop crea la propuesta: ${bloque.split('\n')[1]?.slice(0, 60)}`)
+  await foto(p, '11-terminal-stop-propuesta')
+  await p.click('.lf-ficha__prop .lf-prop__cancelar')
+  await p.waitForFunction(() => /cancelada/i.test(document.querySelector('.lf-ficha__prop .lf-prop__estado')?.textContent ?? ''), null, { timeout: 15000 })
+  ok(true, 'la propuesta de mover el stop se cancela')
+  await p.click('[data-prueba="lab-derivados"]'); await p.waitForURL(/\/luffy\/laboratorio\//, { timeout: 15000 })
+  await p.waitForSelector('.lf-lab__lienzo .lf-g canvas', { timeout: 40000 })
+  ok(/apalancado|funding/i.test(await p.locator('.lf-lab__lienzo .lf-g__titulo').innerText()), 'derivados se abre en el laboratorio para editarlo')
+  await foto(p, '12-lab-derivados')
+  console.log('\nLUFFY · 6b · cartera: declarar STONK y verla')
+  await p.goto(`${BASE}/luffy/cartera`, { waitUntil: 'networkidle' })
+  await p.waitForSelector('[data-prueba="posicion"]', { timeout: 20000 })
+  await p.click('[data-prueba="declarar"]')
+  await p.fill('[data-prueba="form-declarar"] input[required]:nth-of-type(1)', 'STONK')
+  const inputs = p.locator('[data-prueba="form-declarar"] input')
+  await inputs.nth(0).fill('STONK'); await inputs.nth(1).fill('146'); await inputs.nth(2).fill('0,1031')
+  await p.click('[data-prueba="form-declarar"] button[type="submit"]')
+  await p.waitForSelector('.lf-pag .lf-prop', { timeout: 15000 })
+  ok(/DECLARACI/i.test(await p.locator('.lf-pag .lf-prop__bloque').innerText()), 'declarar crea la propuesta y pide confirmación')
+  await p.click('.lf-pag .lf-prop .btn--esmeralda'); await p.click('.lf-pag .lf-prop .btn--esmeralda')
+  await p.waitForFunction(() => /ejecutada/i.test(document.querySelector('.lf-pag .lf-prop__estado')?.textContent ?? ''), null, { timeout: 15000 })
+  await p.waitForFunction(() => [...document.querySelectorAll('[data-prueba="posicion"][data-activo="STONK"]')].some((e) => /declarada/.test(e.textContent ?? '')), null, { timeout: 15000 })
+  ok(true, 'STONK aparece en la cartera como declarada')
+  await foto(p, '13-cartera-declarada', true)
+  await ctx.close()
+}
+
 console.log('\nLUFFY · admin, teléfono (390 px)')
 {
   const { ctx, p } = await contexto(true)
   await entrar(ctx, env.VETA_ADMIN_EMAIL, env.VETA_ADMIN_PASSWORD)
-  const rutas = [['m01-chat', hiloStonk ? `/luffy/h/${hiloStonk}` : '/luffy'], ['m03-lab', specStonk ? `/luffy/laboratorio/${specStonk}` : '/luffy/laboratorio'], ['m05-tableros', '/luffy/tableros']]
+  const rutas = [['m01-chat', hiloStonk ? `/luffy/h/${hiloStonk}` : '/luffy'], ['m03-lab', specStonk ? `/luffy/laboratorio/${specStonk}` : '/luffy/laboratorio'], ['m05-tableros', '/luffy/tableros'], ['m06-terminal', '/luffy/terminal/WAL'], ['m07-cartera', '/luffy/cartera'], ['m08-radar', '/luffy/radar'], ['m09-control', '/luffy/control'], ['m10-oficina', '/luffy/oficina'], ['m11-informes', '/luffy/informes']]
   for (const [nombre, r] of rutas) {
     await p.goto(`${BASE}${r}`, { waitUntil: 'networkidle' })
-    await p.waitForSelector('.lf-g canvas, .lf-hilo, [data-prueba="tablero"]', { timeout: 30000 }).catch(() => {})
+    await p.waitForSelector('.lf-g canvas, .lf-hilo, [data-prueba="tablero"], [data-prueba="posicion"], [data-prueba="candidata"], [data-prueba="gatillo"], .lf-ev, .lf-inf__sec', { timeout: 30000 }).catch(() => {})
     await espera(1200)
     ok(await sinDesborde(p), `${r}: sin desborde horizontal a 390 px`)
     await foto(p, nombre)
     if (nombre === 'm01-chat') { await p.click('.lf-conv__hilos'); await espera(500); await foto(p, 'm02-chat-hilos'); ok(await p.locator('.lf-hilos.is-open').isVisible(), 'el cajón de hilos se abre en el teléfono'); await p.click('.lf-velo', { position: { x: 375, y: 500 } }); await espera(300) }
+    if (nombre === 'm06-terminal') { await p.click('.lf-ficha__monedas'); await espera(500); ok(await p.locator('.lf-term__lista.is-open').isVisible(), 'la hoja de monedas se abre en el teléfono'); await foto(p, 'm06b-terminal-monedas'); await p.click('.lf-velo', { position: { x: 200, y: 30 } }); await espera(300) }
     if (nombre === 'm03-lab') { await p.click('.lf-lab__fab'); await espera(500); ok(await p.locator('.lf-lab__ctrl.is-open').isVisible(), 'la hoja de ajustes se abre en el teléfono'); await foto(p, 'm04-lab-ajustes'); await p.click('.lf-lab__cerrar'); await espera(300) }
   }
   await ctx.close()

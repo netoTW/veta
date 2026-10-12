@@ -57,6 +57,12 @@ const LuffyShell = lazy(() => import('./luffy/LuffyShell').then((m) => ({ defaul
 const LuffyChat = lazy(() => import('./luffy/Chat').then((m) => ({ default: m.Chat })))
 const LuffyLaboratorio = lazy(() => import('./luffy/Laboratorio').then((m) => ({ default: m.Laboratorio })))
 const LuffyTableros = lazy(() => import('./luffy/Tableros').then((m) => ({ default: m.Tableros })))
+const LuffyTerminal = lazy(() => import('./luffy/Terminal').then((m) => ({ default: m.Terminal })))
+const LuffyCartera = lazy(() => import('./luffy/Cartera').then((m) => ({ default: m.Cartera })))
+const LuffyRadar = lazy(() => import('./luffy/Radar').then((m) => ({ default: m.Radar })))
+const LuffyControl = lazy(() => import('./luffy/Control').then((m) => ({ default: m.Control })))
+const LuffyOficina = lazy(() => import('./luffy/Oficina').then((m) => ({ default: m.Oficina })))
+const LuffyInformes = lazy(() => import('./luffy/Informes').then((m) => ({ default: m.Informes })))
 
 /* La guía de estilo, fuera de la portada. */
 function GuiaVisual() {
@@ -108,6 +114,14 @@ export default function App() {
             <Route path="laboratorio/t/:tableroId" element={<LuffyLaboratorio />} />
             <Route path="laboratorio/:specId" element={<LuffyLaboratorio />} />
             <Route path="tableros" element={<LuffyTableros />} />
+            <Route path="terminal" element={<LuffyTerminal />} />
+            <Route path="terminal/:activo" element={<LuffyTerminal />} />
+            <Route path="cartera" element={<LuffyCartera />} />
+            <Route path="radar" element={<LuffyRadar />} />
+            <Route path="control" element={<LuffyControl />} />
+            <Route path="oficina" element={<LuffyOficina />} />
+            <Route path="informes" element={<LuffyInformes />} />
+            <Route path="informes/:fecha" element={<LuffyInformes />} />
           </Route>
           <Route element={<Producto />}>
             <Route path="/gemas" element={<Gemas />} />

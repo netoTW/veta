@@ -100,7 +100,16 @@ function posicionesDe(origen: string) {
     fuente: 'posiciones (fills reales) + ordenes + bitacora', consultado_en: ahora(),
   }
   const caja = { ...pablo, origen: 'caja', mandato: 'trade', simulado: true, cantidad: 80, entradas: [{ ...pablo.entradas[0], cantidad: 80, usdt: redondeo(precioEntrada * 80, 2), id_corto: 'f6e5d4' }], salidas: [], stops: [pablo.stops[0]], pnl_realizado_usdt: 0 }
-  return origen === 'caja' ? [caja] : origen === 'ambos' ? [pablo, caja] : [pablo]
+  // la caja real (fase 6b): WAL abierta hoy con su stop inicial; STRK cerrada con ganancia
+  const w = cierres(velas('WAL', 90, DIA)); const tw = w[w.length - 1][0] + 73_000
+  const wal = { activo: 'WAL', origen: 'caja', estado: 'abierta', mandato: 'trade', abierta_en: new Date(tw * 1000).toISOString(), cerrada_en: null, cantidad: 2228.739, precio_medio: 0.03797, costo_usdt: 84.63, comisiones_usdt: 0.085, pnl_realizado_usdt: 0, simulado: false,
+    entradas: [{ t: tw, hora: new Date(tw * 1000).toISOString(), precio: 0.03797, cantidad: 2228.739, usdt: 84.63, comision_usdt: 0.085, orden_id: 'o-8801', id_corto: 'c4j4w1', fill_id: 'f-9001' }], salidas: [],
+    stops: [{ t: tw, hora: new Date(tw * 1000).toISOString(), precio: 0.0328, accion: 'inicial', id_corto: 'c4j4w1' }], stop_vigente: { precio: 0.0328, cantidad: 2228.739, orden_id: '2109380965351456769' }, fuente: 'posiciones (fills reales) + ordenes + bitacora', consultado_en: ahora() }
+  const st = cierres(velas('STRK', 90, DIA)); const te = st[st.length - 2][0] + 40_000, ts = st[st.length - 1][0] + 30_000
+  const strk = { activo: 'STRK', origen: 'caja', estado: 'cerrada', mandato: 'trade', abierta_en: new Date(te * 1000).toISOString(), cerrada_en: new Date(ts * 1000).toISOString(), cantidad: 0, precio_medio: 0.0854, costo_usdt: 0, comisiones_usdt: 0.055, pnl_realizado_usdt: 2.95, simulado: false,
+    entradas: [{ t: te, hora: new Date(te * 1000).toISOString(), precio: 0.0854, cantidad: 292.8, usdt: 25.0, comision_usdt: 0.025, orden_id: 'o-8771', id_corto: 'c4j4s1', fill_id: 'f-8971' }], salidas: [{ t: ts, hora: new Date(ts * 1000).toISOString(), precio: 0.1008, cantidad: 292.8, usdt: 29.51, comision_usdt: 0.03, pnl_usdt: 2.95, orden_id: 'o-8790', id_corto: 'c4j4s2', fill_id: 'f-8990' }],
+    stops: [{ t: te, hora: new Date(te * 1000).toISOString(), precio: 0.079, accion: 'inicial', id_corto: 'c4j4s1' }, { t: te + 40_000, hora: new Date((te + 40_000) * 1000).toISOString(), precio: 0.0985, accion: 'ajuste', id_corto: 'c4j4s3' }], stop_vigente: null, fuente: 'posiciones (fills reales) + ordenes + bitacora', consultado_en: ahora() }
+  return origen === 'caja' ? [caja, wal, strk] : origen === 'ambos' ? [pablo, caja, wal, strk] : [pablo]
 }
 
 /* ---------- catálogo ---------- */
@@ -287,7 +296,7 @@ export function datosDe(entrada: Spec) {
         puntos = v.filter((x) => x[0] >= po.entradas[0].t - DIA).map((x) => { const vendida = po.salidas.filter((s) => s.t <= x[0]).reduce((a, s) => a + s.cantidad, 0); const cant = po.entradas[0].cantidad - vendida; const real = po.salidas.filter((s) => s.t <= x[0]).reduce((a, s) => a + s.pnl_usdt, 0); return [x[0], redondeo((x[1] - po.precio_medio) * cant + real, 2)] })
         fuente = 'posiciones (fills reales) + bingx (cierres)'
       } else if (tipo === 'candidatas') { formato = 'marcadores'; fuente = 'candidatas'; const v = cierres(velas(act, dias, DIA)); const c = v[Math.max(0, v.length - 31)]; marcadores.push({ serie: se.id, tipo: 'candidata', t: c[0], hora: new Date(c[0] * 1000).toISOString(), precio: redondeo(c[1] * 0.98, 4), etiqueta: 'Radar: impulso v1', modo: 'impulso', version: '1' }) }
-      else if (tipo === 'gatillos') { formato = 'niveles'; fuente = 'gatillos'; if (act === 'STONK') niveles.push({ panel: p.id, serie: se.id, tipo: 'gatillo', precio: 0.15, etiqueta: 'Gatillo #7: si STONK toca 0,15, vender la mitad', direccion: 'sube', fuente: 'gatillos' }); else { no_disponibles.push({ serie: se.id!, tipo, motivo: `no hay gatillos sobre ${act}` }); continue } }
+      else if (tipo === 'gatillos') { formato = 'niveles'; fuente = 'gatillos'; const gs = GATILLOS_SIM.filter((g) => g.activo === act && g.estado === 'activo' && g.precio !== null); if (gs.length) for (const g of gs) niveles.push({ panel: p.id, serie: se.id, tipo: 'gatillo', precio: g.precio, etiqueta: `Gatillo #${g.id}: ${g.texto}`, direccion: g.direccion, fuente: 'gatillos' }); else { no_disponibles.push({ serie: se.id!, tipo, motivo: `no hay gatillos con precio sobre ${act}` }); continue } }
       else if (tipo === 'volume_profile' || tipo === 'liquidaciones_estimadas') {
         const v = velas(act, dias, DIA); const lo = Math.min(...v.map((x) => x[3])), hi = Math.max(...v.map((x) => x[2])); const r = azar(tipo.length + act.length)
         puntos = Array.from({ length: 24 }, (_, i) => { const pr = lo + ((hi - lo) * (i + 0.5)) / 24; const base = Math.exp(-((i - 13) ** 2) / 40); return tipo === 'volume_profile' ? [redondeo(pr, 5), Math.round(ACTIVOS[act].volumen_24h_usdt * 6 * base * (0.6 + r()))] : [redondeo(pr, 5), Math.round(1_900_000 * (i < 12 ? base * (0.5 + r()) : 0.15 * r())), Math.round(1_600_000 * (i >= 12 ? base * (0.5 + r()) : 0.12 * r()))] })
@@ -502,9 +511,20 @@ luffySimulado.post('/propuestas/:id/confirmar', (c) => {
   const p = PROPUESTAS.get(c.req.param('id')); if (!p) return c.json({ detail: 'propuesta no existe' }, 404)
   if (p.estado !== 'propuesta') return c.json({ detail: { codigo: 'no_pendiente', texto: `la propuesta está ${p.estado}` } }, 409)
   if (p.expirada || Date.parse(p.expira as string) < Date.now()) { p.estado = 'expirada'; return c.json({ ok: false, error: 'la propuesta expiró antes de confirmarse', eventos: ['expirada'], propuesta: p }) }
+  if (p.accion === 'declarar') {
+    p.estado = 'llena'
+    const d = (p.detalle as { declaracion?: { activo?: string; cantidad?: number; precio_medio?: number; mandato?: string; fecha?: string } }).declaracion ?? {}
+    const sym = String(d.activo ?? '').toUpperCase()
+    const ya = CARTERA_SIM.pablo.posiciones.find((x) => x.activo === sym)
+    if (ya) Object.assign(ya, { cantidad: Number(d.cantidad), precio_medio: Number(d.precio_medio), mandato: d.mandato ?? ya.mandato, declarada: true, estado: 'abierta' })
+    else CARTERA_SIM.pablo.posiciones.unshift({ activo: sym, mandato: d.mandato ?? 'hold', cantidad: Number(d.cantidad), precio_medio: Number(d.precio_medio), costo_usdt: redondeo(Number(d.cantidad) * Number(d.precio_medio), 2), pnl_realizado_usdt: 0, stop_precio: null, abierta_en: d.fecha ? `${d.fecha}T00:00:00+00:00` : ahora(), declarada: true, estado: 'abierta' })
+    const texto = `DECLARADA #${p.id_corto} · ${sym} · ${d.cantidad} a ${String(d.precio_medio).replace('.', ',')} · mandato ${d.mandato ?? 'hold'}`
+    const h = HILOS.get(p.hilo_id as string); if (h) { h.mensajes.push({ id: ++mensajeId, rol: 'ejecucion', contenido: texto, ts: ahora(), modelo: null, costo_usd: 0, herramientas_usadas: [], graficos: [], propuestas: [] }); h.actualizado = ahora() }
+    return c.json({ ok: true, texto, estado: 'llena', fills: [], stop: null, alertas: [], eventos: ['posición declarada'], reconciliacion: { discrepancias: [], alertas: [], error: null } })
+  }
   p.estado = 'llena'
-  const cantidad = Math.floor((p.cantidad_usdt as number) / (p.precio as number))
-  const texto = `ENTRADA #${p.id_corto} · ${p.par} · compra ${cantidad} a ${String(p.precio).replace('.', ',')} · stop ${String(p.stop).replace('.', ',')} colocado`
+  const cantidad = Math.floor((Number(p.cantidad_usdt) || 0) / (Number(p.precio) || 1)) || 0
+  const texto = p.accion === 'mover_stop' ? `STOP MOVIDO #${p.id_corto} · ${p.par} · stop a ${String(p.stop).replace('.', ',')}` : p.accion === 'cancelar' ? `ORDEN CANCELADA #${p.id_corto} · ${p.par}` : p.accion === 'modificar' ? `ORDEN MODIFICADA #${p.id_corto} · ${p.par}` : `ENTRADA #${p.id_corto} · ${p.par} · compra ${cantidad} a ${String(p.precio).replace('.', ',')} · stop ${String(p.stop).replace('.', ',')} colocado`
   const h = HILOS.get(p.hilo_id as string); if (h) { h.mensajes.push({ id: ++mensajeId, rol: 'ejecucion', contenido: texto, ts: ahora(), modelo: null, costo_usd: 0, herramientas_usadas: [], graficos: [], propuestas: [] }); h.actualizado = ahora() }
   return c.json({ ok: true, texto, estado: 'llena', fills: [{ id: hex(12, 31), lado: 'compra', precio: p.precio, cantidad, comision: redondeo((p.cantidad_usdt as number) * 0.001, 3), hora: ahora() }], stop: { id: hex(12, 32), precio: p.stop, cantidad, ok: true }, alertas: [], eventos: ['orden enviada', 'llena en un tramo', 'stop colocado'], reconciliacion: { discrepancias: [], alertas: [], error: null } })
 })
@@ -518,7 +538,7 @@ luffySimulado.post('/misiones/:id/activar', (c) => c.json({ ok: true, estado: 'a
 luffySimulado.post('/misiones/:id/cancelar', (c) => c.json({ ok: true, estado: 'cancelada', id_corto: c.req.param('id') }))
 luffySimulado.get('/posiciones/historial', (c) => { const o = c.req.query('origen') ?? 'pablo'; const a = c.req.query('activo'); return c.json({ origen: o, posiciones: posicionesDe(o).filter((p) => !a || p.activo === a.toUpperCase()), consultado_en: ahora(), fuente: 'posiciones + ordenes + bitacora' }) })
 luffySimulado.get('/posiciones', (c) => c.json(posicionesDe('pablo').map((p) => ({ activo: p.activo, cantidad: p.cantidad, precio_medio: p.precio_medio, precio_actual: ACTIVOS[p.activo].precio, valor_usdt: redondeo(p.cantidad * ACTIVOS[p.activo].precio, 2), pnl_no_realizado_usdt: redondeo((ACTIVOS[p.activo].precio - p.precio_medio) * p.cantidad, 2), mandato: p.mandato, stop: p.stop_vigente?.precio ?? null, fuente: 'bingx', consultado_en: ahora() }))))
-luffySimulado.get('/costo', (c) => c.json({ desde: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString(), costo_usd: 27.41, tokens_entrada: 165_735, tokens_salida: 87_282, tokens_cache_lectura: 5_514_994, tokens_cache_escritura: 1_025_446, respuestas: 96, por_modelo: [{ modelo: 'claude-fable-5-1', costo_usd: 26.9, n: 80 }, { modelo: 'claude-sonnet-5', costo_usd: 0.51, n: 16 }], presupuesto: { presupuesto_api_usd: 140, aviso_usd: 100, degradar_usd: 125 } }))
+luffySimulado.get('/costo', (c) => { const r = azar(42); const dias = Array.from({ length: 12 }, (_, i) => ({ fecha: new Date(Date.now() - (11 - i) * 86_400_000).toISOString().slice(0, 10), luffy_usd: redondeo(1.2 + r() * 2.6, 2), jev_usd: redondeo(0.3 + r() * 0.9, 2) })); return c.json({ desde: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString(), costo_usd: 27.41, total_usd: 33.98, tokens_entrada: 165_735, tokens_salida: 87_282, tokens_cache_lectura: 5_514_994, tokens_cache_escritura: 1_025_446, respuestas: 96, por_modelo: [{ modelo: 'claude-fable-5-1', costo_usd: 26.9, n: 80 }, { modelo: 'claude-sonnet-5', costo_usd: 0.51, n: 16 }], luffy: { total_usd: 27.41, por_tipo_turno: [{ tipo: 'discusion', usd: 9.8, n: 41 }, { tipo: 'dato_grafico', usd: 8.1, n: 22 }, { tipo: 'orden', usd: 4.2, n: 9 }, { tipo: 'monitor', usd: 3.9, n: 18 }, { tipo: 'caja', usd: 1.41, n: 6 }] }, jev: { total_usd: 6.57, por_modelo: [{ modelo: 'jev', usd: 2.78, n: 12_521 }, { modelo: 'claude-haiku-5-5', usd: 2.1, n: 611 }, { modelo: 'claude-sonnet-5', usd: 1.69, n: 44 }] }, por_dia: dias, presupuesto: { presupuesto_api_usd: 140, aviso_usd: 100, degradar_usd: 125 } }) })
 luffySimulado.post('/graficos/datos', async (c) => {
   const b = await c.req.json().catch(() => null) as { spec?: Spec } | null
   if (!b?.spec || typeof b.spec !== 'object') return c.json({ detail: { codigo: 'spec_invalido', texto: 'el spec no es válido', errores: [{ loc: ['spec'], msg: 'hace falta un objeto spec' }] } }, 422)
@@ -558,6 +578,286 @@ luffySimulado.delete('/tableros/:id', (c) => { const i = TABLEROS.findIndex((x) 
 luffySimulado.get('/datasets', (c) => c.json(DATASETS))
 luffySimulado.get('/datasets/:nombre', (c) => { const d = DATASETS.find((x) => x.nombre === c.req.param('nombre')); return d ? c.json({ nombre: d.nombre, columnas: d.columnas, unidad: d.unidad, descripcion: d.descripcion, puntos: serieDiaria('STONK', 'ingresos', 30).map((x) => ({ t: x[0], valor: x[1] })), fuente: 'python_libre: ingresos contra precio', consultado_en: ahora() }) : c.json({ detail: 'dataset no existe' }, 404) })
 luffySimulado.get('/vigilancia', (c) => c.json([]))
-luffySimulado.get('/gatillos', (c) => c.json([{ id: 7, activo: 'STONK', estado: 'activo', texto: 'si STONK toca 0,15, vender la mitad', precio: 0.15, direccion: 'sube' }]))
-luffySimulado.get('/alertas', (c) => c.json([]))
+luffySimulado.get('/gatillos', (c) => c.json(GATILLOS_SIM.filter((g) => g.estado !== 'borrado')))
+luffySimulado.get('/alertas', (c) => {
+  if (!c.req.query('pagina')) return c.json(ALERTAS_SIM.slice(0, Number(c.req.query('limite') ?? 20) || 20))
+  const pagina = Math.max(1, Number(c.req.query('pagina')) || 1), por = Math.max(1, Number(c.req.query('por_pagina') ?? 25) || 25); const sev = c.req.query('severidad'), tipo = c.req.query('tipo')
+  const todas = ALERTAS_SIM.filter((a) => (!sev || a.severidad === sev) && (!tipo || a.tipo === tipo))
+  return c.json({ alertas: todas.slice((pagina - 1) * por, pagina * por), total: todas.length, pagina, por_pagina: por })
+})
 luffySimulado.notFound((c) => c.json({ detail: 'no existe' }, 404))
+
+/* ============================================================================
+   Fase 6b (simulado): terminal, cartera, exchange, caja, radar, control,
+   oficina e informes, con la forma de src/luffy/tipos6b.ts (supuesta hasta
+   CONTRATO-PANEL.md v2). Mismas semillas: cada corrida pinta lo mismo.
+   ========================================================================== */
+Object.assign(ACTIVOS, {
+  WAL: { nombre: 'Walrus', precio: 0.0375, deriva: 0.002, vol: 0.045, decimales: 4, perp: true, volumen_24h_usdt: 15_840_000 },
+  STRK: { nombre: 'Starknet', precio: 0.104, deriva: -0.001, vol: 0.05, decimales: 4, defillama: { slug: 'starknet', categoria: 'Chain' }, perp: true, volumen_24h_usdt: 42_000_000 },
+  KAIA: { nombre: 'Kaia', precio: 0.0498, deriva: -0.0015, vol: 0.04, decimales: 4, perp: true, volumen_24h_usdt: 9_300_000 },
+  CFX: { nombre: 'Conflux', precio: 0.0612, deriva: 0.003, vol: 0.06, decimales: 4, perp: true, volumen_24h_usdt: 31_000_000 },
+  C98: { nombre: 'Coin98', precio: 0.0412, deriva: 0.0025, vol: 0.055, decimales: 4, defillama: { slug: 'coin98', categoria: 'Dexs' }, perp: true, volumen_24h_usdt: 6_100_000 },
+  CYBER: { nombre: 'Cyber', precio: 1.42, deriva: 0.002, vol: 0.05, decimales: 3, perp: true, volumen_24h_usdt: 8_700_000 },
+  OGN: { nombre: 'Origin', precio: 0.0591, deriva: 0.001, vol: 0.05, decimales: 4, perp: true, volumen_24h_usdt: 4_200_000 },
+})
+const pct = (a: number, b: number) => (b ? redondeo(((a / b) - 1) * 100, 2) : null)
+const cambio = (sym: string, dias: number) => { const v = cierres(velas(sym, dias + 1, DIA)); return v.length > dias ? pct(v[v.length - 1][1], v[v.length - 1 - dias][1]) : null }
+const vsBtc = (sym: string, dias: number) => { const a = cambio(sym, dias), b = cambio('BTC', dias); return a === null || b === null ? null : redondeo(a - b, 2) }
+const MODOS_SIM = [
+  { id: 'impulso', version: '1', nombre: 'Impulso', descripcion: 'Volumen que se multiplica con precio que acompaña y sin granjas detrás.', estado: 'activo' as 'activo' | 'propuesto' | 'retirado', receta: ['volumen 24 h ≥ 3× su media de 30 d', 'cambio 24 h entre +8 % y +40 %', 'menciones humanas ≥ 2× su media', 'granjas < 20 % de las menciones'], estudio: { n: 369, acierto_pct: 49.1, retorno_mediano_pct: 0.4, horizonte_d: 7 }, track: { n: 14, acierto_pct: 42.9, retorno_mediano_pct: -1.1 }, creado: '2026-10-09T10:00:00+00:00' },
+  { id: 'squeeze', version: '2', nombre: 'Squeeze cargado', descripcion: 'Cortos atrapados: OI alto, funding negativo y precio que no cae.', estado: 'activo' as 'activo' | 'propuesto' | 'retirado', receta: ['OI / volumen ≥ 0,6', 'funding ≤ −0,01 %', 'precio por encima de su media de 7 d', 'liquidaciones de cortos arriba ≥ 3× las de largos abajo'], estudio: { n: 212, acierto_pct: 58.0, retorno_mediano_pct: 3.2, horizonte_d: 7 }, track: { n: 6, acierto_pct: 66.7, retorno_mediano_pct: 4.1 }, creado: '2026-10-10T18:00:00+00:00' },
+  { id: 'pre_catalizador', version: '1', nombre: 'Pre-catalizador', descripcion: 'Votación, listado o desbloqueo fechado en los próximos 7 días con atención creciente.', estado: 'activo' as 'activo' | 'propuesto' | 'retirado', receta: ['catalizador fechado en ≤ 7 d', 'menciones humanas creciendo 3 días seguidos', 'sin desbloqueo > 2 % del circulante en 30 d'], estudio: { n: 88, acierto_pct: 54.5, retorno_mediano_pct: 2.1, horizonte_d: 7 }, track: { n: 3, acierto_pct: 33.3, retorno_mediano_pct: -0.8 }, creado: '2026-10-11T09:00:00+00:00' },
+  { id: 'ingresos_vs_precio', version: '1', nombre: 'Ingresos contra precio', descripcion: 'Los ingresos del protocolo suben y el precio todavía no.', estado: 'propuesto' as 'activo' | 'propuesto' | 'retirado', receta: ['ingresos 7 d ≥ 1,5× ingresos 7 d anteriores', 'precio 7 d ≤ +5 %', 'TVL estable o creciendo'], estudio: { n: 140, acierto_pct: 56.4, retorno_mediano_pct: 2.7, horizonte_d: 14 }, track: null, creado: '2026-10-12T01:00:00+00:00' },
+]
+const CANDIDATAS_SIM = [
+  { activo: 'WAL', modo: 'squeeze', version: '2', dias: 1, etiquetas: ['squeeze cargado', 'pulso sano'], jev: { juicio: 'conversación orgánica, sin shill', confianza: 0.82 } },
+  { activo: 'CFX', modo: 'impulso', version: '1', dias: 1, etiquetas: ['impulso', 'sin cortos atrapados'], jev: { juicio: 'ruido de bots informativos, pocas personas', confianza: 0.61 } },
+  { activo: 'C98', modo: 'impulso', version: '1', dias: 2, etiquetas: ['impulso', 'confluencia floja'], jev: { juicio: 'shill coordinado parcial', confianza: 0.55 } },
+  { activo: 'CYBER', modo: 'impulso', version: '1', dias: 2, etiquetas: ['impulso'], jev: null },
+  { activo: 'STRK', modo: 'pre_catalizador', version: '1', dias: 5, etiquetas: ['votación en 4 d', 'pump reciente'], jev: { juicio: 'anuncio real de gobernanza', confianza: 0.9 } },
+  { activo: 'KAIA', modo: 'impulso', version: '1', dias: 9, etiquetas: ['impulso', 'granjas'], jev: { juicio: 'shill coordinado', confianza: 0.88 } },
+  { activo: 'OGN', modo: 'squeeze', version: '2', dias: 12, etiquetas: ['squeeze ignición'], jev: { juicio: 'orgánico', confianza: 0.7 } },
+  { activo: 'STONK', modo: 'ingresos_vs_precio', version: '1', dias: 30, etiquetas: ['ingresos cayendo'], jev: { juicio: 'personas reales, tono negativo', confianza: 0.76 } },
+]
+const GATILLOS_SIM: { id: number; activo: string | null; texto: string; estado: 'activo' | 'pausado' | 'disparado' | 'borrado'; precio: number | null; direccion: string | null; ultimo_disparo: string | null; cada_min: number | null; creado: string; hilo_id: string | null }[] = [
+  { id: 7, activo: 'STONK', texto: 'si STONK toca 0,15, vender la mitad', estado: 'activo', precio: 0.15, direccion: 'sube', ultimo_disparo: null, cada_min: 5, creado: hace(60 * 24 * 3), hilo_id: H_STONK },
+  { id: 9, activo: 'WAL', texto: 'si WAL cierra una hora sobre 0,0389 con volumen, subir el stop a 0,038', estado: 'activo', precio: 0.0389, direccion: 'sube', ultimo_disparo: null, cada_min: 1, creado: hace(60 * 5), hilo_id: H_CAJA },
+  { id: 10, activo: 'WAL', texto: 'si las granjas superan el 30 % de las menciones de WAL, avisar', estado: 'activo', precio: null, direccion: null, ultimo_disparo: hace(60 * 2), cada_min: 15, creado: hace(60 * 5), hilo_id: H_CAJA },
+  { id: 4, activo: 'SOL', texto: 'si SOL vuelve a 193, avisar para entrar 40 USDT', estado: 'pausado', precio: 193, direccion: 'baja', ultimo_disparo: hace(60 * 30), cada_min: 5, creado: hace(60 * 24 * 2), hilo_id: H_MONITOR },
+  { id: 2, activo: 'BTC', texto: 'si BTC pierde 108 k, avisar y revisar stops', estado: 'disparado', precio: 108_000, direccion: 'baja', ultimo_disparo: hace(60 * 24 * 6), cada_min: 5, creado: hace(60 * 24 * 9), hilo_id: H_MONITOR },
+]
+const CARTERA_SIM = {
+  pablo: { efectivo_usdt: 2_188.69, simulado: false, posiciones: [
+    { activo: 'STONK', mandato: 'swing', cantidad: 146, precio_medio: 0.1031, costo_usdt: 15.05, pnl_realizado_usdt: 0.98, stop_precio: 0.104, abierta_en: hace(60 * 24 * 3), declarada: true, estado: 'abierta' },
+    { activo: 'SOL', mandato: 'trade', cantidad: 0, precio_medio: 101.11, costo_usdt: 0, pnl_realizado_usdt: -0.0596, stop_precio: null, abierta_en: '2026-10-10T08:54:51+00:00', declarada: false, estado: 'cerrada' },
+  ] },
+  caja: { efectivo_usdt: 16.4, simulado: false, posiciones: [
+    { activo: 'WAL', mandato: 'trade', cantidad: 2228.739, precio_medio: 0.03797, costo_usdt: 84.63, pnl_realizado_usdt: 0, stop_precio: 0.0328, abierta_en: hace(60 * 6), declarada: false, estado: 'abierta' },
+    { activo: 'STRK', mandato: 'trade', cantidad: 0, precio_medio: 0.0854, costo_usdt: 0, pnl_realizado_usdt: 2.95, stop_precio: null, abierta_en: hace(60 * 24 * 1.5), declarada: false, estado: 'cerrada' },
+    { activo: 'KAIA', mandato: 'trade', cantidad: 0, precio_medio: 0.0525, costo_usdt: 0, pnl_realizado_usdt: -1.9, stop_precio: null, abierta_en: hace(60 * 24 * 1.2), declarada: false, estado: 'cerrada' },
+  ] },
+}
+function cartera(origen: string) {
+  const c = origen === 'caja' ? CARTERA_SIM.caja : CARTERA_SIM.pablo
+  const posiciones = c.posiciones.map((p) => {
+    const precio = ACTIVOS[p.activo]?.precio ?? null
+    const valor = precio !== null ? redondeo(p.cantidad * precio, 2) : null
+    const pnl = precio !== null ? redondeo((precio - p.precio_medio) * p.cantidad, 2) : null
+    return { ...p, par: `${p.activo}-USDT`, precio_actual: precio, valor_usdt: valor, pnl_no_realizado_usdt: pnl, pnl_no_realizado_pct: precio !== null && p.cantidad ? pct(precio, p.precio_medio) : null, stop_distancia_pct: precio !== null && p.stop_precio ? pct(p.stop_precio, precio) : null, peso_pct: null as number | null, simulado: c.simulado }
+  })
+  const valorPos = posiciones.reduce((a, p) => a + (p.valor_usdt ?? 0), 0)
+  const total = redondeo(c.efectivo_usdt + valorPos, 2)
+  for (const p of posiciones) p.peso_pct = total ? redondeo(((p.valor_usdt ?? 0) / total) * 100, 1) : null
+  return { origen, simulado: c.simulado, efectivo_usdt: c.efectivo_usdt, valor_total_usdt: total, exposicion_pct: total ? redondeo((valorPos / total) * 100, 1) : 0, posiciones, exposicion: posiciones.filter((p) => p.valor_usdt).map((p) => ({ activo: p.activo, pct: p.peso_pct ?? 0 })), pnl_realizado_total_usdt: redondeo(posiciones.reduce((a, p) => a + p.pnl_realizado_usdt, 0), 2), consultado_en: ahora(), fuente: 'posiciones + bingx' }
+}
+function curvaCapital(origen: string, rango: string) {
+  const { dias, desde } = diasDe(rango)
+  const base = origen === 'caja' ? 101 : 2300
+  const r = azar(origen === 'caja' ? 77 : 33)
+  const puntos: { t: number; capital: number; aportes: number; drawdown_pct: number }[] = []
+  let cap = base, pico = base
+  for (let i = 0; i < dias; i++) {
+    const t = desde + i * DIA
+    cap = redondeo(cap * (1 + (r() - 0.49) * (origen === 'caja' ? 0.03 : 0.006)), 2)
+    if (origen === 'caja' && i < dias - 2) cap = base
+    pico = Math.max(pico, cap)
+    puntos.push({ t, capital: cap, aportes: base, drawdown_pct: redondeo(((cap / pico) - 1) * 100, 2) })
+  }
+  return { origen, rango, puntos, max_drawdown_pct: redondeo(Math.min(...puntos.map((p) => p.drawdown_pct)), 2), rendimiento_pct: pct(puntos[puntos.length - 1].capital, base), consultado_en: ahora() }
+}
+const ORDENES_SIM = [
+  { id: '2109380965351456769', par: 'WAL-USDT', lado: 'venta', tipo: 'stop_market', precio: null, cantidad: 2228.739, llena: 0, estado: 'abierta', creada: hace(60 * 6), es_stop: true, stop_precio: 0.0328 },
+  { id: '2109380965351456770', par: 'STONK-USDT', lado: 'venta', tipo: 'stop_market', precio: null, cantidad: 146, llena: 0, estado: 'abierta', creada: hace(60 * 24 * 2), es_stop: true, stop_precio: 0.104 },
+  { id: '2109380965351456771', par: 'SOL-USDT', lado: 'compra', tipo: 'limit', precio: 193.4, cantidad: 0.2068, llena: 0, estado: 'abierta', creada: hace(60 * 4), es_stop: false, stop_precio: null },
+]
+const CAJA_DECISIONES = [
+  { ciclo: 14, hora: hace(60 * 2), accion: 'esperar', activo: 'WAL', porque: 'WAL sigue plana sobre la entrada; el radar no trajo candidatas nuevas. 16 USDT en espera.' },
+  { ciclo: 13, hora: hace(60 * 4), accion: 'esperar', activo: 'WAL', porque: 'Sin ruptura de 0,0386–0,0389 ni caída a 0,034. Candidatas idénticas a hace dos horas.' },
+  { ciclo: 12, hora: hace(60 * 6), accion: 'entrar', activo: 'WAL', porque: 'Squeeze cargado: OI/volumen 0,71, funding −0,018 %, pulso sano. 85 USDT a 0,03797, stop 0,0328.' },
+  { ciclo: 11, hora: hace(60 * 8), accion: 'salir', activo: 'STRK', porque: 'Objetivo +18 % tocado antes de la votación; se cobra. +2,95 USDT.' },
+  { ciclo: 9, hora: hace(60 * 20), accion: 'mover_stop', activo: 'STRK', porque: 'Stop subido a 0,0985 tras +12 %: asegura +1 USDT.' },
+  { ciclo: 6, hora: hace(60 * 29), accion: 'salir', activo: 'KAIA', porque: 'El stop en 0,0525 saltó en el exchange. −1,90 USDT.' },
+]
+const FUENTES_SIM = [
+  { id: 'bingx', nombre: 'BingX', salud: 'al_dia' as const, ultima_lectura: hace(1) },
+  { id: 'binance', nombre: 'Binance futuros', salud: 'al_dia' as const, ultima_lectura: hace(3) },
+  { id: 'defillama', nombre: 'DefiLlama', salud: 'atrasada' as const, ultima_lectura: hace(95), detalle: 'la última lectura tardó 41 s; reintenta cada 30 min' },
+  { id: 'coinalyze', nombre: 'Coinalyze', salud: 'al_dia' as const, ultima_lectura: hace(12) },
+  { id: 'x', nombre: 'X (crawler)', salud: 'al_dia' as const, ultima_lectura: hace(2) },
+  { id: 'telegram', nombre: 'Telegram', salud: 'al_dia' as const, ultima_lectura: hace(0) },
+  { id: 'snapshot', nombre: 'Snapshot', salud: 'al_dia' as const, ultima_lectura: hace(44) },
+  { id: 'tally', nombre: 'Tally', salud: 'caida' as const, ultima_lectura: null, detalle: 'sin TALLY_API_KEY: apagado' },
+  { id: 'motor', nombre: 'Motor VETA', salud: 'al_dia' as const, ultima_lectura: hace(31) },
+]
+const AGENTES_SIM = [
+  { id: 'cuant_riesgo', nombre: 'Cuant de riesgo', estado: 'ocioso' as const, ultima_actividad: 'p_toque del stop de WAL a 7 d: 31 %', hora: hace(6 * 60) },
+  { id: 'cuant_micro', nombre: 'Cuant de microestructura', estado: 'ocioso' as const, ultima_actividad: 'libro de WAL: 1,1 M USD de largos liquidables abajo', hora: hace(6 * 60) },
+  { id: 'investigador', nombre: 'Investigador', estado: 'ocioso' as const, ultima_actividad: 'votación de STRK: buyback del 2 % del tesoro', hora: hace(3 * 60) },
+  { id: 'estratega', nombre: 'Estratega', estado: 'ocioso' as const, ultima_actividad: 'revisión quincenal de la caja', hora: hace(60 * 24) },
+  { id: 'jev', nombre: 'Jev (clasificador)', estado: 'trabajando' as const, ultima_actividad: 'clasificando 212 posts de X', hora: hace(0) },
+]
+const MANUAL_SIM = { version_vigente: '1.7', versiones: [
+  { version: '1.7', fecha: '2026-10-11T19:20:00+00:00', resumen: 'Gatillos con ritmo propio de lectura; tope de lecturas por hora.' },
+  { version: '1.6', fecha: '2026-10-10T21:00:00+00:00', resumen: 'La caja en real: límites de la misión y pánico.' },
+  { version: '1.5', fecha: '2026-10-10T14:00:00+00:00', resumen: 'Mandatos hold / swing / trade y cómo se mide cada uno.' },
+], propuestas: [
+  { id: 'mp-21', fecha: hace(60 * 7), resumen: 'Regla nueva: no rotar una posición de la caja antes de 24 h salvo stop.', diff: '@@ §4 Caja @@\n+ Una posición de la caja no se rota antes de 24 h salvo que salte el stop\n+ o la misión cambie. Rotar por una candidata nueva exige ventaja medida.', estado: 'pendiente' as 'pendiente' | 'aprobada' | 'rechazada', hilo_id: H_CAJA },
+  { id: 'mp-20', fecha: hace(60 * 24 * 2), resumen: 'Frescura: precio ≤ 5 min para cualquier orden.', diff: '@@ §2.1 @@\n- precio y libro 10 min para decidir\n+ precio y libro 5 min para decidir', estado: 'aprobada' as 'pendiente' | 'aprobada' | 'rechazada', hilo_id: H_MONITOR },
+] }
+const ALERTAS_SIM = Array.from({ length: 37 }, (_, i) => { const r = azar(900 + i); const sev = (['alta', 'media', 'baja', 'baja', 'media'] as const)[i % 5]; const tipos = ['precio', 'granjas', 'fuente', 'stop', 'gatillo', 'presupuesto']; const activos = ['WAL', 'STONK', 'SOL', null, 'BTC', 'STRK']; const tipo = tipos[Math.floor(r() * tipos.length)]; const activo = activos[Math.floor(r() * activos.length)]; return { id: 400 - i, hora: hace(14 * i + 3), severidad: sev, tipo, activo, texto: tipo === 'precio' ? `${activo ?? 'BTC'} se movió ${(2 + r() * 6).toFixed(1).replace('.', ',')} % en una hora` : tipo === 'granjas' ? `${activo ?? 'WAL'}: granjas al ${Math.round(20 + r() * 30)} % de las menciones` : tipo === 'fuente' ? 'DefiLlama tardó 41 s en responder' : tipo === 'stop' ? `stop de ${activo ?? 'KAIA'} a ${(1 + r() * 4).toFixed(1).replace('.', ',')} % del precio` : tipo === 'gatillo' ? `gatillo #${7 + (i % 3)} leyó X: nada nuevo` : `gasto del mes al ${Math.round(50 + r() * 30)} % del presupuesto` } })
+const diaAtras = (n: number) => new Date(Date.now() - n * 86_400_000).toISOString().slice(0, 10)
+
+/* ---------- terminal ---------- */
+function filaUniverso(sym: string) {
+  const a = ACTIVOS[sym]
+  const cands = CANDIDATAS_SIM.filter((c) => c.activo === sym && c.dias <= 3)
+  const pos = [...CARTERA_SIM.pablo.posiciones.map((p) => ({ ...p, origen: 'pablo' })), ...CARTERA_SIM.caja.posiciones.map((p) => ({ ...p, origen: 'caja' }))].find((p) => p.activo === sym && p.estado === 'abierta')
+  const gat = GATILLOS_SIM.filter((g) => g.activo === sym && g.estado === 'activo').length
+  const cat = sym === 'STRK' ? { fecha: diaAtras(-4), etiqueta: 'Votación: buyback del 2 % del tesoro' } : sym === 'STONK' ? { fecha: diaAtras(-9), etiqueta: 'Desbloqueo del equipo (1,8 % del circulante)' } : null
+  return { simbolo: sym, par: `${sym}-USDT`, nombre: a.nombre, precio: a.precio, cambio_24h_pct: cambio(sym, 1), vs_btc_7d_pct: vsBtc(sym, 7), vs_btc_30d_pct: vsBtc(sym, 30), modos: [...new Set(cands.map((c) => c.modo))], squeeze: sym === 'WAL' ? 'cargado' as const : sym === 'OGN' ? 'ignicion' as const : null, posicion: pos ? { origen: pos.origen, estado: pos.estado } : null, gatillos: gat, catalizador: cat, en_vigilancia: ['STONK', 'WAL', 'SOL', 'STRK'].includes(sym), candidata: cands.length > 0, volumen_24h_usdt: a.volumen_24h_usdt }
+}
+luffySimulado.get('/terminal/universo', (c) => {
+  const filtro = c.req.query('filtro') ?? 'todo', q = (c.req.query('q') ?? '').trim().toUpperCase()
+  let filas = Object.keys(ACTIVOS).map(filaUniverso)
+  if (filtro === 'mis_posiciones') filas = filas.filter((f) => f.posicion?.origen === 'pablo')
+  else if (filtro === 'caja') filas = filas.filter((f) => f.posicion?.origen === 'caja' || CARTERA_SIM.caja.posiciones.some((p) => p.activo === f.simbolo))
+  else if (filtro === 'candidatas') filas = filas.filter((f) => CANDIDATAS_SIM.some((x) => x.activo === f.simbolo))
+  else if (filtro === 'vigilancia') filas = filas.filter((f) => f.en_vigilancia)
+  else if (filtro === 'gatillos') filas = filas.filter((f) => f.gatillos > 0)
+  if (q) filas = filas.filter((f) => f.simbolo.includes(q) || f.nombre.toUpperCase().includes(q))
+  filas.sort((x, y) => Number(!!y.posicion) - Number(!!x.posicion) || Number(y.candidata) - Number(x.candidata) || (y.volumen_24h_usdt ?? 0) - (x.volumen_24h_usdt ?? 0))
+  return c.json({ filas, consultado_en: ahora(), fuente: 'terminal/universo (bingx, radar, posiciones, gatillos, catalizadores)' })
+})
+function fichaTerminal(sym: string) {
+  const a = ACTIVOS[sym]
+  const origenPos = CARTERA_SIM.caja.posiciones.some((p) => p.activo === sym) ? 'caja' : 'pablo'
+  const secciones = [
+    { id: 'precio', titulo: 'Precio y volumen', plantilla: { nombre: 'precio_volumen', version: '1' }, spec: { version: 2, titulo: `${sym}: precio y volumen`, activos: [sym], rango: '90d', intervalo: '1d', paneles: [{ id: 'precio', titulo: 'Precio', altura: 3, escala: 'lineal', series: [{ id: sym.toLowerCase(), tipo: 'ohlc', activo: sym, estilo: 'velas' }, { id: 'cand', tipo: 'candidatas', activo: sym }, { id: 'gat', tipo: 'gatillos', activo: sym }] }, { id: 'volumen', titulo: 'Volumen', altura: 1, escala: 'lineal', series: [{ id: 'vol', tipo: 'volumen', activo: sym, estilo: 'barras' }] }], posiciones: { origen: origenPos, mostrar: ['entradas', 'salidas', 'stop', 'stops_historial'] }, eventos: sym === 'STRK' ? [{ fecha: diaAtras(-4), etiqueta: 'Votación' }] : sym === 'STONK' ? [{ fecha: diaAtras(-9), etiqueta: 'Desbloqueo' }] : [] } },
+    { id: 'derivados', titulo: 'Derivados', plantilla: { nombre: 'derivados', version: '1' }, spec: { version: 2, titulo: `${sym}: dinero apalancado, funding y liquidaciones`, activos: [sym], rango: '60d', intervalo: '1d', paneles: [{ id: 'oi', titulo: 'Dinero apalancado abierto', altura: 2, escala: 'lineal', series: [{ id: 'oi', tipo: 'oi', activo: sym, estilo: 'area' }] }, { id: 'funding', titulo: 'Funding', altura: 1, escala: 'lineal', series: [{ id: 'fund', tipo: 'funding', activo: sym, estilo: 'linea' }] }, { id: 'liq', titulo: 'Liquidaciones', altura: 1, escala: 'lineal', series: [{ id: 'liq', tipo: 'liquidaciones', activo: sym, estilo: 'barras' }] }, { id: 'ls', titulo: 'Largos contra cortos', altura: 1, escala: 'lineal', series: [{ id: 'ls', tipo: 'long_short', activo: sym, estilo: 'linea' }] }] } },
+    { id: 'fundamento', titulo: 'Fundamento contra la categoría', plantilla: { nombre: 'fundamento_categoria', version: '1' }, spec: { version: 2, titulo: `${sym}: ingresos y TVL contra la mediana de su categoría`, activos: [sym], rango: '90d', intervalo: '1d', paneles: [{ id: 'ingresos', titulo: 'Ingresos diarios', altura: 2, escala: 'lineal', series: [{ id: 'ing', tipo: 'ingresos', activo: sym, estilo: 'barras' }, { id: 'cat', tipo: 'categoria', metrica: 'ingresos', categoria: 'auto', agregado: 'mediana', activo: sym, rol: 'benchmark', estilo: 'linea', eje: 'der', transformaciones: [{ tipo: 'base100' }] }] }, { id: 'tvl', titulo: 'Dinero depositado', altura: 1, escala: 'lineal', series: [{ id: 'tvl', tipo: 'tvl', activo: sym, estilo: 'area' }] }] } },
+    { id: 'atencion', titulo: 'Atención: personas, bots y granjas', plantilla: { nombre: 'atencion', version: '1' }, spec: { version: 2, titulo: `${sym}: menciones de personas, bots y granjas`, activos: [sym], rango: '30d', intervalo: '1d', paneles: [{ id: 'pulso', titulo: 'Menciones en 24 h', altura: 2, escala: 'lineal', series: [{ id: 'hum', tipo: 'pulso_humanos', activo: sym, estilo: 'area' }, { id: 'bots', tipo: 'pulso_bots', activo: sym, estilo: 'linea', rol: 'apoyo' }, { id: 'granjas', tipo: 'pulso_granjas', activo: sym, estilo: 'linea', rol: 'apoyo' }] }, { id: 'tono', titulo: 'Tono', altura: 1, escala: 'lineal', series: [{ id: 'tono', tipo: 'pulso_tono', activo: sym, estilo: 'area' }] }] } },
+  ]
+  const no_disponibles: { seccion: string; motivo: string }[] = []
+  if (!a.defillama) { no_disponibles.push({ seccion: 'fundamento', motivo: `DefiLlama no tiene protocolo para ${sym}` }) }
+  const cands = CANDIDATAS_SIM.filter((x) => x.activo === sym)
+  const radar = cands.length ? {
+    familias: [
+      { nombre: 'Volumen', cumple: true, cifras: [{ k: 'volumen 24 h / media 30 d', v: `${(2.4 + azar(sym.length)() * 2).toFixed(1).replace('.', ',')}×` }, { k: 'cambio 24 h', v: `${(cambio(sym, 1) ?? 0).toFixed(1).replace('.', ',')} %` }] },
+      { nombre: 'Apalancamiento', cumple: sym === 'WAL' || sym === 'OGN', cifras: [{ k: 'OI / volumen', v: sym === 'WAL' ? '0,71' : '0,22' }, { k: 'funding', v: sym === 'WAL' ? '−0,018 %' : '+0,004 %' }] },
+      { nombre: 'Atención', cumple: sym !== 'KAIA', cifras: [{ k: 'menciones humanas 24 h', v: sym === 'WAL' ? '9' : '41' }, { k: 'granjas', v: sym === 'KAIA' ? '38 %' : '0 %' }] },
+      { nombre: 'Catalizadores', cumple: sym === 'STRK' || sym === 'STONK', cifras: [{ k: 'próximo', v: sym === 'STRK' ? `votación ${diaAtras(-4)}` : sym === 'STONK' ? `desbloqueo ${diaAtras(-9)}` : 'ninguno fechado' }] },
+    ],
+    modos: MODOS_SIM.map((m) => ({ id: m.id, version: m.version, nombre: m.nombre, cumple: cands.some((x) => x.modo === m.id), estudio: m.estudio })),
+    etiquetas: [...new Set(cands.flatMap((x) => x.etiquetas))], ultima_marca: hace(60 * 24 * Math.min(...cands.map((x) => x.dias))),
+  } : null
+  const catalizadores = sym === 'STRK' ? [{ fecha: diaAtras(-4), tipo: 'votacion', etiqueta: 'Votación: buyback del 2 % del tesoro', fuente: 'snapshot', url: 'https://snapshot.org' }] : sym === 'STONK' ? [{ fecha: diaAtras(-9), tipo: 'desbloqueo', etiqueta: 'Desbloqueo del equipo: 1,8 % del circulante', fuente: 'agenda del motor' }] : sym === 'WAL' ? [{ fecha: diaAtras(-12), tipo: 'listado', etiqueta: 'Listado en un exchange coreano (rumor verificado a medias)', fuente: 'investigador' }] : []
+  const notas = sym === 'WAL' ? [{ fecha: hace(60 * 6), tipo: 'bitacora' as const, texto: 'Entrada de la caja: squeeze cargado con pulso sano. Stop 0,0328, plazo 24–36 h para exigir avance.', hilo_id: H_CAJA }, { fecha: hace(60 * 2), tipo: 'teoria' as const, texto: 'Los cortos atrapados cubren si rompe 0,0389 con volumen; sin volumen, el techo se defiende.', estado: 'abierta', hilo_id: H_CAJA }] : sym === 'STONK' ? [{ fecha: hace(12), tipo: 'bitacora' as const, texto: 'Ingresos cayendo tres semanas seguidas; la categoría aguanta. Stop en 0,143 y vigilar el cierre semanal.', hilo_id: H_STONK }, { fecha: hace(60 * 24 * 2), tipo: 'teoria' as const, texto: 'Si los ingresos no recuperan 500 k/día antes del desbloqueo, el precio lo refleja.', estado: 'abierta', hilo_id: H_STONK }] : []
+  const posiciones = ['pablo', 'caja'].flatMap((o) => cartera(o).posiciones.filter((p) => p.activo === sym).map((p) => ({ activo: p.activo, origen: o, estado: p.estado, mandato: p.mandato, cantidad: p.cantidad, precio_medio: p.precio_medio, stop_precio: p.stop_precio, precio_actual: p.precio_actual, pnl_no_realizado_usdt: p.pnl_no_realizado_usdt, pnl_realizado_usdt: p.pnl_realizado_usdt, simulado: p.simulado, fuente: 'posiciones + bingx', consultado_en: ahora() })))
+  return { activo: sym, nombre: a.nombre, par: `${sym}-USDT`, precio: a.precio, cambio_24h_pct: cambio(sym, 1), secciones, radar, catalizadores, notas, posiciones, gatillos: GATILLOS_SIM.filter((g) => g.activo === sym && g.estado !== 'borrado'), no_disponibles, consultado_en: ahora() }
+}
+luffySimulado.get('/terminal/:activo', (c) => { const sym = c.req.param('activo').toUpperCase(); if (!ACTIVOS[sym]) return c.json({ detail: `${sym} no está en el universo` }, 404); return c.json(fichaTerminal(sym)) })
+luffySimulado.post('/terminal/:activo/preguntar', (c) => {
+  const sym = c.req.param('activo').toUpperCase(); if (!ACTIVOS[sym]) return c.json({ detail: 'no existe' }, 404)
+  const existente = [...HILOS.values()].find((h) => h.titulo === `${sym} · terminal`)
+  if (existente) return c.json({ hilo_id: existente.id, titulo: existente.titulo, nuevo: false })
+  const id = `c0ffee00-0000-4000-8000-${String(Date.now()).slice(-12)}`
+  HILOS.set(id, { id, titulo: `${sym} · terminal`, creado: ahora(), actualizado: ahora(), resumen_vivo: `Ficha del terminal de ${sym} como contexto.`, costo_usd: 0, mensajes: [{ id: ++mensajeId, rol: 'sistema', contenido: `[ficha del terminal de ${sym}]`, ts: ahora(), modelo: null, costo_usd: 0, herramientas_usadas: [], graficos: [], propuestas: [] }] })
+  return c.json({ hilo_id: id, titulo: `${sym} · terminal`, nuevo: true })
+})
+
+/* ---------- cartera y exchange ---------- */
+luffySimulado.get('/cartera', (c) => c.json(cartera(c.req.query('origen') === 'caja' ? 'caja' : 'pablo')))
+luffySimulado.get('/cartera/curva', (c) => c.json(curvaCapital(c.req.query('origen') === 'caja' ? 'caja' : 'pablo', c.req.query('rango') ?? '90d')))
+luffySimulado.post('/posiciones/declarar', async (c) => {
+  const b = await c.req.json().catch(() => ({})) as { activo?: string; cantidad?: number; precio_medio?: number; fecha?: string; mandato?: string }
+  if (!b.activo || !(Number(b.cantidad) > 0) || !(Number(b.precio_medio) > 0)) return c.json({ detail: { codigo: 'declaracion_invalida', texto: 'hacen falta activo, cantidad y precio medio' } }, 422)
+  const sym = b.activo.toUpperCase(); const id_corto = hex(6, 1200 + PROPUESTAS.size)
+  const p = { id: hex(32, 1300 + PROPUESTAS.size), id_corto, hilo_id: H_MONITOR, accion: 'declarar', par: `${sym}-USDT`, lado: 'compra', tipo: 'declaracion', mandato: b.mandato ?? 'hold', cantidad_usdt: redondeo(Number(b.cantidad) * Number(b.precio_medio), 2), precio: Number(b.precio_medio), stop: null, precio_referencia: ACTIVOS[sym]?.precio ?? null, estado: 'propuesta', expira: new Date(Date.now() + 30 * 60_000).toISOString(), expirada: false, bloque: `DECLARACIÓN PROPUESTA #${id_corto}\n${sym} · ${b.cantidad} a ${b.precio_medio} (${b.fecha ?? 'sin fecha'}) · mandato ${b.mandato ?? 'hold'}\nNo envía nada al exchange: registra la tenencia como posición con su precio medio.`, origen: 'pablo', propuesta_en: ahora(), detalle: { declaracion: b } }
+  PROPUESTAS.set(id_corto, p); return c.json(p)
+})
+luffySimulado.get('/exchange/ordenes', (c) => c.json({ abiertas: ORDENES_SIM.filter((o) => o.estado === 'abierta'), consultado_en: ahora(), fuente: 'bingx' }))
+luffySimulado.get('/exchange/historial', (c) => {
+  const dias = Number(c.req.query('dias') ?? 30) || 30
+  const fills = [
+    { id: 'f-9001', par: 'WAL-USDT', lado: 'compra', precio: 0.03797, cantidad: 2228.739, comision_usdt: 0.085, hora: hace(60 * 6), orden_id: 'o-8801' },
+    { id: 'f-8990', par: 'STRK-USDT', lado: 'venta', precio: 0.1008, cantidad: 292.8, comision_usdt: 0.03, hora: hace(60 * 8), orden_id: 'o-8790' },
+    { id: 'f-8971', par: 'STRK-USDT', lado: 'compra', precio: 0.0854, cantidad: 292.8, comision_usdt: 0.025, hora: hace(60 * 36), orden_id: 'o-8771' },
+    { id: 'f-8950', par: 'KAIA-USDT', lado: 'venta', precio: 0.0525, cantidad: 440.46, comision_usdt: 0.023, hora: hace(60 * 29), orden_id: 'o-8750' },
+    { id: 'f-8930', par: 'KAIA-USDT', lado: 'compra', precio: 0.0568, cantidad: 440.46, comision_usdt: 0.025, hora: hace(60 * 30), orden_id: 'o-8730' },
+    { id: 'f-8800', par: 'SOL-USDT', lado: 'venta', precio: 104.34, cantidad: 0.0953, comision_usdt: 0.01, hora: '2026-10-10T19:31:00+00:00', orden_id: 'o-8600' },
+    { id: 'f-8790', par: 'SOL-USDT', lado: 'compra', precio: 101.11, cantidad: 0.0953, comision_usdt: 0.01, hora: '2026-10-10T08:54:51+00:00', orden_id: 'o-8590' },
+  ].filter((f) => Date.parse(f.hora) > Date.now() - dias * 86_400_000)
+  const ordenes = fills.map((f) => ({ id: f.orden_id, par: f.par, lado: f.lado, tipo: f.lado === 'venta' && f.par !== 'STRK-USDT' ? 'stop_market' : 'limit', precio: f.precio, cantidad: f.cantidad, llena: f.cantidad, estado: 'llena', creada: f.hora, es_stop: f.lado === 'venta' && f.par === 'KAIA-USDT', stop_precio: null }))
+  const porPar = new Map<string, number>(); for (const f of fills) porPar.set(f.par, redondeo((porPar.get(f.par) ?? 0) + f.comision_usdt, 3))
+  return c.json({ ordenes, fills, comisiones: { periodo: `${dias} d`, total_usdt: redondeo(fills.reduce((a, f) => a + f.comision_usdt, 0), 3), por_par: [...porPar].map(([par, usdt]) => ({ par, usdt })) }, consultado_en: ahora() })
+})
+luffySimulado.post('/exchange/proponer', async (c) => {
+  const b = await c.req.json().catch(() => ({})) as Record<string, unknown>
+  const accion = String(b.accion ?? '')
+  if (!['cancelar', 'modificar', 'mover_stop', 'orden'].includes(accion)) return c.json({ detail: { codigo: 'accion_invalida', texto: 'acción desconocida' } }, 422)
+  const id_corto = hex(6, 1400 + PROPUESTAS.size)
+  const par = String(b.par ?? (b.activo ? `${String(b.activo).toUpperCase()}-USDT` : ORDENES_SIM.find((o) => o.id === b.orden_id)?.par ?? '?'))
+  const bloque = accion === 'mover_stop' ? `MOVER STOP #${id_corto}\n${par} · stop a ${b.stop}\n${Number(b.stop) < (ACTIVOS[par.split('-')[0]]?.precio ?? 0) * 0.9 ? 'AFLOJA STOP: queda más lejos del precio que el vigente' : 'sube el stop: asegura parte del resultado'}`
+    : accion === 'cancelar' ? `CANCELAR ORDEN #${id_corto}\norden ${b.orden_id} · ${par}` : accion === 'modificar' ? `MODIFICAR ORDEN #${id_corto}\norden ${b.orden_id} · ${par}${b.precio ? ` · precio ${b.precio}` : ''}${b.cantidad ? ` · cantidad ${b.cantidad}` : ''}` : `ORDEN PROPUESTA #${id_corto}\n${par} · ${b.lado} ${b.cantidad_usdt ? `${b.cantidad_usdt} USDT` : `${b.cantidad ?? '?'}`} · ${b.tipo}${b.precio ? ` a ${b.precio}` : ''}${b.stop ? ` · stop ${b.stop}` : ''}`
+  const p = { id: hex(32, 1500 + PROPUESTAS.size), id_corto, hilo_id: H_MONITOR, accion: accion === 'orden' ? 'entrada' : accion === 'cancelar' ? 'cancelar' : accion, par, lado: String(b.lado ?? (accion === 'mover_stop' ? 'venta' : '')), tipo: String(b.tipo ?? accion), mandato: String(b.mandato ?? 'swing'), cantidad_usdt: Number(b.cantidad_usdt ?? 0) || null, precio: Number(b.precio ?? 0) || null, stop: Number(b.stop ?? 0) || null, precio_referencia: ACTIVOS[par.split('-')[0]]?.precio ?? null, estado: 'propuesta', expira: new Date(Date.now() + 15 * 60_000).toISOString(), expirada: false, bloque, origen: 'pablo', propuesta_en: ahora(), detalle: { pedido: b } }
+  PROPUESTAS.set(id_corto, p); return c.json(p)
+})
+
+/* ---------- caja ---------- */
+const MISION = { id_corto: 'm1s10n', texto: 'La máxima rentabilidad en 14 días con 101 USDT. Candidatas del radar en impulso y squeeze.', estado: 'activa', creada: hace(60 * 24 * 1.3), plazo_hasta: new Date(Date.now() + 12.7 * 86_400_000).toISOString(), objetivo: '×2 en 14 días' }
+luffySimulado.get('/caja', (c) => { const ca = cartera('caja'); return c.json({ simulado: false, mision: MISION, presupuesto_api: { usado_usd: 4.37, tope_usd: 20 }, limites: [{ k: 'riesgo por operación', v: '≤ 15 % del efectivo' }, { k: 'posiciones a la vez', v: '2' }, { k: 'rotación', v: 'no antes de 24 h salvo stop' }, { k: 'horizonte', v: '14 días' }], efectivo_usdt: ca.efectivo_usdt, valor_total_usdt: ca.valor_total_usdt, posiciones: ca.posiciones, decisiones: CAJA_DECISIONES, consultado_en: ahora() }) })
+luffySimulado.post('/caja/mision/:id/:accion', (c) => { const a = c.req.param('accion'); if (!['pausar', 'reanudar', 'cancelar'].includes(a)) return c.json({ detail: 'acción desconocida' }, 404); MISION.estado = a === 'pausar' ? 'pausada' : a === 'reanudar' ? 'activa' : 'cancelada'; return c.json({ ok: true, estado: MISION.estado }) })
+
+/* ---------- radar ---------- */
+luffySimulado.get('/radar/candidatas', (c) => {
+  const modo = c.req.query('modo'), dias = Number(c.req.query('dias') ?? 30) || 30
+  const candidatas = CANDIDATAS_SIM.filter((x) => (!modo || modo === 'todos' || x.modo === modo) && x.dias <= dias).map((x) => { const v = cierres(velas(x.activo, 40, DIA)); const i = Math.max(0, v.length - 1 - x.dias); const marca = v[i][1]; const seg = (d: number) => (x.dias >= d ? pct(v[Math.min(v.length - 1, i + d)][1], marca) : null); const sb = (d: number) => { const s = seg(d), b = x.dias >= d ? pct(cierres(velas('BTC', 40, DIA))[Math.min(39, i + d)][1], cierres(velas('BTC', 40, DIA))[i][1]) : null; return s === null || b === null ? null : redondeo(s - b, 2) }; const ficha = fichaTerminal(x.activo); return { activo: x.activo, nombre: ACTIVOS[x.activo].nombre, fecha: hace(60 * 24 * x.dias), modo: x.modo, version: x.version, familias: ficha.radar?.familias ?? [], jev: x.jev, etiquetas: x.etiquetas, precio_marca: redondeo(marca, ACTIVOS[x.activo].decimales + 1), seguimiento: { d7_pct: seg(7), d14_pct: seg(14), d30_pct: seg(30), vs_btc_d7_pct: sb(7), vs_btc_d14_pct: sb(14), vs_btc_d30_pct: sb(30) } } })
+  return c.json({ candidatas, modos: MODOS_SIM.map((m) => m.id), consultado_en: ahora() })
+})
+luffySimulado.get('/radar/modos', (c) => c.json({ modos: MODOS_SIM, consultado_en: ahora() }))
+luffySimulado.post('/modos/:id/:version/decidir', async (c) => { const m = MODOS_SIM.find((x) => x.id === c.req.param('id') && x.version === c.req.param('version')); if (!m) return c.json({ detail: 'modo no existe' }, 404); const b = await c.req.json().catch(() => ({})) as { decision?: string }; if (m.estado !== 'propuesto') return c.json({ detail: { codigo: 'no_pendiente', texto: `el modo está ${m.estado}` } }, 409); m.estado = b.decision === 'aprobar' ? 'activo' : 'retirado'; return c.json({ ok: true, estado: m.estado }) })
+
+/* ---------- control ---------- */
+luffySimulado.patch('/gatillos/:id', async (c) => { const g = GATILLOS_SIM.find((x) => x.id === Number(c.req.param('id'))); if (!g) return c.json({ detail: 'gatillo no existe' }, 404); const b = await c.req.json().catch(() => ({})) as { estado?: string }; if (b.estado === 'pausado' || b.estado === 'activo') g.estado = b.estado; return c.json(g) })
+luffySimulado.delete('/gatillos/:id', (c) => { const g = GATILLOS_SIM.find((x) => x.id === Number(c.req.param('id'))); if (!g) return c.json({ detail: 'gatillo no existe' }, 404); g.estado = 'borrado'; return c.json({ ok: true }) })
+luffySimulado.get('/manual', (c) => c.json({ ...MANUAL_SIM, consultado_en: ahora() }))
+luffySimulado.get('/manual/diff', (c) => c.json({ de: c.req.query('de'), a: c.req.query('a'), diff: '@@ §3 Gatillos @@\n- cada gatillo lee X cada 5 min\n+ cada gatillo lee X a su propio ritmo (cada_min), con tope total por hora\n@@ §4 Caja @@\n+ pánico: cierra todo y avisa' }))
+luffySimulado.post('/manual/propuestas/:id/decidir', async (c) => { const p = MANUAL_SIM.propuestas.find((x) => x.id === c.req.param('id')); if (!p) return c.json({ detail: 'propuesta no existe' }, 404); const b = await c.req.json().catch(() => ({})) as { decision?: string }; if (p.estado !== 'pendiente') return c.json({ detail: { codigo: 'no_pendiente', texto: `ya está ${p.estado}` } }, 409); p.estado = b.decision === 'aprobar' ? 'aprobada' : 'rechazada'; if (p.estado === 'aprobada') { MANUAL_SIM.version_vigente = '1.8'; MANUAL_SIM.versiones.unshift({ version: '1.8', fecha: ahora(), resumen: p.resumen }) } return c.json({ ok: true, estado: p.estado }) })
+
+/* ---------- oficina ---------- */
+luffySimulado.get('/oficina/estado', (c) => c.json({ luffy: { estado: enCurso.size ? 'pensando' : 'ocioso', hilo_id: [...enCurso.keys()][0] ?? null, hilo_titulo: enCurso.size ? HILOS.get([...enCurso.keys()][0])?.titulo ?? null : null, desde: enCurso.size ? ahora() : null }, agentes: AGENTES_SIM, fuentes: FUENTES_SIM, corriendo: [{ que: 'clasificación social (Jev): 212 posts', desde: hace(1) }, { que: 'gatillo #9 leyendo X', desde: hace(0) }], consultado_en: ahora() }))
+luffySimulado.get('/eventos', (c) => {
+  const guion = [
+    () => ({ tipo: 'fuente', fuente: 'x', ok: true, n: 48 }), () => ({ tipo: 'herramienta', herramienta: 'exchange_ticker', fuente: 'bingx' }),
+    () => ({ tipo: 'radar_ciclo', detalle: 'ciclo 31: 2 candidatas en impulso, 1 en squeeze' }), () => ({ tipo: 'fuente', fuente: 'coinalyze', ok: true, n: 12 }),
+    () => ({ tipo: 'agente_convocado', agente: 'cuant_micro' }), () => ({ tipo: 'fuente', fuente: 'binance', ok: true, n: 6 }), () => ({ tipo: 'agente_terminado', agente: 'cuant_micro', costo_usd: 0.02 }),
+    () => ({ tipo: 'caja_ciclo', detalle: 'ciclo 15: esperar (WAL plana)' }), () => ({ tipo: 'fuente', fuente: 'defillama', ok: false }), () => ({ tipo: 'alerta', severidad: 'baja', texto: 'DefiLlama tardó 41 s' }),
+    () => ({ tipo: 'fuente', fuente: 'telegram', ok: true, n: 1 }), () => ({ tipo: 'turno_abierto', hilo_id: H_MONITOR, hilo_titulo: 'Monitor', tipo_turno: 'monitor' }), () => ({ tipo: 'herramienta', herramienta: 'mercado_tickers', fuente: 'bingx' }), () => ({ tipo: 'turno_cerrado', hilo_id: H_MONITOR, hilo_titulo: 'Monitor', tipo_turno: 'monitor', costo_usd: 0.07 }),
+  ]
+  let i = 0
+  const stream = new ReadableStream({
+    start(ctl) {
+      const enc = new TextEncoder()
+      const tick = () => { try { ctl.enqueue(enc.encode(sse({ hora: ahora(), ...guion[i % guion.length]() }))); i++ } catch { /* cerrado */ } }
+      tick(); const id = setInterval(tick, 2200 / VELOCIDAD)
+      c.req.raw.signal.addEventListener('abort', () => { clearInterval(id); try { ctl.close() } catch { /* ya */ } })
+    },
+  })
+  return new Response(stream, { headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no' } })
+})
+
+/* ---------- informes ---------- */
+const INFORMES_SIM = [0, 1, 2, 3, 5, 6].map((n) => ({ fecha: diaAtras(n), titulo: n === 0 ? 'Mercado sin dirección; WAL en squeeze; STONK con ingresos cayendo' : n === 1 ? 'La caja entra en WAL; STRK cobrada antes de la votación' : n === 2 ? 'KAIA: el stop saltó; el radar trae CFX y C98' : n === 3 ? 'SOL rechazada en 196; nada que hacer' : n === 5 ? 'BTC pierde 108 k y recupera; stops revisados' : 'Semana tranquila; ingresos de STONK a la baja', resumen: 'Cartera sin cambios; una decisión de la caja; dos alertas de precio.' }))
+luffySimulado.get('/informes', (c) => c.json({ informes: INFORMES_SIM, revisiones: [{ fecha: diaAtras(1), titulo: 'Revisión quincenal de la caja · 1', resumen: 'Tres operaciones: +2,95 STRK, −1,90 KAIA, WAL abierta. Lección: no rotar antes de 24 h.' }], bitacora: [{ id: 51, fecha: hace(60 * 6), activo: 'WAL', tipo: 'entrada', tesis: 'Squeeze cargado con pulso sano; cortos atrapados.', resultado: null }, { id: 50, fecha: hace(60 * 8), activo: 'STRK', tipo: 'salida', tesis: 'Cobrar el +18 % antes de la votación.', resultado: '+2,95 USDT' }, { id: 47, fecha: hace(60 * 29), activo: 'KAIA', tipo: 'salida', tesis: 'Stop ejecutado.', resultado: '−1,90 USDT' }, { id: 40, fecha: hace(60 * 24 * 3), activo: 'STONK', tipo: 'observacion', tesis: 'Ingresos cayendo más que su categoría.', resultado: null }], teorias: [{ id: 12, fecha: hace(60 * 2), activo: 'WAL', texto: 'Los cortos cubren si rompe 0,0389 con volumen.', estado: 'abierta' }, { id: 11, fecha: hace(60 * 24 * 2), activo: 'STONK', texto: 'Si los ingresos no recuperan 500 k/día antes del desbloqueo, el precio lo refleja.', estado: 'abierta' }, { id: 9, fecha: hace(60 * 24 * 5), activo: 'SOL', texto: 'Continuación si cierra sobre 196.', estado: 'refutada' }], consultado_en: ahora() }))
+luffySimulado.get('/informes/:fecha', (c) => {
+  const f = c.req.param('fecha'); const inf = INFORMES_SIM.find((x) => x.fecha === f); if (!inf) return c.json({ detail: 'no hay informe de ese día' }, 404)
+  const g = guardarSpec({ ...SPEC_BTC, titulo: 'BTC: precio, volumen y funding' }, 'chat', H_MONITOR, null)
+  const g2 = guardarSpec({ ...SPEC_STONK, titulo: 'STONK: ingresos contra su categoría' , benchmarks: ['categoria'] }, 'chat', H_STONK, null)
+  return c.json({ fecha: f, titulo: inf.titulo, secciones: [
+    { titulo: 'Mercado', texto: 'BTC lleva seis sesiones entre 108 k y 114 k con el funding en cero: nadie paga por apalancarse. ETH pierde fuerza relativa.', cifras: [{ k: 'BTC', v: '112 340 USDT · +0,4 %' }, { k: 'funding BTC', v: '0,006 %' }, { k: 'ETH / BTC 7 d', v: '−2,1 %' }], graficos: [{ spec_id: g.spec_id as string, titulo: g.titulo as string }] },
+    { titulo: 'Cartera', texto: 'STONK sigue con el stop en 0,143 y los ingresos a la baja. SOL cerrada en −0,06 USDT.', cifras: [{ k: 'STONK', v: '146 a 0,1031 · +13 %' }, { k: 'efectivo', v: '2 188,69 USDT' }], graficos: [{ spec_id: g2.spec_id as string, titulo: g2.titulo as string }] },
+    { titulo: 'Caja', texto: 'WAL abierta a 0,03797 con stop 0,0328; plazo de rotación 24–36 h. 16 USDT libres.', cifras: [{ k: 'valor', v: '101,5 USDT' }, { k: 'realizado', v: '+1,05 USDT' }], graficos: [] },
+    { titulo: 'Radar', texto: 'CFX y C98 en impulso sin cortos atrapados; STRK con votación en 4 días.', cifras: [{ k: 'candidatas', v: '3 nuevas' }], graficos: [] },
+  ], consultado_en: ahora() })
+})
