@@ -180,7 +180,9 @@ console.log('\nLUFFY · admin, escritorio')
   if (SIM) {
   const asa = p.locator('[data-prueba="asa-stop"]')
   await asa.waitFor({ timeout: 15000 })
-  const caja = await asa.boundingBox()
+  // el gráfico reajusta márgenes (leyendas, riel de señales) tras dibujarse: se espera a que el asa quede quieta
+  let caja = await asa.boundingBox()
+  for (let i = 0; i < 20; i++) { await espera(250); const otra = await asa.boundingBox(); if (otra && caja && Math.abs(otra.y - caja.y) < 0.5 && Math.abs(otra.x - caja.x) < 0.5) break; caja = otra }
   await p.mouse.move(caja.x + caja.width / 2, caja.y + caja.height / 2); await p.mouse.down(); await p.mouse.move(caja.x + caja.width / 2, caja.y + caja.height / 2 - 40, { steps: 8 }); await p.mouse.up()
   await p.waitForSelector('.lf-ficha__prop .lf-prop', { timeout: 15000 })
   const bloque = await p.locator('.lf-ficha__prop .lf-prop__bloque').innerText()
