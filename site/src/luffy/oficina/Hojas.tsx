@@ -87,6 +87,7 @@ export function describirPaso(p: Ev): string {
     case 'agente_convocado': return `convoca al ${NOMBRE[p.agente as IdAgente] ?? p.agente}`
     case 'agente_terminado': return `el ${NOMBRE[p.agente as IdAgente] ?? p.agente} entrega · ${seg(p.duracion_s)}${p.costo_usd ? ` · ${usd(p.costo_usd)}` : ''}`
     case 'propuesta': return `propone ${p.accion} ${p.par}`
+    case 'modelo': return `${p.quien === 'luffy' ? 'piensa' : `${NOMBRE[p.quien as IdAgente] ?? p.quien} piensa`}${p.iteracion ? ` (vuelta ${p.iteracion})` : ''}${p.modelo ? ` · ${p.modelo}` : ''}${p.costo_usd ? ` · ${usd(p.costo_usd)}` : ''}`
     default: return p.tipo
   }
 }

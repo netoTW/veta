@@ -850,6 +850,28 @@ cuidado del servidor y la parabólica: un mástil de roca pulida en dos caras (l
 tapa del servidor, el filo y tres anillos de oro finos (la mitad de atrás tenue), un collar a media altura y el
 emisor con su luz de estado y las ondas.
 
+### El gasto en la oficina y el costo de cada turno en la repetición (12-oct-2026)
+
+**El panel** (`src/luffy/oficina/Gasto.tsx`, entre la sala y lo de abajo) se construyó contra el contrato v2.3
+(`GET /oficina/gasto`, §8.4), con su adaptador en `oficina/gastoApi.ts` y su simulador en `server/luffySimuladoGasto.ts`:
+- **Hoy, 7 días y el mes** como barras contra los umbrales: aviso en oro, degradar en rojo y presupuesto en hueso. Para hoy
+  y 7 días se usan los umbrales llevados al ritmo del mes. Arriba, el estado (normal, aviso, degradado) y lo que queda del mes.
+- **El reparto por origen** (con su color) **y por agente**, del período elegido. Lo de las pruebas de las sesiones va
+  aparte y no cuenta para los umbrales.
+- **La serie diaria del mes**, apilada por origen y escalada al uso real. Un día con pruebas lleva su marca rayada abajo.
+- **Tocar un origen o un agente** abre sus llamadas: hora, agente u origen, modelo, tokens, costo, si el origen se infirió
+  y el enlace al hilo. Esa ruta **no está en el contrato**: se le pidió a Mugiwara (`TRASPASO.md` §6) y por ahora la
+  responde el simulador.
+- Control → Gasto sigue como vista detallada; el enlace del pie abre esa pestaña (`?ver=gasto`).
+
+Mientras Mugiwara despliega `/oficina/gasto` (hoy da 404), la tarjeta lo dice en una línea. Para mirarla contra la API
+real: `VETA_SIMULAR=gasto` (también `terminal2`).
+
+**La repetición con su costo:** si el turno tiene `mensaje_id`, se pide su línea a `GET /oficina/turnos/{mensaje_id}`
+(v2.3, ya en producción). Así va al ritmo real (`t_s`), cada llamada al modelo aparece como un paso («piensa, vuelta 2,
+0,061 US$») con su globo, y la barra suma lo gastado («llevamos 0,669 US$ de 0,806 US$»). Sin línea, se arma con los eventos
+como antes. Probado con un ciclo real de la caja de 14 pasos.
+
 ### Terminal v2, adelantado con datos simulados (12-oct-2026)
 
 La pantalla que reemplaza la ficha del terminal (`Mugiwara/PROMPT-TERMINAL-v2-veta.md`, maqueta aprobada

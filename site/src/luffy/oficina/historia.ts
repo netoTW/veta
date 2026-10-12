@@ -1,4 +1,4 @@
-import { luffy6b } from '../api6b'
+import { luffy6b, pedir } from '../api6b'
 import type { EventoOficina } from '../tipos6b'
 import type { IdAgente } from './Escena'
 
@@ -12,7 +12,9 @@ import type { IdAgente } from './Escena'
    adelante en tandas de 1000 desde el último id, hasta pasar las 24 h o llegar al
    tope de tandas. En vivo, cada evento del SSE se suma con `anotar`.
    ========================================================================== */
-export type Ev = EventoOficina & { activos?: unknown; hilo_id?: string | null; paso?: string | null; grupo?: string }
+/** Una llamada al modelo dentro de un turno (sólo en la línea de `/oficina/turnos/{mensaje_id}`, v2.3): cuánto costó cada vuelta. */
+export interface PasoModelo { tipo: 'modelo'; id: number; hora: string; proceso: string; quien: string; modelo: string | null; iteracion: number | null; costo_usd: number | null }
+export type Ev = (EventoOficina | PasoModelo) & { activos?: unknown; hilo_id?: string | null; paso?: string | null; grupo?: string }
 const TANDA = 1000, TANDAS = 12, HORAS = 24
 
 let eventos: Ev[] = []
@@ -219,4 +221,32 @@ export function franjas(ls: Lectura[], horas = 24): ('vacio' | 'ok' | 'mixto' | 
   for (const l of ls) { const i = n - 1 - Math.floor((fin - Date.parse(l.hora)) / 1_800_000); if (i >= 0 && i < n) c[i][l.ok ? 'ok' : 'mal']++ }
   c.forEach((x, i) => { out[i] = !x.ok && !x.mal ? 'vacio' : !x.mal ? 'ok' : !x.ok ? 'mal' : 'mixto' })
   return out
+}
+
+/* ---------- la línea de un turno (v2.3: `GET /oficina/turnos/{mensaje_id}`) ----------
+   Con ella la repetición va a ritmo real (`t_s`) y con el costo de cada llamada al modelo. Si no llega
+   (un turno viejo, la ruta caída), la repetición se arma con los eventos, como antes. */
+export interface LineaTurno { pasos: Ev[]; ts: number[]; costos: number[]; total: number | null; completo: boolean; nota: string | null }
+export async function lineaTurno(t: Turno, signal?: AbortSignal): Promise<LineaTurno | null> {
+  if (!t.mensaje_id) return null
+  const r = await pedir<Record<string, unknown>>(`/oficina/turnos/${t.mensaje_id}`, { signal, tope: 8000 }).catch(() => null)
+  const crudos = Array.isArray(r?.pasos) ? (r!.pasos as Record<string, unknown>[]) : []
+  if (!r || !crudos.length) return null
+  const n = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : null)
+  const s = (v: unknown) => (typeof v === 'string' && v ? v : null)
+  const pasos: Ev[] = [], ts: number[] = [], costos: number[] = []
+  let id = -1
+  const poner = (e: Ev, t_s: number, costo = 0) => { pasos.push(e); ts.push(t_s); costos.push(costo) }
+  const abre = t.pasos.find((p) => p.tipo === 'turno_abierto'), cierra = t.pasos.find((p) => p.tipo === 'turno_cerrado')
+  if (abre) poner(abre, 0)
+  for (const p of crudos) {
+    const base = { id: id--, hora: s(p.hora) ?? t.desde, proceso: 'api' }, t_s = Math.max(0, n(p.t_s) ?? 0), quien = s(p.quien) ?? 'luffy'
+    if (p.tipo === 'modelo') poner({ ...base, tipo: 'modelo', quien, modelo: s(p.modelo), iteracion: n(p.iteracion), costo_usd: n(p.costo_usd) } as Ev, t_s, n(p.costo_usd) ?? 0)
+    else if (p.tipo === 'herramienta') poner({ ...base, tipo: 'herramienta', nombre: s(p.nombre) ?? '', quien, ok: p.ok !== false, duracion_s: n(p.duracion_s) ?? 0, fuente: s(p.fuente), hilo_id: t.hilo_id, ...(Array.isArray(p.activos) ? { activos: p.activos } : {}) } as Ev, t_s)
+    else if (p.tipo === 'agente_convocado') poner({ ...base, tipo: 'agente_convocado', agente: quien, hilo_id: t.hilo_id } as Ev, t_s)
+    else if (p.tipo === 'agente_terminado') poner({ ...base, tipo: 'agente_terminado', agente: quien, costo_usd: n(p.costo_usd) ?? 0, duracion_s: n(p.duracion_s) ?? 0, ok: p.ok !== false } as Ev, t_s)
+  }
+  const dur = n(r.duracion_s) ?? Math.max(...ts, 0) + 1
+  if (cierra) poner(cierra, Math.max(dur, ts[ts.length - 1] ?? 0))
+  return { pasos, ts, costos, total: n(r.costo_usd), completo: r.completo !== false, nota: s(r.nota) }
 }

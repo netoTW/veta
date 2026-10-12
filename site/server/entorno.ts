@@ -114,5 +114,7 @@ export const ENV = {
   MUGIWARA_TOKEN: (process.env.MUGIWARA_API_TOKEN ?? '').trim(),
   /* El terminal v2 todavía no está en Mugiwara: con VETA_TERMINAL2=simulado sus rutas las responde
      el simulador aunque lo demás vaya a la API real (sólo para mirarlo en local). */
-  TERMINAL2_SIMULADO: process.env.VETA_TERMINAL2 === 'simulado',
+  TERMINAL2_SIMULADO: process.env.VETA_TERMINAL2 === 'simulado' || (process.env.VETA_SIMULAR ?? '').split(',').includes('terminal2'),
+  /* Lo mismo para el gasto de la oficina (`/oficina/gasto`), mientras Mugiwara despliega su ruta: VETA_SIMULAR=gasto */
+  GASTO_SIMULADO: (process.env.VETA_SIMULAR ?? '').split(',').includes('gasto'),
 }

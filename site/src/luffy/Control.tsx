@@ -12,7 +12,7 @@ import { C, rgba } from './charts/tema'
    unificado y propuestas pendientes), gasto por día, tipo de turno y agente
    contra el presupuesto, y el feed de alertas paginado por cursor. */
 export function Control() {
-  const [pestana, setPestana] = useState<'gatillos' | 'manual' | 'gasto' | 'alertas'>('gatillos')
+  const [pestana, setPestana] = useState<'gatillos' | 'manual' | 'gasto' | 'alertas'>(() => { const v = new URLSearchParams(location.search).get('ver'); return v === 'manual' || v === 'gasto' || v === 'alertas' ? v : 'gatillos' })
   return (
     <div className="lf-pag">
       <div className="lf-pag__cab"><h1 className="lf-pag__t">Control <em>de Luffy</em></h1>

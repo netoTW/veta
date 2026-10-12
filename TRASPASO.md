@@ -235,6 +235,11 @@ límite de error, archivado de la calibración.
 - La capa `gatillos` de `/graficos/datos` declara `no_disponibles: [{serie: "gat", motivo: "ValueError: no
   hay gatillos activos con nivel de precio para este activo"}]` cuando simplemente no hay gatillos: una
   capa vacía no es un dato que falte. La web la oculta y quita el nombre de la excepción de los motivos.
+- **Gasto en la oficina (12-oct):** la web lee `GET /oficina/gasto` tal como está en v2.3 (hoy da 404 en producción).
+  Falta en el contrato **la lista de llamadas** que se ve al tocar un origen o un agente:
+  `GET /oficina/gasto/llamadas?periodo=hoy|siete_dias|mes&origen=&agente=&limite=60` →
+  `{items: [{hora, origen, agente, modelo, costo_usd, tokens: {entrada, cache_lectura, salida}, hilo_id, mensaje_id, tipo_turno, inferido}]}`,
+  más nuevas primero. La web ya la consume (simulador en `server/luffySimuladoGasto.ts`).
 - **Terminal v2 (12-oct):** la web ya tiene la pantalla contra una forma provisional (`site/src/luffy/terminal2/contrato.ts`,
   armada con `PROMPT-TERMINAL-v2-mugiwara.md`): rutas `/terminal/v2/lista` y `/terminal/v2/{activo}`, cifras como
   `{id, etiqueta, valor, unidad, texto?, nota?, tono?, signo?}`, series como `[t, valor]`, velas `[t, o, h, l, c, v]` y

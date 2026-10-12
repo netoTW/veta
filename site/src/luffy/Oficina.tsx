@@ -7,8 +7,9 @@ import { fmtHora, fmtUsd, hace } from './formato'
 import { EmptyState } from '../ui/EmptyState'
 import { Escena, NOMBRE, puertoDe, type ApiEscena, type GrupoFuente, type IdAgente, type MonedaEscena, type Puerto } from './oficina/Escena'
 import { HojaAgente, HojaFuentes, SALUD_LLANO, describirPaso } from './oficina/Hojas'
-import { actividad as actividadDe, alCambiar, anotar as anotarHistoria, historia, MODO_LLANO, monedasDe, pasoDe, rotuloDe, todos, type Ev, type Turno } from './oficina/historia'
+import { actividad as actividadDe, alCambiar, anotar as anotarHistoria, historia, lineaTurno, MODO_LLANO, monedasDe, pasoDe, rotuloDe, todos, type Ev, type Turno } from './oficina/historia'
 import { TarjetaCurva } from './Cartera'
+import { GastoOficina } from './oficina/Gasto'
 
 /* ============================================================================
    La oficina en vivo (CONTRATO-PANEL.md §8.5): una sala isométrica con un
@@ -94,7 +95,8 @@ function sumar(r: Registro[], e: EventoOficina): Registro[] {
 
 type Globos = Partial<Record<IdAgente, { texto: string; t: number; hasta: number }>>
 type Abierta = { tipo: 'agente'; a: IdAgente } | { tipo: 'fuente'; cual: GrupoFuente | Puerto } | null
-interface Rep { turno: Turno; i: number; vt: number; vel: number; pausa: boolean; fin: boolean }
+/** `ts` y `costos` vienen de la línea del turno (v2.3) cuando la hay: el ritmo real y lo que costó cada llamada. */
+interface Rep { turno: Turno; i: number; vt: number; vel: number; pausa: boolean; fin: boolean; cargando?: boolean; ts?: number[]; costos?: number[]; total?: number | null; nota?: string | null }
 const VELOCIDADES = [1, 2, 4, 8]
 
 export function Oficina() {
@@ -186,6 +188,7 @@ export function Oficina() {
         break
       }
       case 'radar_ciclo': es?.barrer(); pulso('crawler', 4); globo('crawler', `radar ${e.modo}: ${e.n_candidatas} de ${e.n_evaluados}`, 6); viajar(rotuloDe(e)); if (e.n_candidatas > 0) es?.entregar('crawler', 'luffy'); break
+      case 'modelo': { const a = comoAgente(e.quien) ?? 'luffy'; pulso(a, 3 / x); globo(a, `pensando${e.iteracion ? ` · vuelta ${e.iteracion}` : ''}${e.costo_usd ? ` · ${fmtUsd(e.costo_usd, 3)}` : ''}`, 60 / x); break }
       case 'caja_ciclo': if (!e.corrio) globo('luffy', 'la caja: sin novedades', 5); break
       case 'reconciliacion': es?.fuente('bingx', !e.discrepancias); break
       case 'alerta': viajar(rotuloDe(e)); break
@@ -243,24 +246,26 @@ export function Oficina() {
     enRep.current = true
     escena.current?.limpiar()
     setGlobos({}); setEnCurso({}); setPulsos({}); setLeido(null)
-    setRep({ turno: t, i: 0, vt: 0, vel: 4, pausa: false, fin: false })
+    setRep({ turno: t, i: 0, vt: 0, vel: 4, pausa: false, fin: false, cargando: true })
     document.querySelector('.lf-ofi2__sala')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    // la línea real del turno (con el costo de cada llamada); sin ella, los eventos
+    void lineaTurno(t).then((l) => setRep((r) => (r && r.turno.clave === t.clave ? (l ? { ...r, turno: { ...t, pasos: l.pasos }, ts: l.ts, costos: l.costos, total: l.total, nota: l.completo ? null : l.nota, cargando: false } : { ...r, cargando: false }) : r)))
   }, [])
   const salirRep = useCallback(() => { enRep.current = false; setRep(null); setGlobos({}); setLeido(null); escena.current?.limpiar(); void cargarEstado() }, [cargarEstado])
   const tiempos = useMemo(() => {
     if (!rep) return []
     // la hora real de cada paso, con lo que pasó en el mismo segundo separado un poco y las esperas largas acortadas
     const t0 = Date.parse(rep.turno.desde); let prev = -1
-    return rep.turno.pasos.map((p) => { let s = (Date.parse(p.hora) - t0) / 1000; s = Math.max(s, prev + 0.8); if (s - prev > 20) s = prev + 20; prev = s; return s })
-  }, [rep?.turno]) // eslint-disable-line react-hooks/exhaustive-deps
+    return rep.turno.pasos.map((p, i) => { let s = rep.ts ? rep.ts[i] : (Date.parse(p.hora) - t0) / 1000; s = Math.max(s, prev + (rep.ts ? 0.35 : 0.8)); if (s - prev > 20) s = prev + 20; prev = s; return s })
+  }, [rep?.turno, rep?.ts]) // eslint-disable-line react-hooks/exhaustive-deps
   // el reloj de la repetición: avanza con la velocidad elegida y suelta en la sala cada paso cuando le toca
   const repRef = useRef(rep)
   useEffect(() => { repRef.current = rep }, [rep])
   useEffect(() => {
-    if (!rep || rep.pausa || rep.fin) return
+    if (!rep || rep.pausa || rep.fin || rep.cargando) return
     const iv = setInterval(() => {
       const r = repRef.current
-      if (!r || r.pausa || r.fin) return
+      if (!r || r.pausa || r.fin || r.cargando) return
       const vt = r.vt + 0.1 * r.vel
       let i = r.i
       while (i < r.turno.pasos.length && tiempos[i] <= vt) { enSala(r.turno.pasos[i], r.vel); i++ }
@@ -270,7 +275,7 @@ export function Oficina() {
       setRep(nuevo)
     }, 100)
     return () => clearInterval(iv)
-  }, [rep?.pausa, rep?.fin, rep?.turno, tiempos, enSala]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [rep?.pausa, rep?.fin, rep?.turno, rep?.cargando, tiempos, enSala]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const trabajando = useMemo(() => Object.fromEntries(AGENTES.map((a) => [a, !!enCurso[a] || (pulsos[a] ?? 0) > ahora])) as Record<IdAgente, boolean>, [enCurso, pulsos, ahora])
   const fuentes = useMemo(() => (estado?.fuentes ?? []).map((f) => ({ nombre: f.nombre, etiqueta: f.etiqueta ?? f.nombre.replace(/_/g, ' '), estado: f.estado })), [estado])
@@ -330,7 +335,7 @@ export function Oficina() {
                 </div>
               </div>
               <div className="lf-rep__barra"><i style={{ width: `${Math.min(100, (rep.vt / (largo + 2)) * 100)}%` }} /></div>
-              <p className="lf-rep__paso mono" data-prueba="rep-paso">{rep.fin ? 'Fin del turno.' : pasoRep ? `${rep.i} de ${rep.turno.pasos.length} · ${describirPaso(pasoRep)}` : 'Empieza…'}</p>
+              <p className="lf-rep__paso mono" data-prueba="rep-paso">{rep.cargando ? 'Trayendo la línea del turno…' : rep.fin ? 'Fin del turno.' : pasoRep ? `${rep.i} de ${rep.turno.pasos.length} · ${describirPaso(pasoRep)}` : 'Empieza…'}{rep.costos && <span className="lf-rep__costo" data-prueba="rep-costo"> · llevamos {fmtUsd(rep.costos.slice(0, rep.i).reduce((a, c) => a + c, 0), 3)}{rep.total ? ` de ${fmtUsd(rep.total, 3)}` : ''}</span>}{rep.nota ? ` · ${rep.nota}` : ''}</p>
             </div>
           )}
           <Escena ref={escena} monedas={monedas} fuentes={fuentes} trabajando={trabajando} actividad={actividad} globos={globos} onAgente={alAgente} onMoneda={alMoneda} onFuente={alFuente} repeticion={!!rep} />
@@ -349,6 +354,8 @@ export function Oficina() {
           </p>}
         </section>
       )}</Seguro>
+
+      <Seguro t="Gasto"><GastoOficina /></Seguro>
 
       <div className="lf-ofi2__abajo">
         <Seguro t="Curva de la caja"><TarjetaCurva origen="caja" /></Seguro>

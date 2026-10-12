@@ -22,6 +22,7 @@ import type { Rol } from '../src/lib/matriz.ts'
 import { luffySimulado } from './luffySimulado.ts'
 import { appLuffy } from './luffyApp.ts'
 import { simuladorTerminal2 } from './luffySimuladoTerminal2.ts'
+import { simuladorGasto } from './luffySimuladoGasto.ts'
 
 type Vars = { sesion: Sesion | null; rol: Rol; rolReal: Rol; verComo: Rol | null }
 export const luffyApp = new Hono<{ Variables: Vars }>()
@@ -39,6 +40,7 @@ luffyApp.use('*', async (c, next) => {
 luffyApp.route('/app', appLuffy)
 
 if (ENV.LUFFY !== 'simulado' && ENV.TERMINAL2_SIMULADO) luffyApp.route('/', simuladorTerminal2)
+if (ENV.LUFFY !== 'simulado' && ENV.GASTO_SIMULADO) luffyApp.route('/', simuladorGasto)
 
 if (ENV.LUFFY === 'simulado') {
   luffyApp.route('/', luffySimulado)

@@ -486,3 +486,59 @@
   .lf-rep__fila { flex-direction: column; align-items: flex-start; }
 }
 @media (prefers-reduced-motion: reduce) { .lf-hojaof { animation: none; } }
+
+/* ---------- el gasto en la oficina ---------- */
+.lf-gof { display: flex; flex-direction: column; gap: 14px; margin-bottom: 14px; }
+.lf-gof.is-cargando { min-height: 220px; }
+.lf-gof__estado { font-style: normal; color: var(--esmeralda-luz); }
+.lf-gof__estado.is-aviso { color: var(--oro-luz); } .lf-gof__estado.is-degradado { color: var(--rojo-luz); }
+.lf-gof__barras { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.lf-gof__barra { display: flex; flex-direction: column; gap: 7px; padding: 12px 14px; border-radius: 12px; background: rgba(7, 8, 9, 0.35); border: 1px solid var(--hairline-2); }
+.lf-gof__barra-cab { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.lf-gof__barra-cab span { font-size: 0.56rem; letter-spacing: 0.16em; color: var(--ceniza); }
+.lf-gof__barra-cab b { font-weight: 500; font-size: 1.05rem; color: var(--hueso); }
+.lf-gof__barra-cab em { font-style: normal; font-size: 0.6rem; color: var(--ceniza-2); margin-left: auto; }
+.lf-gof__pista { position: relative; height: 10px; border-radius: 6px; background: rgba(236, 230, 216, 0.06); }
+.lf-gof__lleno { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 6px; background: linear-gradient(90deg, var(--esmeralda-sombra), var(--esmeralda)); transition: width 0.6s var(--ease); }
+.lf-gof__barra.is-aviso .lf-gof__lleno { background: linear-gradient(90deg, var(--oro-sombra), var(--oro)); }
+.lf-gof__barra.is-degradado .lf-gof__lleno { background: linear-gradient(90deg, #7A2F28, var(--rojo-luz)); }
+.lf-gof__marca { position: absolute; top: -4px; bottom: -4px; width: 2px; margin-left: -1px; border-radius: 1px; background: var(--hueso); }
+.lf-gof__marca.is-aviso { background: var(--oro-luz); } .lf-gof__marca.is-degradar { background: var(--rojo-luz); }
+.lf-gof__leyenda { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 0.56rem; color: var(--ceniza-2); }
+.lf-gof__leyenda .is-aviso { color: var(--oro-luz); } .lf-gof__leyenda .is-degradar { color: var(--rojo-luz); }
+.lf-gof__cab { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.lf-gof__pruebas { font-size: 0.6rem; color: var(--ceniza-2); }
+.lf-gof__reparto { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.lf-gof__lista { display: flex; flex-direction: column; gap: 2px; }
+.lf-gof__lista h4, .lf-gof__serie h4 { margin: 0 0 6px; font-weight: 400; font-size: 0.56rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ceniza); }
+.lf-gof__lista h4 em, .lf-gof__serie h4 em { font-style: normal; color: var(--oro-luz); letter-spacing: 0.04em; text-transform: none; }
+.lf-gof__fila { display: grid; grid-template-columns: minmax(0, 1fr) minmax(60px, 0.9fr) 13.5rem; gap: 10px; align-items: center; padding: 6px 8px; margin: 0 -8px; border: 0; border-radius: 8px; background: none; color: var(--hueso); font: inherit; font-size: 0.8rem; text-align: left; cursor: pointer; }
+.lf-gof__fila:hover, .lf-gof__fila:focus-visible { background: rgba(236, 230, 216, 0.04); outline: none; }
+.lf-gof__n { display: inline-flex; align-items: center; gap: 8px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lf-gof__n i { flex: none; width: 8px; height: 8px; border-radius: 2px; }
+.lf-gof__b { height: 6px; border-radius: 3px; background: rgba(236, 230, 216, 0.05); overflow: hidden; }
+.lf-gof__b i { display: block; height: 100%; border-radius: 3px; opacity: 0.85; }
+.lf-gof__v { font-size: 0.72rem; white-space: nowrap; text-align: left; letter-spacing: 0.02em; text-transform: none; }
+.lf-gof .lf-gof__barra-cab b, .lf-gof__leyenda, .lf-gof__barra-cab em { letter-spacing: 0.02em; }
+.lf-gof__v em { font-style: normal; color: var(--ceniza-2); font-size: 0.6rem; }
+.lf-gof__dias { display: flex; align-items: flex-end; gap: 3px; height: 130px; padding-bottom: 4px; border-bottom: 1px solid var(--hairline-2); position: relative; }
+.lf-gof__dia { flex: 1; min-width: 0; height: 100%; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.lf-gof__pila { flex: 1; width: 100%; display: flex; flex-direction: column-reverse; justify-content: flex-start; border-radius: 2px 2px 0 0; overflow: hidden; }
+.lf-gof__pila i { display: block; width: 100%; }
+.lf-gof__pila i:first-child { border-radius: 0 0 0 0; }
+.lf-gof__pila .is-prueba, .lf-gof__ley .is-prueba { background: repeating-linear-gradient(135deg, rgba(142, 145, 140, 0.45) 0 3px, rgba(142, 145, 140, 0.12) 3px 6px) !important; }
+.lf-gof__pila .is-prueba { order: 99; }
+.lf-gof__dia > span { font-size: 0.5rem; color: var(--ceniza-2); height: 10px; }
+.lf-gof__ley { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 8px; font-size: 0.56rem; color: var(--ceniza); }
+.lf-gof__ley span { display: inline-flex; align-items: center; gap: 6px; }
+.lf-gof__ley i { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+.lf-gof__pie a { color: var(--esmeralda-luz); }
+.lf-rep__costo { color: var(--oro-luz); }
+@media (max-width: 760px) {
+  .lf-gof__barras, .lf-gof__reparto { grid-template-columns: minmax(0, 1fr); }
+  .lf-gof__dia > span { font-size: 0.42rem; }
+  .lf-gof__dia:nth-child(odd) > span { visibility: hidden; }
+}
+.lf-gof__prueba { width: 6px; height: 6px; border-radius: 1px; }
+.lf-gof__prueba.is-on { background: repeating-linear-gradient(135deg, rgba(142, 145, 140, 0.6) 0 2px, rgba(142, 145, 140, 0.15) 2px 4px); }
+@media (max-width: 760px) { .lf-gof__fila { grid-template-columns: minmax(0, 1fr) 4.5rem 8.5rem; } .lf-gof__v em { display: none; } }
