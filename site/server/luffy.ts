@@ -21,6 +21,7 @@ import type { Sesion } from './auth.ts'
 import type { Rol } from '../src/lib/matriz.ts'
 import { luffySimulado } from './luffySimulado.ts'
 import { appLuffy } from './luffyApp.ts'
+import { simuladorTerminal2 } from './luffySimuladoTerminal2.ts'
 
 type Vars = { sesion: Sesion | null; rol: Rol; rolReal: Rol; verComo: Rol | null }
 export const luffyApp = new Hono<{ Variables: Vars }>()
@@ -36,6 +37,8 @@ luffyApp.use('*', async (c, next) => {
 /* La app instalable (manifiesto y service worker): la sirve la web, no Mugiwara, y va antes del
    reenvío para no llegar nunca a mugiwara-api. Detrás del mismo control: sólo Pablo la ve. */
 luffyApp.route('/app', appLuffy)
+
+if (ENV.LUFFY !== 'simulado' && ENV.TERMINAL2_SIMULADO) luffyApp.route('/', simuladorTerminal2)
 
 if (ENV.LUFFY === 'simulado') {
   luffyApp.route('/', luffySimulado)

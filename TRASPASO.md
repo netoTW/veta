@@ -137,6 +137,10 @@ límite de error, archivado de la calibración.
 ## 4. Pendientes, por prioridad
 
 ### Alta
+0000. **Terminal v2** (`Mugiwara/PROMPT-TERMINAL-v2-veta.md`): la pantalla está hecha con datos simulados en
+    `/luffy/t2` (sin enlace, sin desplegar; ESTADO-WEB.md). Cuando Mugiwara publique la sección del terminal v2 en
+    `CONTRATO-PANEL.md`: ajustar sólo `site/src/luffy/terminal2/contrato.ts` y `server/luffySimuladoTerminal2.ts`,
+    capturas reales (WAL y una sin perpetuo), apuntar «Terminal» del menú a la v2 y desplegar.
 000. **Pendientes tras la 6b** (`Mugiwara/PROMPT-VETA-pendientes.md`): bloque A (estabilidad y
     velocidad) y B (app instalable) desplegados el 12-oct; C (la oficina rehecha) hecho y con commit
     local; desplegado el 12-oct a pedido de Pablo (Vercel lo publicó con retraso por un incidente
@@ -233,6 +237,11 @@ límite de error, archivado de la calibración.
 - La capa `gatillos` de `/graficos/datos` declara `no_disponibles: [{serie: "gat", motivo: "ValueError: no
   hay gatillos activos con nivel de precio para este activo"}]` cuando simplemente no hay gatillos: una
   capa vacía no es un dato que falte. La web la oculta y quita el nombre de la excepción de los motivos.
+- **Terminal v2 (12-oct):** la web ya tiene la pantalla contra una forma provisional (`site/src/luffy/terminal2/contrato.ts`,
+  armada con `PROMPT-TERMINAL-v2-mugiwara.md`): rutas `/terminal/v2/lista` y `/terminal/v2/{activo}`, cifras como
+  `{id, etiqueta, valor, unidad, texto?, nota?, tono?, signo?}`, series como `[t, valor]`, velas `[t, o, h, l, c, v]` y
+  `no_disponibles` con `seccion` y `campo`. Si el contrato toma esa forma, el ajuste es nulo; si no, se cambia el
+  adaptador. Útil que traiga `comparar.btc` y `comparar.categoria` (cierres en el rango) para «comparar contra».
 - **La oficina viva (12-oct), lo que le falta del lado de Mugiwara** (el panel ya lo lee si llega):
   1. `activos: ["WAL", …]` en `fuente_leida` (X, Telegram, listados, gobernanza), `jev`, `radar_ciclo`
      (las candidatas) y `herramienta` (sacado de la entrada: `activo`, `simbolo`, `par`). Sin eso la araña

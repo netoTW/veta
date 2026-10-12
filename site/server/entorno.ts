@@ -112,4 +112,7 @@ export const ENV = {
   LUFFY: (process.env.VETA_LUFFY === 'http' || process.env.VETA_LUFFY === 'simulado' ? process.env.VETA_LUFFY : (process.env.MUGIWARA_API_TOKEN ?? '').trim() ? 'http' : 'simulado') as 'http' | 'simulado',
   MUGIWARA_URL: (process.env.MUGIWARA_API_URL ?? 'http://127.0.0.1:8800').replace(/\/$/, ''),
   MUGIWARA_TOKEN: (process.env.MUGIWARA_API_TOKEN ?? '').trim(),
+  /* El terminal v2 todavía no está en Mugiwara: con VETA_TERMINAL2=simulado sus rutas las responde
+     el simulador aunque lo demás vaya a la API real (sólo para mirarlo en local). */
+  TERMINAL2_SIMULADO: process.env.VETA_TERMINAL2 === 'simulado',
 }

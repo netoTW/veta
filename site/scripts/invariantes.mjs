@@ -65,6 +65,7 @@ if (ok) {
     && paso('barrido', 'node', ['scripts/barrido.mjs'])
     && paso('luffy (acceso y caso guiado)', 'node', ['scripts/probar-luffy.mjs'])
     && paso('luffy como app (sólo Pablo la ve)', 'node', ['scripts/probar-app.mjs'])
+    && paso('terminal v2 (simulado, casos guiados)', 'node', ['scripts/probar-terminal2.mjs'])
   if (ok) {
     if (existsSync('scripts/probar-contrato.mjs')) ok = paso('prueba de contrato', 'node', ['scripts/probar-contrato.mjs'])
       && paso('integridad v1', 'node', ['scripts/probar-integridad.mjs'])

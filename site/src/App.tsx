@@ -58,6 +58,8 @@ const LuffyChat = lazy(() => import('./luffy/Chat').then((m) => ({ default: m.Ch
 const LuffyLaboratorio = lazy(() => import('./luffy/Laboratorio').then((m) => ({ default: m.Laboratorio })))
 const LuffyTableros = lazy(() => import('./luffy/Tableros').then((m) => ({ default: m.Tableros })))
 const LuffyTerminal = lazy(() => import('./luffy/Terminal').then((m) => ({ default: m.Terminal })))
+// el terminal v2, en construcción: sin enlace en el menú hasta conectarlo con datos reales (ESTADO-WEB.md)
+const LuffyTerminal2 = lazy(() => import('./luffy/terminal2/Terminal2').then((m) => ({ default: m.Terminal2 })))
 const LuffyCartera = lazy(() => import('./luffy/Cartera').then((m) => ({ default: m.Cartera })))
 const LuffyRadar = lazy(() => import('./luffy/Radar').then((m) => ({ default: m.Radar })))
 const LuffyControl = lazy(() => import('./luffy/Control').then((m) => ({ default: m.Control })))
@@ -118,6 +120,7 @@ export default function App() {
             <Route path="tableros" element={<LuffyTableros />} />
             {/* una sola ruta con la moneda opcional: pasar de /terminal a /terminal/WAL no remonta la terminal */}
             <Route path="terminal/:activo?" element={<LuffyTerminal />} />
+            <Route path="t2/:activo?" element={<LuffyTerminal2 />} />
             <Route path="cartera" element={<LuffyCartera />} />
             <Route path="radar" element={<LuffyRadar />} />
             <Route path="control" element={<LuffyControl />} />

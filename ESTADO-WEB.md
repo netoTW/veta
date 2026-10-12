@@ -843,6 +843,61 @@ anterior, un globo aparece, la araña muestra un rótulo, tocar a Luffy abre su 
 se repite paso a paso y «Volver al vivo» lo cierra, tocar una fuente muestra su salud y tocar una
 moneda abre su ficha. Con datos reales: cero errores de consola a 1440 y 390 px.
 
+### Terminal v2, adelantado con datos simulados (12-oct-2026)
+
+La pantalla que reemplaza la ficha del terminal (`Mugiwara/PROMPT-TERMINAL-v2-veta.md`, maqueta aprobada
+`Mugiwara/MAQUETA-TERMINAL-v2.dc.html`), construida **antes de que Mugiwara publique su contrato**. Vive en
+`/luffy/t2/:activo?`, **sin enlace en el menú y sin desplegar** hasta conectarla con datos reales; entonces
+reemplaza a `/luffy/terminal`. Capturas en `recursos/capturas/terminal2/` (`scripts/capturar-terminal2.mjs`).
+
+**Aislado para que el ajuste al contrato sea barato.** Todo lo que depende de Mugiwara está en
+`src/luffy/terminal2/contrato.ts`: las rutas (`/terminal/v2/lista`, `/terminal/v2/{activo}?rango=`), los
+tipos crudos provisionales (armados con `PROMPT-TERMINAL-v2-mugiwara.md`) y el adaptador al modelo que lee
+la pantalla (`Ficha2`, `Fila2`). Cuando llegue la sección del contrato se cambia ese archivo y el simulador
+(`server/luffySimuladoTerminal2.ts`, aparte del resto); la pantalla no se toca. Con `VETA_TERMINAL2=simulado`
+el puente responde el terminal v2 desde el simulador aunque lo demás vaya a la API real.
+
+**La pantalla**, en el orden de la maqueta:
+- **Columna de monedas:** búsqueda, filtros en cápsula, «ordenar por» (fuerza contra BTC, volumen, interés
+  abierto, funding, squeeze, capitalización). Filas con precio, «vs BTC 7 d» y chips; la elegida con el filo
+  de oro; las que no se operan en BingX, marcadas.
+- **Encabezado:** ticker, nombre y qué es; precio y cambio 24 h; la grilla de cifras; chips de posición,
+  gatillos y radar; «Preguntarle a Luffy».
+- **Controles comunes:** rango (30 d a máx); capas que se prenden y apagan sin rehacer el gráfico
+  (posiciones, gatillos, catalizadores, radar, liquidaciones); «comparar contra» (nada, BTC, la mediana de su
+  categoría u otra moneda, llevada al precio de esta al inicio del rango).
+- **Las seis secciones**, cada una con su número en oro y su pregunta:
+  1. Estadísticas.
+  2. Movimiento: el gráfico A (velas, perfil de volumen al costado con su mayor volumen en oro, el mapa de
+     liquidaciones en franjas con rótulo en las densas y su chip de calidad, marcas de las capas, el radar en
+     su riel al pie), el delta acumulado spot y futuros con el interés abierto tenue, la grilla, «ver
+     derivados en detalle» (cuatro paneles, cada uno con su eje y el funding real por intervalo, positivo
+     arriba) y la lectura por código.
+  3. Fundamento: el gráfico B (fees, revenue y holders revenue anidados por semana, la capitalización y la
+     mediana de su categoría en base 100), la grilla, cómo captura valor y la ficha del proyecto con fuente y
+     fecha por línea.
+  4. Redes: la franja del mercado, el gráfico C (menciones apiladas con el precio encima y el tono de las
+     personas en su franja), la grilla y «quién habla».
+  5. On-chain: tenedores, flujo con exchanges, movimientos grandes y wallets que sigue Pablo (sólo lectura).
+  6. Oportunidad: escenarios («no pronósticos»), la grilla y el radar en llano.
+- **Gráficos sincronizados:** todos comparten eje de tiempo, zoom y cruz. La leyenda va arriba, fuera de los
+  datos, con la fecha y todas las series bajo la cruz. En el teléfono, un toque o un arrastre horizontal pone
+  la cruz (la librería sólo lo hacía con toque largo) y el arrastre vertical baja la página.
+
+**Comportamiento:** lo que llega en `no_disponibles` va en su lugar con el motivo (KMNO, sin perpetuo: cada
+cifra de futuros, el mapa y los derivados dicen por qué). La moneda guardada se pinta al instante; la
+siguiente y la anterior se precargan; los gráficos de abajo cargan al acercarse; ↑ ↓ cambian de moneda; cada
+sección en su `Seguro`. En 390 px: secciones apiladas, la lista en hoja, los controles fijos arriba de los
+gráficos, las tablas con su scroll y rótulos cortos en el gráfico angosto.
+
+**Pruebas:** `scripts/probar-terminal2.mjs` (en los invariantes, con el simulador). Comprueba las seis
+secciones, cada capa apagada y prendida (el gráfico cambia y vuelve), comparar contra BTC, la cruz
+compartida, los derivados con el funding real, ↓ ↑, la moneda sin perpetuo, la no operable, el laboratorio y,
+a 390 px: sin desborde, la lista en hoja, controles fijos y tabla con scroll. Sin errores de consola.
+
+**Falta, para cerrarlo:** conectar con el contrato real (ajustar `contrato.ts` y el simulador), capturas con
+datos reales de WAL y de una moneda sin perpetuo, pasar `/luffy/terminal` a esta pantalla y desplegar.
+
 ## 8. Huecos del contrato abiertos
 
 Lista completa en `HUECOS-CONTRATO.md`. Lo que sigue abierto, con qué falta de cada uno:

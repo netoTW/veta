@@ -11,7 +11,7 @@ export class ErrorLuffy6b extends Error {
 }
 /* Todo pedido lleva tope (30 s): si el servidor no contesta, se corta y la vista ofrece reintentar,
    en vez de quedarse pegada hasta refrescar. */
-async function pedir<T>(ruta: string, init: { metodo?: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE'; cuerpo?: unknown; signal?: AbortSignal; tope?: number } = {}): Promise<T> {
+export async function pedir<T>(ruta: string, init: { metodo?: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE'; cuerpo?: unknown; signal?: AbortSignal; tope?: number } = {}): Promise<T> {
   let r: Response
   try {
     r = await fetch(`${BASE}${ruta}`, { method: init.metodo ?? (init.cuerpo !== undefined ? 'POST' : 'GET'), credentials: 'same-origin', signal: conTope(init.signal, init.tope), headers: init.cuerpo !== undefined ? { 'Content-Type': 'application/json' } : {}, body: init.cuerpo !== undefined ? JSON.stringify(init.cuerpo) : undefined })
@@ -36,7 +36,7 @@ async function pedir<T>(ruta: string, init: { metodo?: 'GET' | 'POST' | 'PATCH' 
   }
   return r.json() as Promise<T>
 }
-const qs = (o: Record<string, string | number | boolean | null | undefined>) => { const p = Object.entries(o).filter(([, v]) => v !== undefined && v !== null && v !== ''); return p.length ? `?${p.map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`).join('&')}` : '' }
+export const qs = (o: Record<string, string | number | boolean | null | undefined>) => { const p = Object.entries(o).filter(([, v]) => v !== undefined && v !== null && v !== ''); return p.length ? `?${p.map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`).join('&')}` : '' }
 const FICHAS = new Map<string, { hasta: number; p: Promise<FichaTerminal>; ctl: AbortController; listo: boolean }>()
 /** La última ficha que llegó de cada moneda, sin vencer: se pinta al instante mientras llega la nueva. */
 const ULTIMAS = new Map<string, FichaTerminal>()

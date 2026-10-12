@@ -8,6 +8,7 @@
    (datos, spec, catálogo), tableros, historial de posiciones y costo.
    ========================================================================== */
 import { Hono } from 'hono'
+import { simuladorTerminal2 } from './luffySimuladoTerminal2.ts'
 
 /* ---------- utilidades ---------- */
 const ahora = () => new Date().toISOString().replace(/\.\d{3}Z$/, '+00:00')
@@ -426,6 +427,8 @@ const enCurso = new Map<string, string>()
 
 /* ---------- la app ---------- */
 export const luffySimulado = new Hono()
+// el terminal v2 (pantalla nueva) tiene su propio simulador, aparte para que el ajuste al contrato sea barato
+luffySimulado.route('/', simuladorTerminal2)
 const sse = (ev: Record<string, unknown>) => `data: ${JSON.stringify(ev)}\n\n`
 const espera = (ms: number) => new Promise((r) => setTimeout(r, ms))
 const VELOCIDAD = Number(process.env.VETA_SIM_VELOCIDAD || 1) || 1
