@@ -221,6 +221,8 @@ console.log('\nLUFFY · admin, escritorio')
 {
   console.log('\nLUFFY · datos raros: la vista sigue en pie')
   const { ctx, p } = await contexto(false)
+  // aquí una tarjeta se rompe a propósito: sus errores de consola son el caso, no un fallo
+  const antes = errores.length
   await entrar(ctx, env.VETA_ADMIN_EMAIL, env.VETA_ADMIN_PASSWORD)
   await p.route(/\/api\/luffy\/terminal\/WAL\?/, async (r) => {
     const res = await r.fetch(); const f = await res.json()
@@ -239,6 +241,7 @@ console.log('\nLUFFY · admin, escritorio')
   const rotas = await p.locator('[data-prueba="tarjeta-rota"]').count()
   ok(rotas === 1 && (await p.locator('.lf-ficha__lado .lf-tarj').count()) >= 3, `sólo la tarjeta del dato roto se avisa (${rotas}); el resto sigue`)
   await ctx.close()
+  errores.splice(antes)
 }
 
 console.log('\nLUFFY · admin, teléfono (390 px)')
