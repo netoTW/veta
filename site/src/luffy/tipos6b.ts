@@ -1,97 +1,192 @@
 /* ============================================================================
-   Fase 6b: las formas que el panel espera de mugiwara-api para el terminal,
-   la cartera, el exchange, la caja, el radar, el control, la oficina y los
-   informes. Son las que describe PROMPT-FASE-6b-mugiwara.md, escritas como
-   SUPUESTO hasta que CONTRATO-PANEL.md v2 las fije; cuando llegue, lo que
-   difiera se ajusta aquí y en el simulador (server/luffySimulado.ts), no en
-   las pantallas.
+   Fase 6b: las formas de CONTRATO-PANEL.md v2.1, §8 (terminal, cartera,
+   exchange, radar, control, oficina, informes), tal cual las sirve
+   /api/luffy/*. Si el contrato cambia, se ajusta aquí y en el simulador
+   (server/luffySimulado.ts), no en las pantallas.
    ========================================================================== */
-import type { PosicionResumen, PropuestaResumen, Spec } from './tipos'
+import type { Propuesta, Spec } from './tipos'
 
-/* ---------- terminal ---------- */
+export type Num = number | null
+
+/* ---------- 8.1 terminal ---------- */
 export type Filtro = 'mis_posiciones' | 'caja' | 'candidatas' | 'vigilancia' | 'gatillos' | 'todo'
+export type Squeeze = 'cargado' | 'ignicion' | null
+export interface Catalizador { fecha: string; dias: number | null; titulo: string; tipo: 'agenda' | 'listado' | 'votacion' | string; fuente?: string; url?: string; estado?: string; impacto?: string }
 export interface UniversoFila {
-  simbolo: string; par: string; nombre: string; precio: number | null; cambio_24h_pct: number | null
-  vs_btc_7d_pct: number | null; vs_btc_30d_pct: number | null; modos: string[]; squeeze: 'cargado' | 'ignicion' | null
-  posicion: { origen: string; estado: string } | null; gatillos: number; catalizador: { fecha: string; etiqueta: string } | null
-  en_vigilancia: boolean; candidata: boolean; volumen_24h_usdt: number | null
+  simbolo: string; par: string; nombre: string | null
+  precio: Num; cambio_24h_pct: Num; vs_btc_7d_pct: Num; vs_btc_30d_pct: Num; volumen_24h_usdt: Num
+  modos_hoy: string[]; squeeze: Squeeze
+  posiciones: { origen: string; cantidad: number; pnl_no_realizado_pct: Num; simulado: boolean; mandato: string }[]
+  gatillos: number; vigilancia: boolean; candidata_hoy: boolean
+  proximo_catalizador: Pick<Catalizador, 'fecha' | 'titulo' | 'tipo' | 'dias'> | null
+  hora_precio: string | null
 }
-export interface Universo { filas: UniversoFila[]; consultado_en: string; fuente: string }
-export type SeccionId = 'precio' | 'derivados' | 'fundamento' | 'atencion'
-export interface SeccionFicha { id: SeccionId; titulo: string; spec: Spec; plantilla: { nombre: string; version: string } }
-export interface ModoFicha { id: string; version: string; nombre: string; cumple: boolean; estudio: { n: number; acierto_pct: number | null; retorno_mediano_pct: number | null; horizonte_d: number } | null }
-export interface FichaRadar { familias: { nombre: string; cumple: boolean; cifras: { k: string; v: string }[] }[]; modos: ModoFicha[]; etiquetas: string[]; ultima_marca: string | null }
-export interface Catalizador { fecha: string; tipo: string; etiqueta: string; fuente: string; url?: string }
-export interface Nota { fecha: string; tipo: 'bitacora' | 'teoria'; texto: string; estado?: string; hilo_id?: string | null }
-export interface Gatillo { id: number; activo: string | null; texto: string; estado: 'activo' | 'pausado' | 'disparado' | 'borrado'; precio?: number | null; direccion?: string | null; ultimo_disparo: string | null; cada_min: number | null; creado: string; hilo_id?: string | null }
+export interface Universo { filtro: Filtro; q: string | null; n: number; activos: UniversoFila[]; fuentes: Record<string, string>; consultado_en: string; fuente: string }
+
+export interface SeccionFicha { id: 'precio' | 'derivados' | 'fundamento' | 'atencion' | string; titulo: string; plantilla: string; version: string; spec: Spec }
+export interface Familia { valor: number | string | null; z: Num; cumple: boolean; cumple_inverso: boolean; etiqueta: string; detalle: Record<string, unknown>; motivo: string | null }
+export interface Confluencia { score: number; obligatorias: string[]; apoyo: string[]; n_apoyo: number }
+export interface EtiquetaRiesgo { etiqueta: string; fuerte: boolean; detalle: string; llano: string }
+export interface ModoCumplido { modo: string; version: string; confluencia: Confluencia; linea_estudio: string | null; candidata_id: number | null; decision: string; p_merece: Num }
+export interface FichaRadar { familias: Record<string, Familia>; modos_cumplidos: ModoCumplido[]; etiquetas: EtiquetaRiesgo[]; regimen: { lectura: string; detalle?: string } | null; consultado_en: string; fuente: string }
+export interface Bitacora { id: string; fecha: string; activo?: string | null; tipo: string; origen?: string; mandato?: string | null; tesis: string; cifras?: Record<string, unknown>; agentes_consultados?: string[]; resultado: string | null; cerrada?: string | null; modo?: string | null; modo_version?: string | null; hilo_id?: string | null; orden_id?: string | null }
+export interface Teoria { id: string; titulo: string; hipotesis: string; razonamiento?: string; como_probar?: string; evidencia_favor?: { texto: string; fuente?: string; hora?: string }[]; evidencia_contra?: { texto: string; fuente?: string; hora?: string }[]; estado: string; confianza: string | null; activos: string[]; creada?: string; revisada?: string | null; hilo_origen?: string | null }
+export interface PosicionHistorial {
+  activo: string; origen: string; estado: string; simulado?: boolean; mandato: string; cantidad: number; precio_medio: number
+  stop_vigente: { precio: number; cantidad: number; orden_id?: string } | null
+  entradas: { t: number; hora: string; precio: number; cantidad: number; usdt: number; declarada?: boolean; id_corto?: string }[]
+  salidas: { t: number; hora: string; precio: number; cantidad: number; usdt: number; pnl_usdt: number; id_corto?: string }[]
+  stops: { t: number; hora: string; precio: number; accion: string; id_corto?: string }[]
+  pnl_realizado_usdt?: number
+}
+export interface Gatillo {
+  id: number; id_corto: string; texto: string; condicion: string; accion: string; avisar: boolean
+  vigilancia: { cuentas?: string[]; activos?: string[]; exchanges?: string[]; palabras?: string[]; precio?: { activo: string; nivel: number; direccion: 'sube' | 'baja' } }
+  estado: 'activo' | 'pausado' | 'cumplido' | 'cancelado'; hilo_id: string | null; en_curso: string | null; ultimo_despertar: string | null
+  despertares: number; resultado: string | null; creado: string; actualizado: string; cumplido_en: string | null; cada_min: number
+}
 export interface FichaTerminal {
-  activo: string; nombre: string; par: string; precio: number | null; cambio_24h_pct: number | null
-  secciones: SeccionFicha[]; radar: FichaRadar | null; catalizadores: Catalizador[]; notas: Nota[]
-  posiciones: PosicionResumen[]; gatillos: Gatillo[]; no_disponibles: { seccion: string; motivo: string }[]; consultado_en: string
+  activo: string; par: string; nombre: string | null; rango: string
+  precio: { ultimo: Num; cambio_24h_pct: Num; hora: string | null; fuente: string }
+  secciones: SeccionFicha[]; radar: FichaRadar | null; catalizadores: Catalizador[]; bitacora: Bitacora[]; teorias: Teoria[]
+  posiciones: PosicionHistorial[]; gatillos: Gatillo[]; hilos: { id: string; titulo: string; actualizado: string }[]
+  no_disponibles: { seccion: string; motivo: string }[]; consultado_en: string; fuente: string
 }
-export interface PreguntarRespuesta { hilo_id: string; titulo: string; nuevo: boolean }
+export interface HiloTerminal { hilo_id: string; titulo: string; nuevo: boolean }
 
-/* ---------- cartera y exchange ---------- */
+/* ---------- 8.2 cartera y exchange ---------- */
+export interface StopCartera { precio: number; distancia_pct: Num; orden_id: string | null; cantidad: Num }
 export interface PosicionCartera {
-  activo: string; par: string; mandato: string; cantidad: number; precio_medio: number; precio_actual: number | null; costo_usdt: number; valor_usdt: number | null
-  pnl_no_realizado_usdt: number | null; pnl_no_realizado_pct: number | null; pnl_realizado_usdt: number; stop_precio: number | null; stop_distancia_pct: number | null
-  peso_pct: number | null; abierta_en: string; declarada?: boolean; simulado: boolean; estado: string
+  activo: string; origen: string; mandato: string; declarada?: boolean; simulado: boolean
+  cantidad: number; precio_medio: number; costo_usdt: number; precio_actual: Num; valor_usdt: Num
+  pnl_no_realizado_usdt: Num; pnl_no_realizado_pct: Num; pnl_realizado_usdt: number; comisiones_usdt?: number
+  stop: StopCartera | null; sin_stop: boolean; peso_pct: Num; abierta_en: string; tesis?: string | null; invalidacion?: string | null; hilo_id?: string | null; fuente?: string
 }
-export interface Cartera { origen: string; simulado: boolean; efectivo_usdt: number; valor_total_usdt: number; exposicion_pct: number; posiciones: PosicionCartera[]; exposicion: { activo: string; pct: number }[]; pnl_realizado_total_usdt: number; consultado_en: string; fuente: string }
-export interface CurvaCapital { origen: string; rango: string; puntos: { t: number; capital: number; aportes: number; drawdown_pct: number }[]; max_drawdown_pct: number | null; rendimiento_pct: number | null; consultado_en: string }
-export interface OrdenExchange { id: string; par: string; lado: string; tipo: string; precio: number | null; cantidad: number; llena: number; estado: string; creada: string; es_stop: boolean; stop_precio?: number | null }
-export interface Ordenes { abiertas: OrdenExchange[]; consultado_en: string; fuente: string }
-export interface Fill { id: string; par: string; lado: string; precio: number; cantidad: number; comision_usdt: number; hora: string; orden_id: string }
-export interface Historial { ordenes: OrdenExchange[]; fills: Fill[]; comisiones: { periodo: string; total_usdt: number; por_par: { par: string; usdt: number }[] }; consultado_en: string }
-export type AccionExchange = { accion: 'cancelar'; orden_id: string } | { accion: 'modificar'; orden_id: string; precio?: number; cantidad?: number } | { accion: 'mover_stop'; activo: string; stop: number } | { accion: 'orden'; par: string; lado: 'compra' | 'venta'; tipo: 'limit' | 'market'; precio?: number; cantidad_usdt?: number; cantidad?: number; stop?: number; mandato?: string }
-export interface Declaracion { activo: string; cantidad: number; precio_medio: number; fecha: string; mandato: string }
-
-/* ---------- caja ---------- */
-export interface Caja {
-  simulado: boolean; mision: { id_corto: string; texto: string; estado: string; creada: string; plazo_hasta: string | null; objetivo: string | null } | null
-  presupuesto_api: { usado_usd: number; tope_usd: number }; limites: { k: string; v: string }[]; efectivo_usdt: number; valor_total_usdt: number
-  posiciones: PosicionCartera[]; decisiones: { ciclo: number; hora: string; accion: string; activo: string | null; porque: string }[]; consultado_en: string
+export interface CerradaReciente { activo: string; origen: string; mandato: string; abierta_en: string; cerrada_en: string | null; pnl_realizado_usdt: number; comisiones_usdt: number; costo_usdt: number; motivo_cierre: string | null }
+export interface Cartera {
+  origen: 'pablo' | 'caja'; simulado: boolean
+  capital: { declarado_usdt?: Num; capital_asignado_usdt?: Num; efectivo_usdt: number; valor_posiciones_usdt: number; valor_total_usdt: number; exposicion_pct: number; fuente: string }
+  posiciones: PosicionCartera[]; cerradas_recientes: CerradaReciente[]
+  pnl: { realizado_total_usdt: number; no_realizado_total_usdt: number; comisiones_total_usdt: number; desde: string | null }
+  mision?: Mision | null; consultado_en: string; fuente: string
 }
+export interface Movimiento { id: number; fecha: string; usdt: number; tipo: 'aporte' | 'retiro'; nota: string | null; origen: string }
+export interface CurvaCapital {
+  origen: string; rango: string
+  puntos: { t: number; fecha: string; valor_total_usdt: number; aportes_acum_usdt: number; rendimiento_usdt: number; rendimiento_pct: number; drawdown_pct: number }[]
+  movimientos: Movimiento[]
+  resumen: { desde: string | null; valor_inicial_usdt: Num; valor_final_usdt: Num; rendimiento_usdt: Num; rendimiento_pct: Num; max_drawdown_pct: Num; aportes_usdt: number; retiros_usdt: number } | null
+  no_disponibles?: { motivo: string }[]; consultado_en: string; fuente: string
+}
+export interface Declaracion { activo: string; cantidad: number; precio_medio: number; fecha: string; mandato: string; tesis?: string; invalidacion?: string; origen?: string }
+export interface OrdenExchange {
+  id: string; par: string; lado: string; tipo: string; estado: string; precio: Num; precio_stop: Num; cantidad: number; ejecutada: number
+  total_usdt: number; precio_promedio: Num; comision: number; hora: string; client_id: string | null
+  propuesta: { id_corto: string; accion: string; origen: string; rol: 'orden' | 'stop' | 'tramo' } | null
+}
+export interface Ordenes { estado: 'abiertas' | 'historial'; ordenes: OrdenExchange[]; consultado_en: string; fuente: string }
+export interface Fill { id: string; orden_id: string; par?: string; lado: string; precio: number; cantidad: number; total_usdt: number; comision: number; comision_activo: string; maker: boolean; hora: string; propuesta: { id_corto: string; origen: string } | null }
+export interface Fills { par: string | null; fills: Fill[]; consultado_en: string; fuente: string }
+export interface Comisiones { periodo: { desde: string; hasta: string }; origen: string; total_usdt: number; n_fills: number; por_activo: { activo: string; comision_usdt: number; n_fills: number; volumen_usdt: number }[]; tasas: { par: string; maker_pct: number; taker_pct: number }[]; consultado_en: string; fuente: string }
+export type AccionExchange =
+  | { accion: 'entrada'; par: string; mandato: 'hold' | 'swing' | 'trade'; tipo: 'market' | 'limit'; cantidad_usdt: number; precio?: number; stop?: number; tesis: string }
+  | { accion: 'cerrar'; par: string; pct_posicion: number; tipo: 'market' | 'limit'; precio?: number; razon: string }
+  | { accion: 'mover_stop'; par: string; stop: number; afloja: boolean; razon: string }
+  | { accion: 'cancelar'; orden_id?: string; id_corto?: string; razon: string }
+  | { accion: 'modificar'; orden_id: string; precio?: number; cantidad?: number; razon: string }
+  | { accion: 'cambio_mandato'; par: string; mandato: 'hold' | 'swing' | 'trade'; stop?: number; invalidacion?: string; razon: string }
+export interface RespuestaPropuestas { propuestas: Propuesta[]; propuesta: Propuesta; hilo_id: string }
 
-/* ---------- radar ---------- */
+/* ---------- 8.3 radar ---------- */
+export interface Seguimiento { fecha: string; ret_pct: Num; ret_btc_pct: Num; exceso_pct: Num }
 export interface Candidata {
-  activo: string; nombre: string; fecha: string; modo: string; version: string; familias: { nombre: string; cumple: boolean; cifras: { k: string; v: string }[] }[]
-  jev: { juicio: string; confianza: number | null } | null; etiquetas: string[]; precio_marca: number | null
-  seguimiento: { d7_pct: number | null; d14_pct: number | null; d30_pct: number | null; vs_btc_d7_pct: number | null; vs_btc_d14_pct: number | null; vs_btc_d30_pct: number | null }
+  id: number; fecha: string; activo: string; modo: string; version: string; score: number; rango: number; decision: string; p_merece: Num; por_que: string | null
+  precio_ref: Num; btc_ref: Num; confluencia: Confluencia; familias: Record<string, Pick<Familia, 'valor' | 'z' | 'cumple' | 'detalle'>>
+  etiquetas: EtiquetaRiesgo[]; regimen: string | null; corrida_ts: string | null; hilo_id: string | null; seguimiento: Record<string, Seguimiento>; linea_estudio: string | null
 }
-export interface Candidatas { candidatas: Candidata[]; modos: string[]; consultado_en: string }
-export interface Modo { id: string; version: string; nombre: string; descripcion: string; estado: 'activo' | 'propuesto' | 'retirado'; receta: string[]; estudio: { n: number; acierto_pct: number | null; retorno_mediano_pct: number | null; horizonte_d: number } | null; track: { n: number; acierto_pct: number | null; retorno_mediano_pct: number | null } | null; creado: string }
-export interface Modos { modos: Modo[]; consultado_en: string }
+export interface Candidatas { desde: string; hasta: string; modo: string | null; candidatas: Candidata[]; consultado_en: string; fuente: string }
+export interface RendimientoHorizonte { n: number; cobertura_pct: Num; exceso_medio_pct: Num; mediana_pct: Num; acierto_pct: Num }
+export interface Modo {
+  id: string; version: string; estado: 'propuesto' | 'activo' | 'retirado'; origen: string; hipotesis: string
+  familias_obligatorias: string[]; apoyo: { familias: string[]; minimo: number }; etiquetas_relevantes: string[]
+  regimen: string; horizontes_dias: number[]; cadencia: string; invalidacion: string | null; universo: Record<string, unknown>; motivo: string | null; creado_en: string
+  estudio: { estado: string; resumen: string } | null; linea_estudio: string | null
+  rendimiento_vivo: { emitidas: number; descartadas: number; primera: string | null; ultima: string | null; horizontes: Record<string, RendimientoHorizonte> } | null
+}
+export interface Modos { modos: Modo[]; familias: string[]; historia_propia: Record<string, unknown>; regimen: { lectura: string } | null; consultado_en: string; fuente: string }
 
-/* ---------- control ---------- */
-export interface Manual { version_vigente: string; versiones: { version: string; fecha: string; resumen: string }[]; propuestas: { id: string; fecha: string; resumen: string; diff: string; estado: 'pendiente' | 'aprobada' | 'rechazada'; hilo_id?: string | null }[]; consultado_en: string }
+/* ---------- 8.4 control ---------- */
+export interface Mision {
+  id: string; estado: string; objetivo: string; objetivo_pct: Num; avance_pct: Num; falta_pct: Num; horizonte: string | null; tiempo_restante: { dias: number; vencida: boolean } | null
+  perdida_max_pct: Num; perdida_max_usdt: Num; perdida_actual_usdt: Num; riesgo_por_operacion_pct: Num; universo_permitido: string[]; universo_vetado: string[]
+  permite_sin_stop: boolean; cerrar_al_perder: boolean; presupuesto_api_usd: Num; gasto_api_usd: Num; max_ordenes_dia: Num; capital_inicial_usdt: Num
+  simulado: boolean; plan: string | null; hilo_id: string | null; motivo_pausa: string | null; activada_en: string | null
+}
+export interface Caja {
+  estado: {
+    capital_asignado_usdt: number; efectivo_usdt: number; valor_posiciones_usdt: number; valor_total_usdt: number; pnl_realizado_usdt: number; pnl_no_realizado_usdt: number
+    pnl_total_pct: Num; ordenes_hoy: number; simulado: boolean; exchange: string
+    posiciones: { activo: string; mandato: string; cantidad: number; precio_medio: number; precio_actual: Num; valor_usdt: Num; pnl_no_realizado_usdt: Num; pnl_no_realizado_pct: Num; stop_precio: Num; stop_orden_id: string | null; distancia_stop_pct: Num; sin_stop: boolean; tesis: string | null; abierta_en: string }[]
+    consultado_en: string; fuente: string
+  }
+  mision: Mision | null
+  decisiones: { fecha: string; activo: string; tipo: string; accion: 'entrar' | 'salir' | 'mover_stop' | 'quitar_stop' | 'esperar' | 'pausa' | 'fin_mision' | string; tesis: string; cifras: Record<string, unknown>; orden: { id_corto: string; estado: string } | null; modo?: string | null; modo_version?: string | null; hilo_id?: string | null }[]
+  ciclos: { ultimo: string | null; cada_h: number; proximo: string | null; sin_novedades_seguidos: number } | null
+  rendimiento: Record<string, unknown> | null
+  consultado_en: string; fuente: string
+}
+export interface Manual {
+  vigente: { id: number; version: string; origen: string; resumen: string; creada: string; texto: string } | null
+  versiones: { id: number; version: string; origen: string; resumen: string; vigente: boolean; creada: string }[]
+  propuestas_pendientes: { id: number; revision_id: number | null; seccion: string; texto_nuevo: string; motivo: string; creada: string }[]
+  consultado_en: string; fuente: string
+}
+export interface DiffManual { desde: string; hasta: string; unificado: string }
 export interface CostoAmpliado {
-  desde: string; costo_usd: number; total_usd?: number
-  luffy?: { total_usd: number; por_tipo_turno: { tipo: string; usd: number; n: number }[] }
-  jev?: { total_usd: number; por_modelo: { modelo: string; usd: number; n: number }[]; por_proposito?: { proposito: string; usd: number; n: number }[] }
-  por_dia?: { fecha: string; luffy_usd: number; jev_usd: number }[]
+  desde: string; costo_usd: number; luffy_usd?: number; total_usd?: number
+  jev?: { costo_usd: number; llamadas: number; por_proposito?: { proposito: string; modelo: string; n: number; costo_usd: number }[]; por_modelo?: { modelo: string; n: number; costo_usd: number }[] }
   por_modelo?: { modelo: string; costo_usd: number; n: number }[]; respuestas?: number
   presupuesto?: { presupuesto_api_usd: number; aviso_usd: number; degradar_usd: number }
+  por_tipo?: { tipo_turno: string; etiqueta: string; n: number; costo_usd: number; promedio_usd: number; iteraciones: Num }[]
+  por_dia?: { dia: string; luffy_usd: number; jev_usd: number; total_usd: number; turnos: number }[]
+  agentes?: { quien: string; n: number; costo_usd: number }[]
+  estilo?: { turnos: number; reescritos: number; tasa_pct: number; costo_usd: number }
+  umbrales?: { presupuesto_api_usd: number; aviso_usd: number; degradar_usd: number; estado: 'normal' | 'aviso' | 'degradado' }
 }
-export interface Alerta { id: number; hora: string; severidad: 'alta' | 'media' | 'baja'; tipo: string; activo: string | null; texto: string }
-export interface Alertas { alertas: Alerta[]; total: number; pagina: number; por_pagina: number }
+export interface AlertaFeed { id: number; clave: string; tipo: string; activo: string | null; severidad: 'alta' | 'media' | 'baja' | string; texto: string; valor: Num; datos: Record<string, unknown>; enviada_en: string; canal: string; atendida: boolean }
+export interface FeedAlertas { items: AlertaFeed[]; siguiente: number | null; tipos: string[]; consultado_en: string; fuente: string }
 
-/* ---------- oficina ---------- */
+/* ---------- 8.5 oficina ---------- */
+export type EstadoFuente = 'al_dia' | 'atrasada' | 'caida' | 'apagada' | 'sin_datos'
 export interface Oficina {
-  luffy: { estado: 'ocioso' | 'pensando'; hilo_id: string | null; hilo_titulo: string | null; desde: string | null }
-  agentes: { id: string; nombre: string; estado: 'ocioso' | 'trabajando'; ultima_actividad: string | null; hora: string | null }[]
-  fuentes: { id: string; nombre: string; salud: 'al_dia' | 'atrasada' | 'caida'; ultima_lectura: string | null; detalle?: string }[]
-  corriendo: { que: string; desde: string }[]; consultado_en: string
+  luffy: { en_curso: { hilo_id: string; titulo: string; desde: string; modo: string; canal: string }[]; ultimo_turno: string | null; turnos_24h: number; costo_24h_usd: number }
+  agentes: { nombre: string; etiqueta?: string; ultima_actividad: string | null; llamadas_24h: number; costo_24h_usd: number; en_curso: boolean }[]
+  fuentes: { nombre: string; etiqueta?: string; estado: EstadoFuente; ultima_lectura?: string | null; detalle?: string }[]
+  trabajos: { nombre: string; etiqueta?: string; cada: string; ultima?: string | null; proxima?: string | null; estado?: string }[]
+  eventos_ultimo_id?: number | null; consultado_en: string; fuente: string
 }
-export type EventoOficina =
-  | { tipo: 'turno_abierto' | 'turno_cerrado'; hora: string; hilo_id: string; hilo_titulo?: string; tipo_turno?: string; costo_usd?: number }
-  | { tipo: 'agente_convocado' | 'agente_terminado'; hora: string; agente: string; costo_usd?: number }
-  | { tipo: 'herramienta'; hora: string; herramienta: string; fuente?: string }
-  | { tipo: 'fuente'; hora: string; fuente: string; ok: boolean; n?: number }
-  | { tipo: 'radar_ciclo' | 'caja_ciclo'; hora: string; detalle: string }
-  | { tipo: 'alerta'; hora: string; severidad: string; texto: string }
+interface EvBase { id: number; hora: string; proceso: 'api' | 'bot' | 'monitor' | 'social' | string }
+export type EventoOficina = EvBase & (
+  | { tipo: 'latido' }
+  | { tipo: 'turno_abierto'; hilo_id: string; quien: string; modo: string; origen: string; canal: string }
+  | { tipo: 'turno_cerrado'; hilo_id: string; tipo_turno: string; modelo: string; costo_usd: number; herramientas: number; duracion_s: number; mensaje_id: number | null }
+  | { tipo: 'agente_convocado'; agente: string; hilo_id: string | null }
+  | { tipo: 'agente_terminado'; agente: string; costo_usd: number; duracion_s: number; ok: boolean }
+  | { tipo: 'herramienta'; nombre: string; quien: string; ok: boolean; duracion_s: number; fuente: string | null }
+  | { tipo: 'jev'; proposito: string; n: number; costo_usd: number; modelo: string }
+  | { tipo: 'fuente_leida'; fuente: string; n: number; ok: boolean; detalle?: string }
+  | { tipo: 'radar_ciclo'; modo: string; n_evaluados: number; n_candidatas: number; duracion_s: number }
+  | { tipo: 'caja_ciclo'; motivo: string; corrio: boolean; propuestas: number; costo_usd: number }
+  | { tipo: 'reconciliacion'; origen: string; discrepancias: number; eventos: number }
+  | { tipo: 'alerta'; alerta_id: number; tipo_alerta?: string; activo: string | null; severidad: string }
+  | { tipo: 'propuesta'; id_corto: string; accion: string; par: string; estado: string; origen: string }
+  | { tipo: 'orden'; id_corto: string; accion: string; estado: string; origen: string }
+  | { tipo: 'gatillo'; id_corto: string; evento: 'despertado' | 'cumplido' }
+  | { tipo: 'informe'; fecha: string; costo_usd: number }
+)
 
-/* ---------- informes ---------- */
-export interface Informes { informes: { fecha: string; titulo: string; resumen: string }[]; revisiones: { fecha: string; titulo: string; resumen: string }[]; bitacora: { id: number; fecha: string; activo: string | null; tipo: string; tesis: string; resultado: string | null }[]; teorias: { id: number; fecha: string; activo: string | null; texto: string; estado: string }[]; consultado_en: string }
-export interface Informe { fecha: string; titulo: string; secciones: { titulo: string; texto: string; cifras: { k: string; v: string }[]; graficos: { spec_id: string; titulo: string }[] }[]; consultado_en: string }
-export type { PropuestaResumen }
+/* ---------- 8.6 informes ---------- */
+export interface Pagina<T> { items: T[]; siguiente: string | number | null; tipos?: string[] }
+export interface InformeItem { id: number; fecha: string; tipo: string; costo_usd: number; enviado: boolean; resumen: string; hilo_id: string | null; creado: string }
+export interface Informe { id: number; fecha: string; tipo: string; modelo: string; costo_usd: number; creado: string; enviado: boolean; hilo_id: string | null; texto: string; secciones: { titulo: string; texto: string }[]; cifras: Record<string, unknown>; graficos: { spec_id: string; titulo: string; url?: string }[]; fuente: string }
+export interface Revision { id: number; desde: string; hasta: string; texto: string; datos: Record<string, unknown>; costo_usd: number; hilo_id: string | null; creada: string; propuestas: { id: number; seccion: string; estado: string; motivo: string }[] }

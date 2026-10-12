@@ -10,14 +10,14 @@ const errores = []
 async function ctx(movil) { const c = await b.newContext(movil ? { ...devices['iPhone 14'], viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, locale: 'es-ES' } : { viewport: { width: 1440, height: 900 }, locale: 'es-ES' }); await c.request.post(`${BASE}/api/auth/sign-in/email`, { data: { email: env.VETA_ADMIN_EMAIL, password: env.VETA_ADMIN_PASSWORD }, headers: { Origin: BASE } }); const p = await c.newPage(); p.on('pageerror', (e) => errores.push(String(e.message).slice(0, 160))); p.on('console', (m) => { if (m.type() === 'error' && !/favicon/.test(m.text())) errores.push(m.text().slice(0, 160)) }); return { c, p } }
 const VISTAS = [
   ['terminal', '/luffy/terminal/WAL', async (p) => { await p.waitForSelector('.lf-ficha__graficos canvas', { timeout: 40000 }); await espera(2500) }],
-  ['cartera', '/luffy/cartera', async (p) => { await p.waitForSelector('[data-prueba="posicion"]', { timeout: 20000 }); await espera(1500) }],
+  ['cartera', '/luffy/cartera', async (p) => { await p.waitForSelector('.lf-kpi', { timeout: 20000 }); await p.waitForSelector('[data-prueba="orden"]', { timeout: 20000 }); await espera(1500) }],
   ['caja', '/luffy/cartera', async (p) => { await p.click('[data-prueba="pestana-caja"]'); await p.waitForSelector('.lf-decis', { timeout: 20000 }); await espera(1500) }],
   ['radar', '/luffy/radar', async (p) => { await p.waitForSelector('[data-prueba="candidata"]', { timeout: 20000 }); await espera(600) }],
   ['modos', '/luffy/radar', async (p) => { await p.click('.lf-tabs button:nth-child(2)'); await p.waitForSelector('[data-prueba="modo"]', { timeout: 20000 }); await espera(400) }],
   ['control', '/luffy/control', async (p) => { await p.waitForSelector('[data-prueba="gatillo"]', { timeout: 20000 }); await espera(400) }],
   ['gasto', '/luffy/control', async (p) => { await p.click('.lf-tabs button:nth-child(3)'); await p.waitForSelector('.lf-gasto canvas', { timeout: 20000 }); await espera(900) }],
   ['oficina', '/luffy/oficina', async (p) => { await p.waitForSelector('.lf-ev', { timeout: 20000 }); await espera(5000) }],
-  ['informes', '/luffy/informes', async (p) => { await p.waitForSelector('.lf-inf__sec canvas', { timeout: 40000 }); await espera(1500) }],
+  ['informes', '/luffy/informes', async (p) => { await p.waitForSelector('.lf-ficha__graficos canvas', { timeout: 40000 }); await espera(1500) }],
 ]
 for (const movil of [false, true]) {
   const { c, p } = await ctx(movil)

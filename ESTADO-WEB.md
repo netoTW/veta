@@ -554,18 +554,22 @@ sitio.
 (Laboratorio, Tableros, Control, Oficina, Informes); teléfono con barra inferior de vidrio y
 hoja «Más».
 
-**Contrato v2, supuesto.** Lo que el panel espera de `mugiwara-api` para el terminal, la
-cartera, el exchange, la caja, el radar, el control, la oficina y los informes está en
-`src/luffy/tipos6b.ts` con la forma que describe `PROMPT-FASE-6b-mugiwara.md`, y el simulador
-(`server/luffySimulado.ts`, parte 6b) lo sirve con datos de semilla fija. **Cuando llegue
-`CONTRATO-PANEL.md` v2, lo que difiera se ajusta en `tipos6b.ts` y en el simulador, no en las
-pantallas.** El cliente es `src/luffy/api6b.ts`. Rutas usadas: `/terminal/universo`,
-`/terminal/{activo}`, `/terminal/{activo}/preguntar`, `/cartera`, `/cartera/curva`,
-`/posiciones/declarar`, `/exchange/ordenes`, `/exchange/historial`, `/exchange/proponer`,
-`/caja`, `/caja/mision/{id}/{pausar|reanudar|cancelar}`, `/panico`, `/radar/candidatas`,
-`/radar/modos`, `/modos/{id}/{v}/decidir`, `/gatillos` (GET, PATCH, DELETE), `/manual`,
-`/manual/diff`, `/manual/propuestas/{id}/decidir`, `/costo` (ampliado), `/alertas` (paginado
-con `pagina`), `/oficina/estado`, `/eventos` (SSE), `/informes`, `/informes/{fecha}`.
+**Contrato v2.1** (`CONTRATO-PANEL.md` §8, de la sesión de Mugiwara). Las formas están en
+`src/luffy/tipos6b.ts`, cotejadas sección por sección con el contrato, y el simulador
+(`server/luffySimulado.ts`, parte 6b) las sirve exactas, con datos de semilla fija. Si el
+contrato cambia, se ajusta ahí y en el simulador, no en las pantallas. El cliente es
+`src/luffy/api6b.ts`. Rutas: `/terminal/universo`, `/terminal/{activo}?rango=`,
+`/terminal/plantillas[/{id}]`, `POST /terminal/{activo}/hilo` (y `contexto: {tipo: 'terminal',
+activo}` en `/chat` para los hilos «Terminal · X»), `/cartera`, `/cartera/curva`,
+`/cartera/movimientos` (GET, POST, DELETE), `POST /posiciones/declarar`, `/exchange/ordenes?estado=`,
+`/exchange/fills`, `/exchange/comisiones`, `POST /exchange/propuestas` (responde `{propuestas,
+propuesta, hilo_id}`; `modificar` trae dos; `409` con la viva en `detail.propuesta`),
+`/radar/candidatas`, `/radar/modos`, `POST /modos/{id}/{v}/decidir {aprobar, motivo}`, `/caja`,
+`/misiones/{id}/pausar|reanudar|cancelar`, `/panico`, `/gatillos` (PATCH, DELETE), `/manual`,
+`/manual/diff?desde&hasta`, `POST /manual/propuestas/{id}/decidir {aprobar}`, `/costo?dias=`,
+`/alertas/feed` (cursor `antes_de`) y `PATCH /alertas/{id}`, `/oficina/estado`, `/eventos` (SSE
+con `latido` y reconexión por `desde_id`), `/informes`, `/informes/{fecha}`, `/revisiones`,
+`/bitacora` (cursor), `/teorias`.
 
 **Terminal** (`Terminal.tsx`): lista con filtros (mis posiciones, caja, candidatas, vigilancia,
 gatillos, todo) y búsqueda; la ficha se arma sin recargar y se recuerda 45 s; ↑ ↓ cambian de
@@ -591,6 +595,10 @@ misión, límites, decisiones de cada ciclo con su porqué, pausar o cancelar la
 turno y por día contra el presupuesto; alertas paginadas con filtros), **Oficina** (`Oficina.tsx`:
 canvas 2D con Luffy al centro, agentes y fuentes; hilos que se encienden con los eventos del SSE;
 se pausa con la pestaña oculta y no repinta sin cambios) e **Informes** (`Informes.tsx`).
+
+**Marcadores sin texto sobre las velas.** Compras, ventas, stops y marcas del radar se dibujan
+sólo como forma; la etiqueta («Compra 84,71 USDT a 0,038», «Radar: impulso v1») aparece junto a la
+fecha al pasar la cruz por esa vela, y la lista completa sigue debajo del gráfico.
 
 **Pruebas.** `scripts/probar-luffy.mjs` (Playwright, Chrome del sistema): los cinco perfiles
 contra `/api/luffy/*` (404 salvo admin), un suscriptor pro en `/luffy` (no existe), y con el

@@ -47,7 +47,7 @@ export const luffy = {
   cambiarHilo: (id: string, cambio: { titulo?: string; telegram_activo?: boolean }) => pedir<HiloResumen>(`/hilos/${encodeURIComponent(id)}`, { metodo: 'PATCH', cuerpo: cambio }),
 
   /** Un turno de Luffy. Cada evento llega al momento; resuelve cuando llega `fin` o se corta el stream. */
-  async chat(cuerpo: { hilo_id: string; texto: string; modo?: 'auto' | 'decision'; imagenes?: ImagenAdjunta[] }, onEvento: (e: EventoChat) => void, signal?: AbortSignal): Promise<void> {
+  async chat(cuerpo: { hilo_id: string; texto: string; modo?: 'auto' | 'decision'; imagenes?: ImagenAdjunta[]; contexto?: { tipo: 'terminal'; activo: string } }, onEvento: (e: EventoChat) => void, signal?: AbortSignal): Promise<void> {
     const r = await fetch(`${BASE}/chat`, { method: 'POST', credentials: 'same-origin', signal, headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream' }, body: JSON.stringify(cuerpo) })
     if (!r.ok) throw await errorDe(r)
     if (!r.body) throw new ErrorLuffy(0, 'sin_cuerpo', 'La respuesta llegó sin cuerpo.')

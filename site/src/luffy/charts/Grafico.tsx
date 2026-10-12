@@ -133,7 +133,7 @@ export function Grafico({ spec, specId, onSpec, onDatos, alto, compacto = false,
               ))}
             </div>
           ) })}
-          {tCruz !== null && <span className="lf-g__fecha mono">{fmtFecha(tCruz, datos?.rango.intervalo === '1h' || datos?.rango.intervalo === '4h')}</span>}
+          {tCruz !== null && <span className="lf-g__fecha mono">{fmtFecha(tCruz, datos?.rango.intervalo === '1h' || datos?.rango.intervalo === '4h')}{(vivo.current?.marcasEn(tCruz) ?? []).map((m, i) => <b key={i} className="lf-g__fecha-marca">{m}</b>)}</span>}
         </div>
         {asa && onMoverStop && (
           <div className={`lf-g__arrastre ${asa.activo ? 'is-activo' : ''}`} style={{ top: asa.top }} onPointerDown={alBajar} onPointerMove={alMover} onPointerUp={alSoltar} onPointerCancel={alSoltar} title="Arrastra para proponer mover el stop" data-prueba="asa-stop">

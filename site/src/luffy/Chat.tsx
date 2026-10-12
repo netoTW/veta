@@ -141,7 +141,9 @@ function Conversacion({ id, alCambiar, abrirCajon }: { id: string; alCambiar: ()
       }
     })
     try {
-      await luffy.chat({ hilo_id: id, texto: t, modo: 'auto', imagenes: imgs.length ? imgs : undefined }, onEvento)
+      // un hilo «Terminal · WAL» lleva la ficha del activo como contexto compacto (CONTRATO-PANEL.md §8.1)
+      const delTerminal = /^Terminal · ([A-Z0-9]+)$/.exec(det?.hilo.titulo ?? '')
+      await luffy.chat({ hilo_id: id, texto: t, modo: 'auto', imagenes: imgs.length ? imgs : undefined, contexto: delTerminal ? { tipo: 'terminal', activo: delTerminal[1] } : undefined }, onEvento)
     } catch (e) {
       if (e instanceof ErrorLuffy && e.codigo === 'en_curso') { setAviso(e.message); setTurno(null); setTexto(t); return }
       setTurno((x) => (x ? { ...x, error: e instanceof Error ? e.message : String(e), paso: null } : x))
@@ -169,7 +171,7 @@ function Conversacion({ id, alCambiar, abrirCajon }: { id: string; alCambiar: ()
           {det && renombrando === null && <button type="button" className="lf-conv__ren-btn" onClick={() => setRenombrando(det.hilo.titulo)}>Renombrar</button>}
         </div>
       </div>
-      {det?.resumen_vivo && <p className="lf-conv__resumen">{det.resumen_vivo}</p>}
+      {/^Terminal · /.test(det?.hilo.titulo ?? '') ? <p className="lf-conv__resumen">Luffy ve la ficha del terminal de {det!.hilo.titulo.split(' · ')[1]} en cada turno de este hilo. <Link to={`/luffy/terminal/${det!.hilo.titulo.split(' · ')[1]}`} className="lf-nota__ir mono">abrir la ficha</Link></p> : det?.resumen_vivo && !/^(\*\*)?RESUMEN VIVO/i.test(det.resumen_vivo) ? <p className="lf-conv__resumen">{det.resumen_vivo}</p> : null}
       <div className="lf-conv__lista" ref={lista}>
         {det?.mensajes.map((m) => <Burbuja key={m.id} m={m} alCambiar={cargar} cambiar={cambiarPropuesta} />)}
         {turno && <TurnoVivo t={turno} cambiar={cambiarPropuesta} />}

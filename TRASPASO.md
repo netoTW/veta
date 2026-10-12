@@ -85,9 +85,11 @@ firma.
 **Fase 6b (12-oct): sistema visual v2 «roca pulida» y panel completo** (`ESTADO-WEB.md` §7ter,
 `SISTEMA-VISUAL.md` §20). Navegación nueva, terminal por moneda con gráficos sincronizados y
 stop arrastrable, cartera y exchange con propuestas, caja, radar, control, oficina en vivo e
-informes. **Construido contra el contrato v2 supuesto** (`src/luffy/tipos6b.ts`) y el simulador:
-cuando Mugiwara publique `CONTRATO-PANEL.md` v2 hay que cotejar forma por forma y pasar las
-pruebas con datos reales (hoy sólo la 6a tiene datos reales). Capturas: `recursos/capturas/6b/`.
+informes. **Cotejado con `CONTRATO-PANEL.md` v2.1** (§8) el 12-oct: tipos, cliente, simulador y pantallas
+con las formas exactas. **Falta que Mugiwara despliegue su backend de la 6b**: a la fecha todas sus
+rutas nuevas dan 404 en el servidor (el código está sin commitear en su repo). Cuando esté:
+`scripts/probar-luffy.mjs` y `scripts/shots-6b.mjs` contra la API real (túnel al 8800 y
+`VETA_LUFFY=http`), revisar capturas y anotar aquí lo que difiera. Capturas: `recursos/capturas/6b/`.
 
 **Fase 6a (11-oct): el panel de Mugiwara en `/luffy`** (`ESTADO-WEB.md` §7ter). Puente
 `/api/luffy/*` sólo para el admin real (el resto, 404), SSE sin buffer, chat con los hilos de
@@ -130,8 +132,8 @@ límite de error, archivado de la calibración.
 ## 4. Pendientes, por prioridad
 
 ### Alta
-00. **Contrato v2 de Mugiwara:** cotejar `tipos6b.ts` y el simulador con `CONTRATO-PANEL.md` v2 cuando
-    exista, correr `probar-luffy.mjs` y `shots-6b.mjs` contra la API real y revisar las capturas.
+00. **Conectar la 6b con datos reales** cuando Mugiwara despliegue (hoy 404): correr `probar-luffy.mjs`
+    y `shots-6b.mjs` contra la API real, revisar las capturas y corregir lo que difiera del contrato.
 0. **Encender Luffy en producción** (fase 6a): `MUGIWARA_API_TOKEN` en `/opt/veta-web/site/.env`,
    copiar `despliegue/Caddyfile` a `/etc/caddy/Caddyfile` y recargar Caddy; esperar a que la
    sesión de Mugiwara despliegue su backend de la 6a. Después: capturas con datos reales y

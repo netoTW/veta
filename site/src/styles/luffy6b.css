@@ -224,3 +224,30 @@
 .lf-inf__cifras small { color: var(--ceniza-2); font-size: 0.54rem; font-family: var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; }
 .lf-inf__cifras b { color: var(--hueso); font-weight: 500; font-family: var(--font-mono); }
 @media (max-width: 900px) { .lf-inf { grid-template-columns: 1fr; } }
+
+/* ---------- 6b: piezas del contrato v2 ---------- */
+.lf-g__fecha { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; max-width: 60%; }
+.lf-g__fecha-marca { font-weight: 500; color: var(--oro-luz); text-transform: none; letter-spacing: 0.02em; text-align: right; white-space: normal; }
+.lf-etiq { display: flex; flex-direction: column; gap: 6px; }
+.lf-etiq__e { color: var(--ceniza); font-size: 0.8rem; line-height: 1.45; padding: 6px 10px; border-left: 2px solid var(--oro-sombra); border-radius: 0 var(--r-control) var(--r-control) 0; background: rgba(201,162,75,0.04); }
+.lf-etiq__e b { color: var(--hueso); font-weight: 400; }
+.lf-etiq__e.is-fuerte { border-left-color: var(--rojo-luz); background: rgba(181,71,62,0.06); }
+.lf-etiq__e em.mono { color: var(--ceniza-2); font-size: 0.56rem; font-style: normal; }
+.lf-fam__m { color: var(--ceniza-2); font-size: 0.74rem; line-height: 1.4; }
+.lf-fam__f.is-inverso { opacity: 1; border-color: rgba(217,105,95,0.35); background: rgba(181,71,62,0.05); }
+.lf-fam__n em { font-style: normal; color: var(--ceniza-2); margin-left: 4px; }
+.lf-props { display: flex; flex-direction: column; gap: 10px; }
+.lf-tarj--oro { border-color: rgba(201,162,75,0.4); }
+.lf-cand__c.is-descartada { opacity: 0.55; }
+.lf-decis__d { grid-template-columns: 96px 1fr; }
+.lf-decis__a b.is-esperar { color: var(--ceniza); }
+.lf-decis__a em.mono { font-style: normal; color: var(--ceniza-2); font-size: 0.56rem; }
+.lf-gat__d { color: var(--ceniza); font-size: 0.8rem; line-height: 1.45; margin-top: 2px; }
+.lf-gat.is-cumplido .lf-gat__t, .lf-gat.is-cancelado .lf-gat__t { color: var(--ceniza); }
+.lf-alerta.is-vista { opacity: 0.6; }
+.lf-alerta__ver { background: none; border: 0; color: var(--oro-luz); cursor: pointer; font: inherit; padding: 0; text-transform: uppercase; }
+.lf-teoria { padding: 10px 0; border-top: 1px solid var(--hairline-2); display: flex; flex-direction: column; gap: 4px; }
+.lf-teoria__ev p { font-size: 0.8rem; line-height: 1.45; }
+.lf-teoria__ev em.mono { font-style: normal; color: var(--ceniza-2); font-size: 0.56rem; }
+.lf-ofi__estado a { color: var(--oro-luz); }
+.lf-ofi__estado { right: 12px; line-height: 1.5; }

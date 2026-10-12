@@ -25,6 +25,8 @@ export interface Vivo {
   chart: IChartApi; series: SerieViva[]; paneles: PanelVivo[]
   /** El stop vigente de la cartera, si el panel lo trae: para arrastrarlo y proponer moverlo. */
   stop: StopVivo | null
+  /** Las etiquetas de los marcadores de una vela (compra, venta, radar, stop): se leen al pasar la cruz, nunca encima de las velas. */
+  marcasEn: (t: number) => string[]
   /** Altura de cada pane, en el orden de `paneles`. */
   alturas: () => number[]
   /** Ancho del eje de la izquierda (eje 2) de cada pane, para correr la leyenda. */
@@ -127,6 +129,7 @@ export function dibujar(el: HTMLElement, d: Datos, op: Opciones): Vivo {
   for (const pv of paneles) { const p = d.paneles.find((x) => x.id === pv.id); if (p && panes[pv.indice]) panes[pv.indice].setStretchFactor(Math.max(1, p.altura)) }
 
   /* ---------- marcadores de posiciones y del radar ---------- */
+  const porTiempo = new Map<number, string[]>()
   const porSerie = new Map<string, Marcador[]>()
   for (const m of d.marcadores) { if (!porSerie.has(m.serie)) porSerie.set(m.serie, []); porSerie.get(m.serie)!.push(m) }
   for (const [serieId, ms] of porSerie) {
@@ -135,12 +138,15 @@ export function dibujar(el: HTMLElement, d: Datos, op: Opciones): Vivo {
     const tiempos = (api.data() as { time: UTCTimestamp }[]).map((x) => x.time)
     // el marcador cae en la vela que estaba abierta en ese momento
     const ajustar = (x: number) => { let r = tiempos[0] ?? t(x); for (const tt of tiempos) { if (tt <= x) r = tt; else break } return r }
+    // sólo la forma sobre el gráfico: el texto se montaba sobre las velas. La etiqueta va a la cruz.
     const marcas: SeriesMarker<Time>[] = ms.map((m) => {
       const precio = m.valor ?? m.precio
-      if (m.tipo === 'entrada') return { time: ajustar(m.t), position: 'belowBar', shape: 'arrowUp', color: C.esmLuz, text: `Compra ${fmt(precio)}`, size: 1.1 }
-      if (m.tipo === 'salida') return { time: ajustar(m.t), position: 'aboveBar', shape: 'arrowDown', color: C.hueso, text: `Venta ${fmt(precio)}`, size: 1.1 }
-      if (m.tipo === 'stop_historial') return { time: ajustar(m.t), position: 'atPriceMiddle', shape: 'circle', color: C.rojoLuz, size: 0.55, price: precio }
-      return { time: ajustar(m.t), position: 'atPriceMiddle', shape: 'circle', color: C.oroLuz, text: 'Radar', size: 0.7, price: precio }
+      const tt = ajustar(m.t)
+      const lista = porTiempo.get(tt as number) ?? []; lista.push(m.etiqueta); porTiempo.set(tt as number, lista)
+      if (m.tipo === 'entrada') return { time: tt, position: 'belowBar', shape: 'arrowUp', color: C.esmLuz, size: 1.1 }
+      if (m.tipo === 'salida') return { time: tt, position: 'aboveBar', shape: 'arrowDown', color: C.hueso, size: 1.1 }
+      if (m.tipo === 'stop_historial') return { time: tt, position: 'atPriceMiddle', shape: 'circle', color: C.rojoLuz, size: 0.55, price: precio }
+      return { time: tt, position: 'belowBar', shape: 'circle', color: C.oroLuz, size: 0.7 }
     })
     marcas.sort((a, b) => (a.time as number) - (b.time as number))
     createSeriesMarkers(api, marcas)
@@ -188,7 +194,7 @@ export function dibujar(el: HTMLElement, d: Datos, op: Opciones): Vivo {
 
   const anchoIzq = (pane: IPaneApi<Time> | undefined) => { try { const ps = (pane as { priceScale?: (id: string) => { width: () => number; options: () => { visible?: boolean } } } | undefined)?.priceScale?.('left'); return ps && ps.options().visible ? ps.width() : 0 } catch { return 0 } }
   return {
-    chart, series: vivas, paneles, stop,
+    chart, series: vivas, paneles, stop, marcasEn: (t) => porTiempo.get(t) ?? [],
     alturas: () => paneles.map((pv) => chart.panes()[pv.indice]?.getHeight() ?? 0),
     anchosIzq: () => paneles.map((pv) => anchoIzq(chart.panes()[pv.indice])),
     fijarMargenes: (alturasLeyenda) => {
