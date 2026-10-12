@@ -120,3 +120,18 @@ input:not([type='checkbox']):not([type='radio']):not([type='range']), textarea, 
 @media (prefers-reduced-motion: reduce) {
   .lf-main > *, .p-main > * { animation: none; }
   .lf-comp.is-pensando .lf-comp__fila::before { animation: none; }
+
+/* ---------- rendimiento en el teléfono ----------
+   El desenfoque sobre un gráfico se recalcula cada vez que el gráfico se repinta (cruz,
+   arrastre, scroll): en un teléfono de gama media eso cuesta fotogramas. Sobre los gráficos y en
+   la cabecera fija de la ficha va sólido; las dos barras de vidrio (arriba y abajo) siguen
+   translúcidas, con un desenfoque más liviano y sin saturación. */
+@media (max-width: 760px) {
+  .lf-g__ley { background: rgba(12, 14, 16, 0.88); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .lf-ficha__cab { background: var(--vidrio-solido, #121417); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .lf-top, .lf-abajo, .lf-comp__fila { -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+  .lf-velo { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgba(7, 8, 9, 0.72); }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .lf-top, .lf-abajo, .lf-comp__fila, .lf-hilos, .lf-lab__ctrl, .lf-hoja-mas, .lf-term__lista, .lf-ficha__cab, .lf-g__ley { background: var(--vidrio-solido, #121417); -webkit-backdrop-filter: none; backdrop-filter: none; }
+}

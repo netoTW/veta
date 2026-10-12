@@ -1,0 +1,2882 @@
+{
+ "base": "http://localhost:5310",
+ "cpu": 4,
+ "cuando": "2026-10-12T07:13:14.845Z",
+ "medidas": [
+  {
+   "nombre": "abrir /luffy (lista de hilos)",
+   "segundos": 7.615,
+   "tope": false
+  },
+  {
+   "nombre": "abrir la terminal en WAL",
+   "segundos": 14.704,
+   "tope": false
+  },
+  {
+   "nombre": "cambiar de moneda (1) → ETH",
+   "segundos": 10.5,
+   "tope": false
+  },
+  {
+   "nombre": "cambiar de moneda (2) → SIGMAETH",
+   "segundos": 6.366,
+   "tope": false
+  },
+  {
+   "nombre": "cambiar de moneda (3) → NEAR",
+   "segundos": 5.379,
+   "tope": false
+  },
+  {
+   "nombre": "abrir la cartera",
+   "segundos": 9.567,
+   "tope": false
+  },
+  {
+   "nombre": "abrir la caja",
+   "segundos": 5.362,
+   "tope": false
+  },
+  {
+   "nombre": "abrir el radar",
+   "segundos": 15.562,
+   "tope": false
+  },
+  {
+   "nombre": "abrir control",
+   "segundos": 7.544,
+   "tope": false
+  },
+  {
+   "nombre": "abrir la oficina",
+   "segundos": 1.015,
+   "tope": false
+  },
+  {
+   "nombre": "abrir informes",
+   "segundos": 2.528,
+   "tope": false
+  }
+ ],
+ "js": {
+  "archivos": 19,
+  "bytes": 589718,
+  "mayores": [
+   {
+    "url": "/assets/index-Z9wwLNaC.js",
+    "bytes": 237658
+   },
+   {
+    "url": "/assets/Grafico-BLphCQpU.js",
+    "bytes": 202133
+   },
+   {
+    "url": "/assets/chunk-BV7QT456-BagTiCLq.js",
+    "bytes": 39822
+   },
+   {
+    "url": "/assets/sesion-CcPrMfWj.js",
+    "bytes": 36904
+   },
+   {
+    "url": "/assets/Chat-CtYKfvad.js",
+    "bytes": 15975
+   },
+   {
+    "url": "/assets/lenguaje-BVWgWjRz.js",
+    "bytes": 13101
+   },
+   {
+    "url": "/assets/piezas-ClSztosB.js",
+    "bytes": 10587
+   },
+   {
+    "url": "/assets/jsx-runtime-B-hcVAMW.js",
+    "bytes": 8774
+   },
+   {
+    "url": "/assets/LuffyShell-CXuJg7nX.js",
+    "bytes": 5343
+   },
+   {
+    "url": "/assets/api-DzH9v0fV.js",
+    "bytes": 3643
+   },
+   {
+    "url": "/assets/md-DhLF3rzQ.js",
+    "bytes": 3437
+   },
+   {
+    "url": "/assets/formato-DYlTusyx.js",
+    "bytes": 3417
+   }
+  ],
+  "portada": []
+ },
+ "api": [
+  {
+   "etapa": "abrir /luffy (lista de hilos)",
+   "ruta": "GET /costo",
+   "estado": 200,
+   "total_ms": 4545,
+   "mugiwara_ms": null,
+   "red_ms": null
+  },
+  {
+   "etapa": "abrir /luffy (lista de hilos)",
+   "ruta": "GET /hilos?limite=40",
+   "estado": 200,
+   "total_ms": 1620,
+   "mugiwara_ms": null,
+   "red_ms": null
+  },
+  {
+   "etapa": "abrir la terminal en WAL",
+   "ruta": "GET /costo",
+   "estado": 200,
+   "total_ms": 3792,
+   "mugiwara_ms": null,
+   "red_ms": null
+  },
+  {
+   "etapa": "abrir la terminal en WAL",
+   "ruta": "GET /terminal/WAL?rango=90d",
+   "estado": 200,
+   "total_ms": 5950,
+   "mugiwara_ms": null,
+   "red_ms": null
+  },
+  {
+   "etapa": "abrir la terminal en WAL",
+   "ruta": "GET /terminal/universo?filtro=todo&limite=300",
+   "estado": 200,
+   "total_ms": 5882,
+   "mugiwara_ms": null,
+   "red_ms": null
+  },
+  {
+   "etapa": "abrir la terminal en WAL",
+   "ruta": "GET /terminal/PUSS?rango=90d",
+   "estado": 200,
+   "total_ms": 6191,
+   "mugiwara_ms": null,
+   "red_ms": null
+  },
+  {
+   "etapa": "abrir la terminal en WAL",
+   "ruta": "GET /terminal/SOXLB?rango=90d",
+   "estado": 200,
+   "total_ms": 7401,
+   "mugiwara_ms": null,
+   "red_ms": null
+  },
+  {
+   "etapa": "abrir la terminal en WAL",
+   "ruta": "POST /graficos/datos",
+   "estado": 200,
+   "total_ms": 1765,
+   "mugiwara_ms": null,
+   "red_ms": null
+  },
+  {
+   "etapa": "abrir la terminal en WAL",
+   "ruta": "POST /graficos/datos",
+   "estado": 200,
+   "total_ms": 2584,
+   "mugiwara_ms": null,
+   "red_ms": null
+  },
+  {
+   "etapa": "abrir la terminal en WAL",
+   "ruta": "POST /graficos/datos",
+   "estado": 200,
+   "total_ms": 2577,
+   "mugiwara_ms": null,
+   "red_ms": null
+  },
+  {
+   "etapa": "cambiar de moneda (1)",
+   "ruta": "GET /terminal/ETH?rango=90d",
+   "estado": 200,
+   "total_ms": 7377,
+   "mugiwara_ms": null,
+   "red_ms": null
+  },
+  {
+   "etapa": "cambiar de moneda (1)",
+   "ruta": "GET /costo",
+   "estado": 200,
+   "total_ms": 5801,
+   "mugiwara_ms": null,
+   "red_ms": null
+  },
+  {
+   "etapa": "cambiar de moneda (1)",
+   "ruta": "GET /terminal/universo?filtro=todo&limite=300",
+   "estado": 200,
+   "total_ms": 951,
+   "mugiwara_ms": null,
+   "red_ms": null
+  },
+  {
+   "etapa": "cambiar de moneda (1)",
+   "ruta": "GET /terminal/ACIRE?rango=90d",
+   "estado": 200,
+   "total_ms": 4422,
+   "mugiwara_ms": null,
+   "red_ms": null
+  },
+  {
+   "etapa": "cambiar de moneda (1)",
+   "ruta": "GET /terminal/BTC?rango=90d",
+   "estado": 200,
+   "total_ms": 7283,
+   "mugiwara_ms": null,
+   "red_ms": null
+  },
+  {
+   "etapa": "cambiar de moneda (1)",
+   "ruta": "POST /graficos/datos",
+   "estado": 200,
+   "total_ms": 1791,
+   "mugiwara_ms": null,
+   "red_ms": null
+  },
+  {
+   "etapa": "cambiar de moneda (1)",
+   "ruta": "POST /graficos/datos",
+   "estado": 200,
+   "total_ms": 1667,
+   "mugiwara_ms": null,
+   "red_ms": null
+  },
+  {
+   "etapa": "cambiar de moneda (1)",
+   "ruta": "POST /graficos/datos",
+   "estado": 200,
+   "total_ms": 1594,
+   "mugiwara_ms": null,
+   "red_ms": null
+  },
+  {
+   "etapa": "cambiar de moneda (2)",
+   "ruta": "GET /terminal/SIGMAETH?rango=90d",
+   "estado": 200,
+   "total_ms": 3368,
+   "mugiwara_ms": null,
+   "red_ms": null
+  },
+  {
+   "etapa": "cambiar de moneda (2)",
+   "ruta": "GET /costo",
+   "estado": 200,
+   "total_ms": 3577,
+   "mugiwara_ms": null,
+   "red_ms": null
+  },
+  {
+   "etapa": "cambiar de moneda (2)",
+   "ruta": "GET /terminal/universo?filtro=todo&limite=300",
+   "estado": 200,
+   "total_ms": 954,
+   "mugiwara_ms": null,
+   "red_ms": null
+  },
+  {
+   "etapa": "cambiar de moneda (2)",
+   "ruta": "GET /terminal/NEAR?rango=90d",
+   "estado": 200,
+   "total_ms": 8071,
+   "mugiwara_ms": null,
+   "red_ms": null
+  },
+  {
+   "etapa": "cambiar de moneda (2)",
+   "ruta": "POST /graficos/datos",
+   "estado": 200,
+   "total_ms": 1934,
+   "mugiwara_ms": null,
+   "red_ms": null
+  },
+  {
+   "etapa": "cambiar de moneda (2)",
+   "ruta": "POST /graficos/datos",
+   "estado": 200,
+   "total_ms": 2068,
+   "mugiwara_ms": null,
+   "red_ms": null
+  },
+  {
+   "etapa": "cambiar de moneda (2)",
+   "ruta": "POST /graficos/datos",
+   "estado": 200,
+   "total_ms": 787,
+   "mugiwara_ms": null,
+   "red_ms": null
+  },
+  {
+   "etapa": "cambiar de moneda (2)",
+   "ruta": "POST /graficos/datos",
+   "estado": 200,
+   "total_ms": 2754,
+   "mugiwara_ms": null,
+   "red_ms": null
+  },
+  {
+   "etapa": "cambiar de moneda (3)",
+   "ruta": "GET /costo",
+   "estado": 200,
+   "total_ms": 4131,
+   "mugiwara_ms": null,
+   "red_ms": null
+  },
+  {
+   "etapa": "cambiar de moneda (3)",
+   "ruta": "GET /terminal/universo?filtro=todo&limite=300",
+   "estado": 200,
+   "total_ms": 1201,
+   "mugiwara_ms": null,
+   "red_ms": null
+  },
+  {
+   "etapa": "cambiar de moneda (3)",
+   "ruta": "POST /graficos/datos",
+   "estado": 200,
+   "total_ms": 1578,
+   "mugiwara_ms": null,
+   "red_ms": null
+  },
+  {
+   "etapa": "cambiar de moneda (3)",
+   "ruta": "POST /graficos/datos",
+   "estado": 200,
+   "total_ms": 1957,
+   "mugiwara_ms": null,
+   "red_ms": null
+  },
+  {
+   "etapa": "cambiar de moneda (3)",
+   "ruta": "POST /graficos/datos",
+   "estado": 200,
+   "total_ms": 1893,
+   "mugiwara_ms": null,
+   "red_ms": null
+  },
+  {
+   "etapa": "abrir la cartera",
+   "ruta": "GET /costo",
+   "estado": 200,
+   "total_ms": 3098,
+   "mugiwara_ms": null,
+   "red_ms": null
+  },
+  {
+   "etapa": "abrir la cartera",
+   "ruta": "GET /cartera?origen=pablo",
+   "estado": 200,
+   "total_ms": 935,
+   "mugiwara_ms": null,
+   "red_ms": null
+  },
+  {
+   "etapa": "abrir la cartera",
+   "ruta": "GET /exchange/ordenes?estado=abiertas",
+   "estado": 200,
+   "total_ms": 900,
+   "mugiwara_ms": null,
+   "red_ms": null
+  },
+  {
+   "etapa": "abrir la cartera",
+   "ruta": "GET /cartera/curva?origen=pablo&rango=90d",
+   "estado": 200,
+   "total_ms": 1108,
+   "mugiwara_ms": null,
+   "red_ms": null
+  },
+  {
+   "etapa": "abrir la caja",
+   "ruta": "GET /caja?decisiones=30",
+   "estado": 200,
+   "total_ms": 4957,
+   "mugiwara_ms": null,
+   "red_ms": null
+  },
+  {
+   "etapa": "abrir la caja",
+   "ruta": "GET /cartera?origen=caja",
+   "estado": 200,
+   "total_ms": 4320,
+   "mugiwara_ms": null,
+   "red_ms": null
+  },
+  {
+   "etapa": "abrir la caja",
+   "ruta": "GET /exchange/fills?par=SOL-USDT&limite=30",
+   "estado": 200,
+   "total_ms": 807,
+   "mugiwara_ms": null,
+   "red_ms": null
+  },
+  {
+   "etapa": "abrir la caja",
+   "ruta": "GET /exchange/fills?par=WAL-USDT&limite=30",
+   "estado": 200,
+   "total_ms": 1472,
+   "mugiwara_ms": null,
+   "red_ms": null
+  },
+  {
+   "etapa": "abrir la caja",
+   "ruta": "GET /exchange/comisiones?desde=2026-09-12&hasta=2026-10-12&origen=pablo",
+   "estado": 200,
+   "total_ms": 1084,
+   "mugiwara_ms": null,
+   "red_ms": null
+  },
+  {
+   "etapa": "abrir el radar",
+   "ruta": "GET /costo",
+   "estado": 200,
+   "total_ms": 3505,
+   "mugiwara_ms": null,
+   "red_ms": null
+  },
+  {
+   "etapa": "abrir el radar",
+   "ruta": "GET /radar/modos",
+   "estado": 200,
+   "total_ms": 8054,
+   "mugiwara_ms": null,
+   "red_ms": null
+  },
+  {
+   "etapa": "abrir el radar",
+   "ruta": "GET /radar/candidatas?dias=30",
+   "estado": 200,
+   "total_ms": 10936,
+   "mugiwara_ms": null,
+   "red_ms": null
+  },
+  {
+   "etapa": "abrir control",
+   "ruta": "GET /costo",
+   "estado": 200,
+   "total_ms": 2518,
+   "mugiwara_ms": null,
+   "red_ms": null
+  },
+  {
+   "etapa": "abrir control",
+   "ruta": "GET /gatillos",
+   "estado": 200,
+   "total_ms": 326,
+   "mugiwara_ms": null,
+   "red_ms": null
+  },
+  {
+   "etapa": "abrir informes",
+   "ruta": "GET /informes?limite=30&tipo=diario",
+   "estado": 200,
+   "total_ms": 802,
+   "mugiwara_ms": null,
+   "red_ms": null
+  },
+  {
+   "etapa": "abrir informes",
+   "ruta": "GET /informes/2026-10-11?tipo=diario",
+   "estado": 200,
+   "total_ms": 1426,
+   "mugiwara_ms": null,
+   "red_ms": null
+  }
+ ],
+ "cascada": [
+  {
+   "etapa": "abrir /luffy (lista de hilos)",
+   "url": "/luffy",
+   "tipo": "Document",
+   "desde_ms": 0,
+   "dur_ms": 173,
+   "bytes": 2495,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir /luffy (lista de hilos)",
+   "url": "/fonts/outfit-latin-wght-normal.woff2",
+   "tipo": "Font",
+   "desde_ms": 192,
+   "dur_ms": 1032,
+   "bytes": 32490,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir /luffy (lista de hilos)",
+   "url": "/fonts/Geist-latin.woff2",
+   "tipo": "Font",
+   "desde_ms": 195,
+   "dur_ms": 958,
+   "bytes": 29486,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir /luffy (lista de hilos)",
+   "url": "/assets/index-Z9wwLNaC.js",
+   "tipo": "Script",
+   "desde_ms": 196,
+   "dur_ms": 3260,
+   "bytes": 237658,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir /luffy (lista de hilos)",
+   "url": "/assets/jsx-runtime-B-hcVAMW.js",
+   "tipo": "Script",
+   "desde_ms": 196,
+   "dur_ms": 398,
+   "bytes": 8774,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir /luffy (lista de hilos)",
+   "url": "/assets/chunk-BV7QT456-BagTiCLq.js",
+   "tipo": "Script",
+   "desde_ms": 196,
+   "dur_ms": 1195,
+   "bytes": 39822,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir /luffy (lista de hilos)",
+   "url": "/assets/sesion-CcPrMfWj.js",
+   "tipo": "Script",
+   "desde_ms": 196,
+   "dur_ms": 1149,
+   "bytes": 36904,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir /luffy (lista de hilos)",
+   "url": "/assets/acceso-CioYKzkQ.js",
+   "tipo": "Script",
+   "desde_ms": 196,
+   "dur_ms": 1142,
+   "bytes": 331,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir /luffy (lista de hilos)",
+   "url": "/assets/formato-DYlTusyx.js",
+   "tipo": "Script",
+   "desde_ms": 197,
+   "dur_ms": 1242,
+   "bytes": 3417,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir /luffy (lista de hilos)",
+   "url": "/assets/TierIcon-Bc1OK4O4.js",
+   "tipo": "Script",
+   "desde_ms": 197,
+   "dur_ms": 1306,
+   "bytes": 653,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir /luffy (lista de hilos)",
+   "url": "/assets/Loader-Dh4lWw5F.js",
+   "tipo": "Script",
+   "desde_ms": 197,
+   "dur_ms": 1344,
+   "bytes": 1851,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir /luffy (lista de hilos)",
+   "url": "/assets/EmptyState-BeHVZ30u.js",
+   "tipo": "Script",
+   "desde_ms": 197,
+   "dur_ms": 1364,
+   "bytes": 934,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir /luffy (lista de hilos)",
+   "url": "/assets/lenguaje-BVWgWjRz.js",
+   "tipo": "Script",
+   "desde_ms": 197,
+   "dur_ms": 1627,
+   "bytes": 13101,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir /luffy (lista de hilos)",
+   "url": "/assets/piezas-ClSztosB.js",
+   "tipo": "Script",
+   "desde_ms": 197,
+   "dur_ms": 1684,
+   "bytes": 10587,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir /luffy (lista de hilos)",
+   "url": "/assets/GLBoundary-D9RnugIY.js",
+   "tipo": "Script",
+   "desde_ms": 197,
+   "dur_ms": 1564,
+   "bytes": 1534,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir /luffy (lista de hilos)",
+   "url": "/assets/index-C5Hp7Um3.css",
+   "tipo": "Stylesheet",
+   "desde_ms": 197,
+   "dur_ms": 3368,
+   "bytes": 244493,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir /luffy (lista de hilos)",
+   "url": "/assets/LuffyShell-CXuJg7nX.js",
+   "tipo": "Script",
+   "desde_ms": 3653,
+   "dur_ms": 255,
+   "bytes": 5343,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir /luffy (lista de hilos)",
+   "url": "/assets/api-DzH9v0fV.js",
+   "tipo": "Script",
+   "desde_ms": 3655,
+   "dur_ms": 237,
+   "bytes": 3643,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir /luffy (lista de hilos)",
+   "url": "/assets/formato-B9oNyOd9.js",
+   "tipo": "Script",
+   "desde_ms": 3655,
+   "dur_ms": 223,
+   "bytes": 2647,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir /luffy (lista de hilos)",
+   "url": "/api/auth/get-session",
+   "tipo": "Fetch",
+   "desde_ms": 3675,
+   "dur_ms": 173,
+   "bytes": 974,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir /luffy (lista de hilos)",
+   "url": "/api/yo",
+   "tipo": "Fetch",
+   "desde_ms": 3677,
+   "dur_ms": 186,
+   "bytes": 560,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir /luffy (lista de hilos)",
+   "url": "/api/yo",
+   "tipo": "Fetch",
+   "desde_ms": 3678,
+   "dur_ms": 350,
+   "bytes": 560,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir /luffy (lista de hilos)",
+   "url": "/favicon.png",
+   "tipo": "Other",
+   "desde_ms": 3681,
+   "dur_ms": 239,
+   "bytes": 5685,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir /luffy (lista de hilos)",
+   "url": "/api/yo",
+   "tipo": "Fetch",
+   "desde_ms": 3857,
+   "dur_ms": 357,
+   "bytes": 560,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir /luffy (lista de hilos)",
+   "url": "/img/logo-mark.webp",
+   "tipo": "Image",
+   "desde_ms": 3964,
+   "dur_ms": 552,
+   "bytes": 24030,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir /luffy (lista de hilos)",
+   "url": "/assets/Chat-CtYKfvad.js",
+   "tipo": "Script",
+   "desde_ms": 3974,
+   "dur_ms": 434,
+   "bytes": 15975,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir /luffy (lista de hilos)",
+   "url": "/assets/md-DhLF3rzQ.js",
+   "tipo": "Script",
+   "desde_ms": 3975,
+   "dur_ms": 235,
+   "bytes": 3437,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir /luffy (lista de hilos)",
+   "url": "/assets/Grafico-BLphCQpU.js",
+   "tipo": "Script",
+   "desde_ms": 3975,
+   "dur_ms": 1498,
+   "bytes": 202133,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir /luffy (lista de hilos)",
+   "url": "/assets/tema-2AScGvLt.js",
+   "tipo": "Script",
+   "desde_ms": 3975,
+   "dur_ms": 184,
+   "bytes": 974,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir /luffy (lista de hilos)",
+   "url": "/fonts/JetBrainsMono-latin.woff2",
+   "tipo": "Font",
+   "desde_ms": 3987,
+   "dur_ms": 727,
+   "bytes": 31538,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir /luffy (lista de hilos)",
+   "url": "/api/luffy/costo",
+   "tipo": "Fetch",
+   "desde_ms": 4069,
+   "dur_ms": 4545,
+   "bytes": 4049,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir /luffy (lista de hilos)",
+   "url": "/api/luffy/hilos?limite=40",
+   "tipo": "Fetch",
+   "desde_ms": 5483,
+   "dur_ms": 1620,
+   "bytes": 47911,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la terminal en WAL",
+   "url": "/luffy/terminal/WAL",
+   "tipo": "Document",
+   "desde_ms": 7615,
+   "dur_ms": 1169,
+   "bytes": 2495,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la terminal en WAL",
+   "url": "/fonts/outfit-latin-wght-normal.woff2",
+   "tipo": "Font",
+   "desde_ms": 8800,
+   "dur_ms": 1028,
+   "bytes": 32490,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la terminal en WAL",
+   "url": "/fonts/Geist-latin.woff2",
+   "tipo": "Font",
+   "desde_ms": 8801,
+   "dur_ms": 958,
+   "bytes": 29486,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la terminal en WAL",
+   "url": "/assets/index-Z9wwLNaC.js",
+   "tipo": "Script",
+   "desde_ms": 8801,
+   "dur_ms": 3261,
+   "bytes": 237658,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la terminal en WAL",
+   "url": "/assets/jsx-runtime-B-hcVAMW.js",
+   "tipo": "Script",
+   "desde_ms": 8801,
+   "dur_ms": 398,
+   "bytes": 8774,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la terminal en WAL",
+   "url": "/assets/chunk-BV7QT456-BagTiCLq.js",
+   "tipo": "Script",
+   "desde_ms": 8801,
+   "dur_ms": 1185,
+   "bytes": 39822,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la terminal en WAL",
+   "url": "/assets/sesion-CcPrMfWj.js",
+   "tipo": "Script",
+   "desde_ms": 8801,
+   "dur_ms": 1148,
+   "bytes": 36904,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la terminal en WAL",
+   "url": "/assets/acceso-CioYKzkQ.js",
+   "tipo": "Script",
+   "desde_ms": 8801,
+   "dur_ms": 1141,
+   "bytes": 331,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la terminal en WAL",
+   "url": "/assets/formato-DYlTusyx.js",
+   "tipo": "Script",
+   "desde_ms": 8801,
+   "dur_ms": 1248,
+   "bytes": 3417,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la terminal en WAL",
+   "url": "/assets/TierIcon-Bc1OK4O4.js",
+   "tipo": "Script",
+   "desde_ms": 8801,
+   "dur_ms": 1305,
+   "bytes": 653,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la terminal en WAL",
+   "url": "/assets/Loader-Dh4lWw5F.js",
+   "tipo": "Script",
+   "desde_ms": 8802,
+   "dur_ms": 1341,
+   "bytes": 1851,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la terminal en WAL",
+   "url": "/assets/EmptyState-BeHVZ30u.js",
+   "tipo": "Script",
+   "desde_ms": 8802,
+   "dur_ms": 1365,
+   "bytes": 934,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la terminal en WAL",
+   "url": "/assets/lenguaje-BVWgWjRz.js",
+   "tipo": "Script",
+   "desde_ms": 8802,
+   "dur_ms": 1635,
+   "bytes": 13101,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la terminal en WAL",
+   "url": "/assets/piezas-ClSztosB.js",
+   "tipo": "Script",
+   "desde_ms": 8802,
+   "dur_ms": 1685,
+   "bytes": 10587,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la terminal en WAL",
+   "url": "/assets/GLBoundary-D9RnugIY.js",
+   "tipo": "Script",
+   "desde_ms": 8802,
+   "dur_ms": 1556,
+   "bytes": 1534,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la terminal en WAL",
+   "url": "/assets/index-C5Hp7Um3.css",
+   "tipo": "Stylesheet",
+   "desde_ms": 8803,
+   "dur_ms": 3366,
+   "bytes": 244493,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la terminal en WAL",
+   "url": "/assets/LuffyShell-CXuJg7nX.js",
+   "tipo": "Script",
+   "desde_ms": 12192,
+   "dur_ms": 256,
+   "bytes": 5343,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la terminal en WAL",
+   "url": "/assets/api-DzH9v0fV.js",
+   "tipo": "Script",
+   "desde_ms": 12192,
+   "dur_ms": 239,
+   "bytes": 3643,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la terminal en WAL",
+   "url": "/assets/formato-B9oNyOd9.js",
+   "tipo": "Script",
+   "desde_ms": 12192,
+   "dur_ms": 219,
+   "bytes": 2647,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la terminal en WAL",
+   "url": "/api/auth/get-session",
+   "tipo": "Fetch",
+   "desde_ms": 12196,
+   "dur_ms": 186,
+   "bytes": 974,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la terminal en WAL",
+   "url": "/api/yo",
+   "tipo": "Fetch",
+   "desde_ms": 12196,
+   "dur_ms": 179,
+   "bytes": 560,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la terminal en WAL",
+   "url": "/api/yo",
+   "tipo": "Fetch",
+   "desde_ms": 12197,
+   "dur_ms": 344,
+   "bytes": 560,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la terminal en WAL",
+   "url": "/favicon.png",
+   "tipo": "Other",
+   "desde_ms": 12198,
+   "dur_ms": 255,
+   "bytes": 5685,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la terminal en WAL",
+   "url": "/api/yo",
+   "tipo": "Fetch",
+   "desde_ms": 12384,
+   "dur_ms": 936,
+   "bytes": 560,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la terminal en WAL",
+   "url": "/img/logo-mark.webp",
+   "tipo": "Image",
+   "desde_ms": 12451,
+   "dur_ms": 702,
+   "bytes": 24030,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la terminal en WAL",
+   "url": "/assets/Terminal-CzIkLjnX.js",
+   "tipo": "Script",
+   "desde_ms": 12457,
+   "dur_ms": 555,
+   "bytes": 17190,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la terminal en WAL",
+   "url": "/assets/api6b-BBNlJkqE.js",
+   "tipo": "Script",
+   "desde_ms": 12458,
+   "dur_ms": 273,
+   "bytes": 4798,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la terminal en WAL",
+   "url": "/assets/Grafico-BLphCQpU.js",
+   "tipo": "Script",
+   "desde_ms": 12458,
+   "dur_ms": 1633,
+   "bytes": 202133,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la terminal en WAL",
+   "url": "/assets/tema-2AScGvLt.js",
+   "tipo": "Script",
+   "desde_ms": 12458,
+   "dur_ms": 189,
+   "bytes": 974,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la terminal en WAL",
+   "url": "/assets/Chat-CtYKfvad.js",
+   "tipo": "Script",
+   "desde_ms": 12458,
+   "dur_ms": 716,
+   "bytes": 15975,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la terminal en WAL",
+   "url": "/assets/md-DhLF3rzQ.js",
+   "tipo": "Script",
+   "desde_ms": 12459,
+   "dur_ms": 545,
+   "bytes": 3437,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la terminal en WAL",
+   "url": "/assets/Plegable-CFnqVvkc.js",
+   "tipo": "Script",
+   "desde_ms": 12459,
+   "dur_ms": 724,
+   "bytes": 612,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la terminal en WAL",
+   "url": "/api/luffy/costo",
+   "tipo": "Fetch",
+   "desde_ms": 12495,
+   "dur_ms": 3792,
+   "bytes": 4049,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la terminal en WAL",
+   "url": "/fonts/JetBrainsMono-latin.woff2",
+   "tipo": "Font",
+   "desde_ms": 12498,
+   "dur_ms": 791,
+   "bytes": 31538,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la terminal en WAL",
+   "url": "/api/luffy/terminal/WAL?rango=90d",
+   "tipo": "Fetch",
+   "desde_ms": 14120,
+   "dur_ms": 5950,
+   "bytes": 20958,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la terminal en WAL",
+   "url": "/api/luffy/terminal/universo?filtro=todo&limite=300",
+   "tipo": "Fetch",
+   "desde_ms": 14123,
+   "dur_ms": 5882,
+   "bytes": 107176,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la terminal en WAL",
+   "url": "/api/luffy/terminal/PUSS?rango=90d",
+   "tipo": "Fetch",
+   "desde_ms": 20129,
+   "dur_ms": 6191,
+   "bytes": 5944,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la terminal en WAL",
+   "url": "/api/luffy/terminal/SOXLB?rango=90d",
+   "tipo": "Fetch",
+   "desde_ms": 20130,
+   "dur_ms": 7401,
+   "bytes": 5751,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la terminal en WAL",
+   "url": "/api/luffy/graficos/datos",
+   "tipo": "Fetch",
+   "desde_ms": 20366,
+   "dur_ms": 1765,
+   "bytes": 11240,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la terminal en WAL",
+   "url": "/api/luffy/graficos/datos",
+   "tipo": "Fetch",
+   "desde_ms": 20367,
+   "dur_ms": 2584,
+   "bytes": 0,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la terminal en WAL",
+   "url": "/api/luffy/graficos/datos",
+   "tipo": "Fetch",
+   "desde_ms": 20368,
+   "dur_ms": 2577,
+   "bytes": 5947,
+   "estado": 200
+  },
+  {
+   "etapa": "cambiar de moneda (1)",
+   "url": "/favicon.png",
+   "tipo": "Other",
+   "desde_ms": 22914,
+   "dur_ms": 181,
+   "bytes": 5685,
+   "estado": 200
+  },
+  {
+   "etapa": "cambiar de moneda (1)",
+   "url": "/api/luffy/terminal/ETH?rango=90d",
+   "tipo": "Fetch",
+   "desde_ms": 22943,
+   "dur_ms": 7377,
+   "bytes": 6399,
+   "estado": 200
+  },
+  {
+   "etapa": "cambiar de moneda (1)",
+   "url": "/api/luffy/costo",
+   "tipo": "Fetch",
+   "desde_ms": 22944,
+   "dur_ms": 5801,
+   "bytes": 4049,
+   "estado": 200
+  },
+  {
+   "etapa": "cambiar de moneda (1)",
+   "url": "/api/luffy/terminal/universo?filtro=todo&limite=300",
+   "tipo": "Fetch",
+   "desde_ms": 22953,
+   "dur_ms": 951,
+   "bytes": 107176,
+   "estado": 200
+  },
+  {
+   "etapa": "cambiar de moneda (1)",
+   "url": "/api/luffy/terminal/ACIRE?rango=90d",
+   "tipo": "Fetch",
+   "desde_ms": 24009,
+   "dur_ms": 4422,
+   "bytes": 4779,
+   "estado": 200
+  },
+  {
+   "etapa": "cambiar de moneda (1)",
+   "url": "/api/luffy/terminal/BTC?rango=90d",
+   "tipo": "Fetch",
+   "desde_ms": 24010,
+   "dur_ms": 7283,
+   "bytes": 6525,
+   "estado": 200
+  },
+  {
+   "etapa": "cambiar de moneda (1)",
+   "url": "/api/luffy/graficos/datos",
+   "tipo": "Fetch",
+   "desde_ms": 30546,
+   "dur_ms": 1791,
+   "bytes": 10045,
+   "estado": 200
+  },
+  {
+   "etapa": "cambiar de moneda (1)",
+   "url": "/api/luffy/graficos/datos",
+   "tipo": "Fetch",
+   "desde_ms": 30547,
+   "dur_ms": 1667,
+   "bytes": 22682,
+   "estado": 200
+  },
+  {
+   "etapa": "cambiar de moneda (1)",
+   "url": "/api/luffy/graficos/datos",
+   "tipo": "Fetch",
+   "desde_ms": 30548,
+   "dur_ms": 1594,
+   "bytes": 6042,
+   "estado": 200
+  },
+  {
+   "etapa": "cambiar de moneda (2)",
+   "url": "/favicon.png",
+   "tipo": "Other",
+   "desde_ms": 33338,
+   "dur_ms": 187,
+   "bytes": 5685,
+   "estado": 200
+  },
+  {
+   "etapa": "cambiar de moneda (2)",
+   "url": "/api/luffy/terminal/SIGMAETH?rango=90d",
+   "tipo": "Fetch",
+   "desde_ms": 33383,
+   "dur_ms": 3368,
+   "bytes": 4798,
+   "estado": 200
+  },
+  {
+   "etapa": "cambiar de moneda (2)",
+   "url": "/api/luffy/costo",
+   "tipo": "Fetch",
+   "desde_ms": 33386,
+   "dur_ms": 3577,
+   "bytes": 4049,
+   "estado": 200
+  },
+  {
+   "etapa": "cambiar de moneda (2)",
+   "url": "/api/luffy/terminal/universo?filtro=todo&limite=300",
+   "tipo": "Fetch",
+   "desde_ms": 33390,
+   "dur_ms": 954,
+   "bytes": 107176,
+   "estado": 200
+  },
+  {
+   "etapa": "cambiar de moneda (2)",
+   "url": "/api/luffy/terminal/NEAR?rango=90d",
+   "tipo": "Fetch",
+   "desde_ms": 34441,
+   "dur_ms": 8071,
+   "bytes": 6301,
+   "estado": 200
+  },
+  {
+   "etapa": "cambiar de moneda (2)",
+   "url": "/api/luffy/graficos/datos",
+   "tipo": "Fetch",
+   "desde_ms": 36975,
+   "dur_ms": 1934,
+   "bytes": 2945,
+   "estado": 200
+  },
+  {
+   "etapa": "cambiar de moneda (2)",
+   "url": "/api/luffy/graficos/datos",
+   "tipo": "Fetch",
+   "desde_ms": 36976,
+   "dur_ms": 2068,
+   "bytes": 3008,
+   "estado": 200
+  },
+  {
+   "etapa": "cambiar de moneda (2)",
+   "url": "/api/luffy/graficos/datos",
+   "tipo": "Fetch",
+   "desde_ms": 36977,
+   "dur_ms": 787,
+   "bytes": 1880,
+   "estado": 200
+  },
+  {
+   "etapa": "cambiar de moneda (2)",
+   "url": "/api/luffy/graficos/datos",
+   "tipo": "Fetch",
+   "desde_ms": 36978,
+   "dur_ms": 2754,
+   "bytes": 2575,
+   "estado": 200
+  },
+  {
+   "etapa": "cambiar de moneda (3)",
+   "url": "/favicon.png",
+   "tipo": "Other",
+   "desde_ms": 39722,
+   "dur_ms": 0,
+   "bytes": 0,
+   "estado": 200
+  },
+  {
+   "etapa": "cambiar de moneda (3)",
+   "url": "/api/luffy/costo",
+   "tipo": "Fetch",
+   "desde_ms": 39755,
+   "dur_ms": 4131,
+   "bytes": 4049,
+   "estado": 200
+  },
+  {
+   "etapa": "cambiar de moneda (3)",
+   "url": "/api/luffy/terminal/universo?filtro=todo&limite=300",
+   "tipo": "Fetch",
+   "desde_ms": 39760,
+   "dur_ms": 1201,
+   "bytes": 107176,
+   "estado": 200
+  },
+  {
+   "etapa": "cambiar de moneda (3)",
+   "url": "/api/luffy/graficos/datos",
+   "tipo": "Fetch",
+   "desde_ms": 42737,
+   "dur_ms": 1578,
+   "bytes": 9033,
+   "estado": 200
+  },
+  {
+   "etapa": "cambiar de moneda (3)",
+   "url": "/api/luffy/graficos/datos",
+   "tipo": "Fetch",
+   "desde_ms": 42738,
+   "dur_ms": 1957,
+   "bytes": 20577,
+   "estado": 200
+  },
+  {
+   "etapa": "cambiar de moneda (3)",
+   "url": "/api/luffy/graficos/datos",
+   "tipo": "Fetch",
+   "desde_ms": 42739,
+   "dur_ms": 1893,
+   "bytes": 5847,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la cartera",
+   "url": "/luffy/cartera",
+   "tipo": "Document",
+   "desde_ms": 44599,
+   "dur_ms": 173,
+   "bytes": 2495,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la cartera",
+   "url": "/fonts/outfit-latin-wght-normal.woff2",
+   "tipo": "Font",
+   "desde_ms": 44805,
+   "dur_ms": 1033,
+   "bytes": 32490,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la cartera",
+   "url": "/fonts/Geist-latin.woff2",
+   "tipo": "Font",
+   "desde_ms": 44805,
+   "dur_ms": 963,
+   "bytes": 29486,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la cartera",
+   "url": "/assets/index-Z9wwLNaC.js",
+   "tipo": "Script",
+   "desde_ms": 44805,
+   "dur_ms": 3265,
+   "bytes": 237658,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la cartera",
+   "url": "/assets/jsx-runtime-B-hcVAMW.js",
+   "tipo": "Script",
+   "desde_ms": 44805,
+   "dur_ms": 404,
+   "bytes": 8774,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la cartera",
+   "url": "/assets/chunk-BV7QT456-BagTiCLq.js",
+   "tipo": "Script",
+   "desde_ms": 44806,
+   "dur_ms": 1192,
+   "bytes": 39822,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la cartera",
+   "url": "/assets/sesion-CcPrMfWj.js",
+   "tipo": "Script",
+   "desde_ms": 44806,
+   "dur_ms": 1155,
+   "bytes": 36904,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la cartera",
+   "url": "/assets/acceso-CioYKzkQ.js",
+   "tipo": "Script",
+   "desde_ms": 44806,
+   "dur_ms": 1141,
+   "bytes": 331,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la cartera",
+   "url": "/assets/formato-DYlTusyx.js",
+   "tipo": "Script",
+   "desde_ms": 44806,
+   "dur_ms": 1247,
+   "bytes": 3417,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la cartera",
+   "url": "/assets/TierIcon-Bc1OK4O4.js",
+   "tipo": "Script",
+   "desde_ms": 44806,
+   "dur_ms": 1313,
+   "bytes": 653,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la cartera",
+   "url": "/assets/Loader-Dh4lWw5F.js",
+   "tipo": "Script",
+   "desde_ms": 44806,
+   "dur_ms": 1347,
+   "bytes": 1851,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la cartera",
+   "url": "/assets/EmptyState-BeHVZ30u.js",
+   "tipo": "Script",
+   "desde_ms": 44807,
+   "dur_ms": 1368,
+   "bytes": 934,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la cartera",
+   "url": "/assets/lenguaje-BVWgWjRz.js",
+   "tipo": "Script",
+   "desde_ms": 44807,
+   "dur_ms": 1641,
+   "bytes": 13101,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la cartera",
+   "url": "/assets/piezas-ClSztosB.js",
+   "tipo": "Script",
+   "desde_ms": 44807,
+   "dur_ms": 1690,
+   "bytes": 10587,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la cartera",
+   "url": "/assets/GLBoundary-D9RnugIY.js",
+   "tipo": "Script",
+   "desde_ms": 44807,
+   "dur_ms": 1569,
+   "bytes": 1534,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la cartera",
+   "url": "/assets/index-C5Hp7Um3.css",
+   "tipo": "Stylesheet",
+   "desde_ms": 44807,
+   "dur_ms": 3371,
+   "bytes": 244493,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la cartera",
+   "url": "/assets/LuffyShell-CXuJg7nX.js",
+   "tipo": "Script",
+   "desde_ms": 48202,
+   "dur_ms": 255,
+   "bytes": 5343,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la cartera",
+   "url": "/assets/api-DzH9v0fV.js",
+   "tipo": "Script",
+   "desde_ms": 48202,
+   "dur_ms": 241,
+   "bytes": 3643,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la cartera",
+   "url": "/assets/formato-B9oNyOd9.js",
+   "tipo": "Script",
+   "desde_ms": 48203,
+   "dur_ms": 217,
+   "bytes": 2647,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la cartera",
+   "url": "/api/auth/get-session",
+   "tipo": "Fetch",
+   "desde_ms": 48205,
+   "dur_ms": 188,
+   "bytes": 974,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la cartera",
+   "url": "/api/yo",
+   "tipo": "Fetch",
+   "desde_ms": 48206,
+   "dur_ms": 181,
+   "bytes": 560,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la cartera",
+   "url": "/api/yo",
+   "tipo": "Fetch",
+   "desde_ms": 48206,
+   "dur_ms": 344,
+   "bytes": 560,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la cartera",
+   "url": "/favicon.png",
+   "tipo": "Other",
+   "desde_ms": 48207,
+   "dur_ms": 256,
+   "bytes": 5685,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la cartera",
+   "url": "/api/yo",
+   "tipo": "Fetch",
+   "desde_ms": 48397,
+   "dur_ms": 968,
+   "bytes": 560,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la cartera",
+   "url": "/img/logo-mark.webp",
+   "tipo": "Image",
+   "desde_ms": 48460,
+   "dur_ms": 689,
+   "bytes": 24030,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la cartera",
+   "url": "/assets/Cartera-z8MAlhGm.js",
+   "tipo": "Script",
+   "desde_ms": 48465,
+   "dur_ms": 885,
+   "bytes": 34484,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la cartera",
+   "url": "/assets/api6b-BBNlJkqE.js",
+   "tipo": "Script",
+   "desde_ms": 48466,
+   "dur_ms": 276,
+   "bytes": 4798,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la cartera",
+   "url": "/assets/tema-2AScGvLt.js",
+   "tipo": "Script",
+   "desde_ms": 48466,
+   "dur_ms": 185,
+   "bytes": 974,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la cartera",
+   "url": "/assets/Chat-CtYKfvad.js",
+   "tipo": "Script",
+   "desde_ms": 48466,
+   "dur_ms": 521,
+   "bytes": 15975,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la cartera",
+   "url": "/assets/md-DhLF3rzQ.js",
+   "tipo": "Script",
+   "desde_ms": 48466,
+   "dur_ms": 443,
+   "bytes": 3437,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la cartera",
+   "url": "/assets/Grafico-BLphCQpU.js",
+   "tipo": "Script",
+   "desde_ms": 48467,
+   "dur_ms": 2714,
+   "bytes": 202133,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la cartera",
+   "url": "/assets/echarts-DIexXyHo.js",
+   "tipo": "Script",
+   "desde_ms": 48467,
+   "dur_ms": 4289,
+   "bytes": 534694,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la cartera",
+   "url": "/assets/Plegable-CFnqVvkc.js",
+   "tipo": "Script",
+   "desde_ms": 48467,
+   "dur_ms": 711,
+   "bytes": 612,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la cartera",
+   "url": "/api/luffy/costo",
+   "tipo": "Fetch",
+   "desde_ms": 48506,
+   "dur_ms": 3098,
+   "bytes": 4049,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la cartera",
+   "url": "/fonts/JetBrainsMono-latin.woff2",
+   "tipo": "Font",
+   "desde_ms": 48515,
+   "dur_ms": 892,
+   "bytes": 31538,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la cartera",
+   "url": "/api/luffy/cartera?origen=pablo",
+   "tipo": "Fetch",
+   "desde_ms": 52799,
+   "dur_ms": 935,
+   "bytes": 1169,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la cartera",
+   "url": "/api/luffy/exchange/ordenes?estado=abiertas",
+   "tipo": "Fetch",
+   "desde_ms": 53735,
+   "dur_ms": 900,
+   "bytes": 700,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la cartera",
+   "url": "/api/luffy/cartera/curva?origen=pablo&rango=90d",
+   "tipo": "Fetch",
+   "desde_ms": 53744,
+   "dur_ms": 1108,
+   "bytes": 1220,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la caja",
+   "url": "/api/luffy/caja?decisiones=30",
+   "tipo": "Fetch",
+   "desde_ms": 54205,
+   "dur_ms": 4957,
+   "bytes": 30076,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la caja",
+   "url": "/api/luffy/cartera?origen=caja",
+   "tipo": "Fetch",
+   "desde_ms": 54206,
+   "dur_ms": 4320,
+   "bytes": 3933,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la caja",
+   "url": "/api/luffy/exchange/fills?par=SOL-USDT&limite=30",
+   "tipo": "Fetch",
+   "desde_ms": 54637,
+   "dur_ms": 807,
+   "bytes": 940,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la caja",
+   "url": "/api/luffy/exchange/fills?par=WAL-USDT&limite=30",
+   "tipo": "Fetch",
+   "desde_ms": 54638,
+   "dur_ms": 1472,
+   "bytes": 619,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la caja",
+   "url": "/api/luffy/exchange/comisiones?desde=2026-09-12&hasta=2026-10-12&origen=pablo",
+   "tipo": "Fetch",
+   "desde_ms": 54638,
+   "dur_ms": 1084,
+   "bytes": 575,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir el radar",
+   "url": "/luffy/radar",
+   "tipo": "Document",
+   "desde_ms": 59528,
+   "dur_ms": 163,
+   "bytes": 2495,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir el radar",
+   "url": "/fonts/outfit-latin-wght-normal.woff2",
+   "tipo": "Font",
+   "desde_ms": 59701,
+   "dur_ms": 1029,
+   "bytes": 32490,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir el radar",
+   "url": "/fonts/Geist-latin.woff2",
+   "tipo": "Font",
+   "desde_ms": 59701,
+   "dur_ms": 958,
+   "bytes": 29486,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir el radar",
+   "url": "/assets/index-Z9wwLNaC.js",
+   "tipo": "Script",
+   "desde_ms": 59702,
+   "dur_ms": 3260,
+   "bytes": 237658,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir el radar",
+   "url": "/assets/jsx-runtime-B-hcVAMW.js",
+   "tipo": "Script",
+   "desde_ms": 59702,
+   "dur_ms": 400,
+   "bytes": 8774,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir el radar",
+   "url": "/assets/chunk-BV7QT456-BagTiCLq.js",
+   "tipo": "Script",
+   "desde_ms": 59702,
+   "dur_ms": 1185,
+   "bytes": 39822,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir el radar",
+   "url": "/assets/sesion-CcPrMfWj.js",
+   "tipo": "Script",
+   "desde_ms": 59702,
+   "dur_ms": 1148,
+   "bytes": 36904,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir el radar",
+   "url": "/assets/acceso-CioYKzkQ.js",
+   "tipo": "Script",
+   "desde_ms": 59702,
+   "dur_ms": 1143,
+   "bytes": 331,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir el radar",
+   "url": "/assets/formato-DYlTusyx.js",
+   "tipo": "Script",
+   "desde_ms": 59702,
+   "dur_ms": 1249,
+   "bytes": 3417,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir el radar",
+   "url": "/assets/TierIcon-Bc1OK4O4.js",
+   "tipo": "Script",
+   "desde_ms": 59702,
+   "dur_ms": 1313,
+   "bytes": 653,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir el radar",
+   "url": "/assets/Loader-Dh4lWw5F.js",
+   "tipo": "Script",
+   "desde_ms": 59702,
+   "dur_ms": 1342,
+   "bytes": 1851,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir el radar",
+   "url": "/assets/EmptyState-BeHVZ30u.js",
+   "tipo": "Script",
+   "desde_ms": 59703,
+   "dur_ms": 1362,
+   "bytes": 934,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir el radar",
+   "url": "/assets/lenguaje-BVWgWjRz.js",
+   "tipo": "Script",
+   "desde_ms": 59703,
+   "dur_ms": 1649,
+   "bytes": 13101,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir el radar",
+   "url": "/assets/piezas-ClSztosB.js",
+   "tipo": "Script",
+   "desde_ms": 59703,
+   "dur_ms": 1692,
+   "bytes": 10587,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir el radar",
+   "url": "/assets/GLBoundary-D9RnugIY.js",
+   "tipo": "Script",
+   "desde_ms": 59703,
+   "dur_ms": 1563,
+   "bytes": 1534,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir el radar",
+   "url": "/assets/index-C5Hp7Um3.css",
+   "tipo": "Stylesheet",
+   "desde_ms": 59703,
+   "dur_ms": 3364,
+   "bytes": 244493,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir el radar",
+   "url": "/assets/LuffyShell-CXuJg7nX.js",
+   "tipo": "Script",
+   "desde_ms": 63094,
+   "dur_ms": 260,
+   "bytes": 5343,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir el radar",
+   "url": "/assets/api-DzH9v0fV.js",
+   "tipo": "Script",
+   "desde_ms": 63094,
+   "dur_ms": 245,
+   "bytes": 3643,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir el radar",
+   "url": "/assets/formato-B9oNyOd9.js",
+   "tipo": "Script",
+   "desde_ms": 63095,
+   "dur_ms": 222,
+   "bytes": 2647,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir el radar",
+   "url": "/api/auth/get-session",
+   "tipo": "Fetch",
+   "desde_ms": 63099,
+   "dur_ms": 191,
+   "bytes": 974,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir el radar",
+   "url": "/api/yo",
+   "tipo": "Fetch",
+   "desde_ms": 63099,
+   "dur_ms": 184,
+   "bytes": 560,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir el radar",
+   "url": "/api/yo",
+   "tipo": "Fetch",
+   "desde_ms": 63100,
+   "dur_ms": 339,
+   "bytes": 560,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir el radar",
+   "url": "/favicon.png",
+   "tipo": "Other",
+   "desde_ms": 63101,
+   "dur_ms": 260,
+   "bytes": 5685,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir el radar",
+   "url": "/api/yo",
+   "tipo": "Fetch",
+   "desde_ms": 63294,
+   "dur_ms": 326,
+   "bytes": 560,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir el radar",
+   "url": "/img/logo-mark.webp",
+   "tipo": "Image",
+   "desde_ms": 63357,
+   "dur_ms": 447,
+   "bytes": 24030,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir el radar",
+   "url": "/assets/Radar-CFjRBOT9.js",
+   "tipo": "Script",
+   "desde_ms": 63361,
+   "dur_ms": 293,
+   "bytes": 8224,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir el radar",
+   "url": "/assets/api6b-BBNlJkqE.js",
+   "tipo": "Script",
+   "desde_ms": 63361,
+   "dur_ms": 242,
+   "bytes": 4798,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir el radar",
+   "url": "/api/luffy/costo",
+   "tipo": "Fetch",
+   "desde_ms": 63397,
+   "dur_ms": 3505,
+   "bytes": 4049,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir el radar",
+   "url": "/fonts/JetBrainsMono-latin.woff2",
+   "tipo": "Font",
+   "desde_ms": 63415,
+   "dur_ms": 456,
+   "bytes": 31538,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir el radar",
+   "url": "/api/luffy/radar/modos",
+   "tipo": "Fetch",
+   "desde_ms": 63697,
+   "dur_ms": 8054,
+   "bytes": 14816,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir el radar",
+   "url": "/api/luffy/radar/candidatas?dias=30",
+   "tipo": "Fetch",
+   "desde_ms": 63698,
+   "dur_ms": 10936,
+   "bytes": 70664,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir control",
+   "url": "/luffy/control",
+   "tipo": "Document",
+   "desde_ms": 75093,
+   "dur_ms": 170,
+   "bytes": 2495,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir control",
+   "url": "/fonts/outfit-latin-wght-normal.woff2",
+   "tipo": "Font",
+   "desde_ms": 75288,
+   "dur_ms": 1032,
+   "bytes": 32490,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir control",
+   "url": "/fonts/Geist-latin.woff2",
+   "tipo": "Font",
+   "desde_ms": 75288,
+   "dur_ms": 960,
+   "bytes": 29486,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir control",
+   "url": "/assets/index-Z9wwLNaC.js",
+   "tipo": "Script",
+   "desde_ms": 75288,
+   "dur_ms": 3265,
+   "bytes": 237658,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir control",
+   "url": "/assets/jsx-runtime-B-hcVAMW.js",
+   "tipo": "Script",
+   "desde_ms": 75288,
+   "dur_ms": 404,
+   "bytes": 8774,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir control",
+   "url": "/assets/chunk-BV7QT456-BagTiCLq.js",
+   "tipo": "Script",
+   "desde_ms": 75288,
+   "dur_ms": 1190,
+   "bytes": 39822,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir control",
+   "url": "/assets/sesion-CcPrMfWj.js",
+   "tipo": "Script",
+   "desde_ms": 75288,
+   "dur_ms": 1155,
+   "bytes": 36904,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir control",
+   "url": "/assets/acceso-CioYKzkQ.js",
+   "tipo": "Script",
+   "desde_ms": 75288,
+   "dur_ms": 1140,
+   "bytes": 331,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir control",
+   "url": "/assets/formato-DYlTusyx.js",
+   "tipo": "Script",
+   "desde_ms": 75289,
+   "dur_ms": 1252,
+   "bytes": 3417,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir control",
+   "url": "/assets/TierIcon-Bc1OK4O4.js",
+   "tipo": "Script",
+   "desde_ms": 75289,
+   "dur_ms": 1309,
+   "bytes": 653,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir control",
+   "url": "/assets/Loader-Dh4lWw5F.js",
+   "tipo": "Script",
+   "desde_ms": 75289,
+   "dur_ms": 1352,
+   "bytes": 1851,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir control",
+   "url": "/assets/EmptyState-BeHVZ30u.js",
+   "tipo": "Script",
+   "desde_ms": 75289,
+   "dur_ms": 1367,
+   "bytes": 934,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir control",
+   "url": "/assets/lenguaje-BVWgWjRz.js",
+   "tipo": "Script",
+   "desde_ms": 75289,
+   "dur_ms": 1648,
+   "bytes": 13101,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir control",
+   "url": "/assets/piezas-ClSztosB.js",
+   "tipo": "Script",
+   "desde_ms": 75289,
+   "dur_ms": 1689,
+   "bytes": 10587,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir control",
+   "url": "/assets/GLBoundary-D9RnugIY.js",
+   "tipo": "Script",
+   "desde_ms": 75289,
+   "dur_ms": 1570,
+   "bytes": 1534,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir control",
+   "url": "/assets/index-C5Hp7Um3.css",
+   "tipo": "Stylesheet",
+   "desde_ms": 75290,
+   "dur_ms": 3370,
+   "bytes": 244493,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir control",
+   "url": "/assets/LuffyShell-CXuJg7nX.js",
+   "tipo": "Script",
+   "desde_ms": 78685,
+   "dur_ms": 259,
+   "bytes": 5343,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir control",
+   "url": "/assets/api-DzH9v0fV.js",
+   "tipo": "Script",
+   "desde_ms": 78687,
+   "dur_ms": 245,
+   "bytes": 3643,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir control",
+   "url": "/assets/formato-B9oNyOd9.js",
+   "tipo": "Script",
+   "desde_ms": 78687,
+   "dur_ms": 223,
+   "bytes": 2647,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir control",
+   "url": "/api/auth/get-session",
+   "tipo": "Fetch",
+   "desde_ms": 78691,
+   "dur_ms": 190,
+   "bytes": 974,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir control",
+   "url": "/api/yo",
+   "tipo": "Fetch",
+   "desde_ms": 78692,
+   "dur_ms": 198,
+   "bytes": 560,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir control",
+   "url": "/api/yo",
+   "tipo": "Fetch",
+   "desde_ms": 78692,
+   "dur_ms": 361,
+   "bytes": 560,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir control",
+   "url": "/favicon.png",
+   "tipo": "Other",
+   "desde_ms": 78693,
+   "dur_ms": 259,
+   "bytes": 5685,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir control",
+   "url": "/api/yo",
+   "tipo": "Fetch",
+   "desde_ms": 78884,
+   "dur_ms": 511,
+   "bytes": 560,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir control",
+   "url": "/img/logo-mark.webp",
+   "tipo": "Image",
+   "desde_ms": 78949,
+   "dur_ms": 605,
+   "bytes": 24030,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir control",
+   "url": "/assets/Control-Bq0SWwmW.js",
+   "tipo": "Script",
+   "desde_ms": 78952,
+   "dur_ms": 473,
+   "bytes": 15344,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir control",
+   "url": "/assets/api6b-BBNlJkqE.js",
+   "tipo": "Script",
+   "desde_ms": 78953,
+   "dur_ms": 264,
+   "bytes": 4798,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir control",
+   "url": "/assets/tema-2AScGvLt.js",
+   "tipo": "Script",
+   "desde_ms": 78953,
+   "dur_ms": 179,
+   "bytes": 974,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir control",
+   "url": "/assets/echarts-DIexXyHo.js",
+   "tipo": "Script",
+   "desde_ms": 78954,
+   "dur_ms": 3125,
+   "bytes": 534694,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir control",
+   "url": "/api/luffy/costo",
+   "tipo": "Fetch",
+   "desde_ms": 78989,
+   "dur_ms": 2518,
+   "bytes": 4049,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir control",
+   "url": "/fonts/JetBrainsMono-latin.woff2",
+   "tipo": "Font",
+   "desde_ms": 78996,
+   "dur_ms": 688,
+   "bytes": 31538,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir control",
+   "url": "/api/luffy/gatillos",
+   "tipo": "Fetch",
+   "desde_ms": 82102,
+   "dur_ms": 326,
+   "bytes": 204,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la oficina",
+   "url": "/luffy/oficina",
+   "tipo": "Document",
+   "desde_ms": 82637,
+   "dur_ms": 170,
+   "bytes": 2495,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la oficina",
+   "url": "/fonts/outfit-latin-wght-normal.woff2",
+   "tipo": "Font",
+   "desde_ms": 82813,
+   "dur_ms": 1,
+   "bytes": 0,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la oficina",
+   "url": "/fonts/Geist-latin.woff2",
+   "tipo": "Font",
+   "desde_ms": 82814,
+   "dur_ms": 0,
+   "bytes": 0,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la oficina",
+   "url": "/assets/index-Z9wwLNaC.js",
+   "tipo": "Script",
+   "desde_ms": 82814,
+   "dur_ms": 0,
+   "bytes": 0,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la oficina",
+   "url": "/assets/jsx-runtime-B-hcVAMW.js",
+   "tipo": "Script",
+   "desde_ms": 82815,
+   "dur_ms": 0,
+   "bytes": 0,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la oficina",
+   "url": "/assets/chunk-BV7QT456-BagTiCLq.js",
+   "tipo": "Script",
+   "desde_ms": 82815,
+   "dur_ms": 0,
+   "bytes": 0,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la oficina",
+   "url": "/assets/sesion-CcPrMfWj.js",
+   "tipo": "Script",
+   "desde_ms": 82815,
+   "dur_ms": 0,
+   "bytes": 0,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la oficina",
+   "url": "/assets/acceso-CioYKzkQ.js",
+   "tipo": "Script",
+   "desde_ms": 82815,
+   "dur_ms": 0,
+   "bytes": 0,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la oficina",
+   "url": "/assets/formato-DYlTusyx.js",
+   "tipo": "Script",
+   "desde_ms": 82815,
+   "dur_ms": 0,
+   "bytes": 0,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la oficina",
+   "url": "/assets/TierIcon-Bc1OK4O4.js",
+   "tipo": "Script",
+   "desde_ms": 82815,
+   "dur_ms": 0,
+   "bytes": 0,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la oficina",
+   "url": "/assets/Loader-Dh4lWw5F.js",
+   "tipo": "Script",
+   "desde_ms": 82815,
+   "dur_ms": 0,
+   "bytes": 0,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la oficina",
+   "url": "/assets/EmptyState-BeHVZ30u.js",
+   "tipo": "Script",
+   "desde_ms": 82815,
+   "dur_ms": 0,
+   "bytes": 0,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la oficina",
+   "url": "/assets/lenguaje-BVWgWjRz.js",
+   "tipo": "Script",
+   "desde_ms": 82815,
+   "dur_ms": 0,
+   "bytes": 0,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la oficina",
+   "url": "/assets/piezas-ClSztosB.js",
+   "tipo": "Script",
+   "desde_ms": 82815,
+   "dur_ms": 0,
+   "bytes": 0,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la oficina",
+   "url": "/assets/GLBoundary-D9RnugIY.js",
+   "tipo": "Script",
+   "desde_ms": 82815,
+   "dur_ms": 0,
+   "bytes": 0,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la oficina",
+   "url": "/assets/index-C5Hp7Um3.css",
+   "tipo": "Stylesheet",
+   "desde_ms": 82815,
+   "dur_ms": 0,
+   "bytes": 0,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la oficina",
+   "url": "/fonts/JetBrainsMono-latin.woff2",
+   "tipo": "Font",
+   "desde_ms": 82842,
+   "dur_ms": 0,
+   "bytes": 0,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la oficina",
+   "url": "/assets/LuffyShell-CXuJg7nX.js",
+   "tipo": "Script",
+   "desde_ms": 82873,
+   "dur_ms": 0,
+   "bytes": 0,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la oficina",
+   "url": "/assets/api-DzH9v0fV.js",
+   "tipo": "Script",
+   "desde_ms": 82873,
+   "dur_ms": 0,
+   "bytes": 0,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la oficina",
+   "url": "/assets/formato-B9oNyOd9.js",
+   "tipo": "Script",
+   "desde_ms": 82873,
+   "dur_ms": 0,
+   "bytes": 0,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la oficina",
+   "url": "/api/auth/get-session",
+   "tipo": "Fetch",
+   "desde_ms": 82876,
+   "dur_ms": 176,
+   "bytes": 974,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la oficina",
+   "url": "/api/yo",
+   "tipo": "Fetch",
+   "desde_ms": 82877,
+   "dur_ms": 168,
+   "bytes": 560,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la oficina",
+   "url": "/api/yo",
+   "tipo": "Fetch",
+   "desde_ms": 82877,
+   "dur_ms": 331,
+   "bytes": 560,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la oficina",
+   "url": "/favicon.png",
+   "tipo": "Other",
+   "desde_ms": 82879,
+   "dur_ms": 0,
+   "bytes": 0,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la oficina",
+   "url": "/img/logo-mark.webp",
+   "tipo": "Image",
+   "desde_ms": 83048,
+   "dur_ms": 0,
+   "bytes": 0,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la oficina",
+   "url": "/assets/Oficina-BmEjjoQR.js",
+   "tipo": "Script",
+   "desde_ms": 83052,
+   "dur_ms": 206,
+   "bytes": 10459,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la oficina",
+   "url": "/assets/api6b-BBNlJkqE.js",
+   "tipo": "Script",
+   "desde_ms": 83052,
+   "dur_ms": 0,
+   "bytes": 0,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la oficina",
+   "url": "/assets/tema-2AScGvLt.js",
+   "tipo": "Script",
+   "desde_ms": 83052,
+   "dur_ms": 0,
+   "bytes": 0,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir la oficina",
+   "url": "/api/yo",
+   "tipo": "Fetch",
+   "desde_ms": 83058,
+   "dur_ms": 317,
+   "bytes": 560,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir informes",
+   "url": "/luffy/informes",
+   "tipo": "Document",
+   "desde_ms": 83652,
+   "dur_ms": 170,
+   "bytes": 2495,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir informes",
+   "url": "/fonts/outfit-latin-wght-normal.woff2",
+   "tipo": "Font",
+   "desde_ms": 83831,
+   "dur_ms": 0,
+   "bytes": 0,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir informes",
+   "url": "/fonts/Geist-latin.woff2",
+   "tipo": "Font",
+   "desde_ms": 83831,
+   "dur_ms": 0,
+   "bytes": 0,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir informes",
+   "url": "/assets/index-Z9wwLNaC.js",
+   "tipo": "Script",
+   "desde_ms": 83831,
+   "dur_ms": 0,
+   "bytes": 0,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir informes",
+   "url": "/assets/jsx-runtime-B-hcVAMW.js",
+   "tipo": "Script",
+   "desde_ms": 83832,
+   "dur_ms": 0,
+   "bytes": 0,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir informes",
+   "url": "/assets/chunk-BV7QT456-BagTiCLq.js",
+   "tipo": "Script",
+   "desde_ms": 83832,
+   "dur_ms": 0,
+   "bytes": 0,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir informes",
+   "url": "/assets/sesion-CcPrMfWj.js",
+   "tipo": "Script",
+   "desde_ms": 83832,
+   "dur_ms": 0,
+   "bytes": 0,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir informes",
+   "url": "/assets/acceso-CioYKzkQ.js",
+   "tipo": "Script",
+   "desde_ms": 83832,
+   "dur_ms": 0,
+   "bytes": 0,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir informes",
+   "url": "/assets/formato-DYlTusyx.js",
+   "tipo": "Script",
+   "desde_ms": 83832,
+   "dur_ms": 0,
+   "bytes": 0,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir informes",
+   "url": "/assets/TierIcon-Bc1OK4O4.js",
+   "tipo": "Script",
+   "desde_ms": 83832,
+   "dur_ms": 0,
+   "bytes": 0,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir informes",
+   "url": "/assets/Loader-Dh4lWw5F.js",
+   "tipo": "Script",
+   "desde_ms": 83833,
+   "dur_ms": 0,
+   "bytes": 0,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir informes",
+   "url": "/assets/EmptyState-BeHVZ30u.js",
+   "tipo": "Script",
+   "desde_ms": 83833,
+   "dur_ms": 0,
+   "bytes": 0,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir informes",
+   "url": "/assets/lenguaje-BVWgWjRz.js",
+   "tipo": "Script",
+   "desde_ms": 83833,
+   "dur_ms": 0,
+   "bytes": 0,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir informes",
+   "url": "/assets/piezas-ClSztosB.js",
+   "tipo": "Script",
+   "desde_ms": 83833,
+   "dur_ms": 0,
+   "bytes": 0,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir informes",
+   "url": "/assets/GLBoundary-D9RnugIY.js",
+   "tipo": "Script",
+   "desde_ms": 83833,
+   "dur_ms": 0,
+   "bytes": 0,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir informes",
+   "url": "/assets/index-C5Hp7Um3.css",
+   "tipo": "Stylesheet",
+   "desde_ms": 83833,
+   "dur_ms": 0,
+   "bytes": 0,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir informes",
+   "url": "/fonts/JetBrainsMono-latin.woff2",
+   "tipo": "Font",
+   "desde_ms": 83858,
+   "dur_ms": 1,
+   "bytes": 0,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir informes",
+   "url": "/assets/LuffyShell-CXuJg7nX.js",
+   "tipo": "Script",
+   "desde_ms": 83873,
+   "dur_ms": 0,
+   "bytes": 0,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir informes",
+   "url": "/assets/api-DzH9v0fV.js",
+   "tipo": "Script",
+   "desde_ms": 83873,
+   "dur_ms": 0,
+   "bytes": 0,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir informes",
+   "url": "/assets/formato-B9oNyOd9.js",
+   "tipo": "Script",
+   "desde_ms": 83873,
+   "dur_ms": 1,
+   "bytes": 0,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir informes",
+   "url": "/api/auth/get-session",
+   "tipo": "Fetch",
+   "desde_ms": 83879,
+   "dur_ms": 174,
+   "bytes": 974,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir informes",
+   "url": "/api/yo",
+   "tipo": "Fetch",
+   "desde_ms": 83880,
+   "dur_ms": 165,
+   "bytes": 560,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir informes",
+   "url": "/api/yo",
+   "tipo": "Fetch",
+   "desde_ms": 83880,
+   "dur_ms": 330,
+   "bytes": 560,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir informes",
+   "url": "/favicon.png",
+   "tipo": "Other",
+   "desde_ms": 83881,
+   "dur_ms": 0,
+   "bytes": 0,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir informes",
+   "url": "/img/logo-mark.webp",
+   "tipo": "Image",
+   "desde_ms": 84049,
+   "dur_ms": 0,
+   "bytes": 0,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir informes",
+   "url": "/assets/Informes-B3hBcvno.js",
+   "tipo": "Script",
+   "desde_ms": 84052,
+   "dur_ms": 271,
+   "bytes": 9025,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir informes",
+   "url": "/assets/api6b-BBNlJkqE.js",
+   "tipo": "Script",
+   "desde_ms": 84052,
+   "dur_ms": 0,
+   "bytes": 0,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir informes",
+   "url": "/assets/md-DhLF3rzQ.js",
+   "tipo": "Script",
+   "desde_ms": 84052,
+   "dur_ms": 216,
+   "bytes": 3437,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir informes",
+   "url": "/assets/Grafico-BLphCQpU.js",
+   "tipo": "Script",
+   "desde_ms": 84053,
+   "dur_ms": 1200,
+   "bytes": 202133,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir informes",
+   "url": "/assets/tema-2AScGvLt.js",
+   "tipo": "Script",
+   "desde_ms": 84053,
+   "dur_ms": 0,
+   "bytes": 0,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir informes",
+   "url": "/api/yo",
+   "tipo": "Fetch",
+   "desde_ms": 84060,
+   "dur_ms": 316,
+   "bytes": 560,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir informes",
+   "url": "/api/luffy/informes?limite=30&tipo=diario",
+   "tipo": "Fetch",
+   "desde_ms": 85260,
+   "dur_ms": 802,
+   "bytes": 1154,
+   "estado": 200
+  },
+  {
+   "etapa": "abrir informes",
+   "url": "/api/luffy/informes/2026-10-11?tipo=diario",
+   "tipo": "Fetch",
+   "desde_ms": 86067,
+   "dur_ms": 1426,
+   "bytes": 18869,
+   "estado": 200
+  }
+ ]
+}

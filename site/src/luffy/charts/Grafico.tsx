@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { Datos, Spec } from '../tipos'
-import { ErrorLuffy, luffy } from '../api'
+import { ErrorLuffy, esTope, luffy } from '../api'
 import { dibujar, type Vivo } from './lwc'
 import type { Sincronia } from './sincronia'
 import { esCapaVacia, fmt, fmtFecha, motivoLlano, RANGO_LABEL } from '../formato'
@@ -23,10 +23,12 @@ interface Props {
   sincronia?: Sincronia
   /** Si viene, la línea del stop vigente se puede arrastrar; al soltar, llega el precio nuevo (para proponer moverlo). */
   onMoverStop?: (activo: string, precio: number) => void
+  /** Espera antes de pedir los datos de un spec que llega por prop (en el laboratorio, mientras se edita). La terminal no espera. */
+  demora?: number
 }
 const RANGOS = ['30d', '60d', '90d', '6m', '1y', 'max']
 
-export function Grafico({ spec, specId, onSpec, onDatos, alto, compacto = false, interactivo = true, rangos = true, acciones, png, className = '', sincronia, onMoverStop }: Props) {
+export function Grafico({ spec, specId, onSpec, onDatos, alto, compacto = false, interactivo = true, rangos = true, acciones, png, className = '', sincronia, onMoverStop, demora }: Props) {
   const [specResuelto, setSpecResuelto] = useState<Spec | null>(null)
   const [rangoLocal, setRangoLocal] = useState<string | null>(null)
   const [datos, setDatos] = useState<Datos | null>(null)
@@ -57,16 +59,20 @@ export function Grafico({ spec, specId, onSpec, onDatos, alto, compacto = false,
   }, [spec, specResuelto, rangoLocal, onSpec])
   const clave = useMemo(() => (specEfectivo ? JSON.stringify(specEfectivo) : ''), [specEfectivo])
 
+  const [intento, setIntento] = useState(0)
   useEffect(() => {
     if (!clave) return
     const ctl = new AbortController(); let v = true
+    // lo último que llegó para este spec se pinta ya; lo nuevo lo reemplaza al llegar
+    const guardado = luffy.datosGuardados(JSON.parse(clave) as Spec)
+    if (guardado) { setDatos(guardado); setError(null) }
     setCargando(true)
     const id = setTimeout(() => {
-      luffy.datos(JSON.parse(clave) as Spec, ctl.signal).then((d) => { if (!v) return; setDatos(d); setError(null); setCargando(false); onDatos?.(d) }, (e) => { if (!v || ctl.signal.aborted) return; setError(e instanceof ErrorLuffy ? e.message : String(e)); setCargando(false) })
-    }, spec ? 220 : 0)
+      luffy.datos(JSON.parse(clave) as Spec, ctl.signal).then((d) => { if (!v) return; setDatos(d); setError(null); setCargando(false); onDatos?.(d) }, (e) => { if (!v || ctl.signal.aborted) return; setError(esTope(e) ? 'El servidor tardó demasiado en mandar este gráfico.' : e instanceof ErrorLuffy ? e.message : String(e)); setCargando(false) })
+    }, guardado ? 0 : demora ?? (spec ? 220 : 0))
     return () => { v = false; clearTimeout(id); ctl.abort() }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- onDatos cambia en cada render del padre; sólo el spec decide
-  }, [clave])
+  }, [clave, intento])
 
   /* Mide los paneles y las leyendas: las leyendas se colocan por pane y cada pane reserva
      arriba el alto de la suya, así los datos nunca quedan debajo (tampoco en vistas previas ni a 390 px). */
@@ -110,6 +116,7 @@ export function Grafico({ spec, specId, onSpec, onDatos, alto, compacto = false,
         <div className="lf-g__cab"><span className="lf-g__titulo">{specEfectivo?.titulo ?? 'Gráfico'}</span>{acciones}</div>
         {png ? <img className="lf-g__png" src={png} alt="" loading="lazy" /> : null}
         <p className="lf-g__nota">{png ? 'Se muestra la imagen de respaldo: ' : ''}{error}</p>
+        <button type="button" className="lf-mas mono" onClick={() => { setError(null); setIntento((n) => n + 1) }} data-prueba="reintentar-grafico">Reintentar</button>
       </div>
     )
   }

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { Seguro } from './Seguro'
 import { Link } from 'react-router-dom'
 import { luffy6b, ErrorLuffy6b } from './api6b'
 import type { EstadoFuente, EventoOficina, Oficina as OficinaT } from './tipos6b'
@@ -123,12 +124,12 @@ export function Oficina() {
           {estado && <div className="lf-ofi__estado mono">{enCurso.length ? <>Luffy trabajando en {enCurso.map((t, i) => <span key={t.hilo_id}>{i > 0 && ', '}<Link to={`/luffy/h/${t.hilo_id}`}>«{t.titulo}»</Link></span>)}</> : `Luffy en reposo · último turno ${hace(estado.luffy.ultimo_turno)}`} · {estado.luffy.turnos_24h} turnos en 24 h · {fmtUsd(estado.luffy.costo_24h_usd)}</div>}
         </div>
         <div className="lf-ficha__lado">
-          <section className="lf-tarj"><h3 className="mono">Fuentes</h3><div className="lf-fuentes">{(estado?.fuentes ?? []).map((f) => <span key={f.nombre} className={`lf-mini ${f.estado === 'al_dia' ? 'lf-mini--esm' : f.estado === 'atrasada' ? 'lf-mini--oro' : f.estado === 'caida' ? 'lf-mini--rojo' : ''}`} title={f.detalle ?? ''}>{f.etiqueta ?? f.nombre.replace(/_/g, ' ')} · {SALUD_LLANO[f.estado]}{f.ultima_lectura ? ` · ${hace(f.ultima_lectura)}` : ''}</span>)}</div></section>
-          <section className="lf-tarj"><h3 className="mono">Agentes</h3>{(estado?.agentes ?? []).map((a) => <p key={a.nombre} className="lf-nota"><b>{a.etiqueta ?? a.nombre}</b>{a.en_curso ? <em className="mono" style={{ display: 'inline', color: 'var(--esmeralda-luz)' }}> · trabajando</em> : null} <em className="mono" style={{ display: 'inline' }}>· {a.llamadas_24h.toLocaleString('es-ES')} en 24 h · {fmtUsd(a.costo_24h_usd)}{a.ultima_actividad ? ` · ${hace(a.ultima_actividad)}` : ''}</em></p>)}</section>
-          <section className="lf-tarj"><h3 className="mono">Registro de actividad<em>{eventos.length ? `${eventos.length} eventos` : ''}</em></h3>
+          <Seguro t="Fuentes">{() => (<section className="lf-tarj"><h3 className="mono">Fuentes</h3><div className="lf-fuentes">{(estado?.fuentes ?? []).map((f) => <span key={f.nombre} className={`lf-mini ${f.estado === 'al_dia' ? 'lf-mini--esm' : f.estado === 'atrasada' ? 'lf-mini--oro' : f.estado === 'caida' ? 'lf-mini--rojo' : ''}`} title={f.detalle ?? ''}>{f.etiqueta ?? f.nombre.replace(/_/g, ' ')} · {SALUD_LLANO[f.estado]}{f.ultima_lectura ? ` · ${hace(f.ultima_lectura)}` : ''}</span>)}</div></section>)}</Seguro>
+          <Seguro t="Agentes">{() => (<section className="lf-tarj"><h3 className="mono">Agentes</h3>{(estado?.agentes ?? []).map((a) => <p key={a.nombre} className="lf-nota"><b>{a.etiqueta ?? a.nombre}</b>{a.en_curso ? <em className="mono" style={{ display: 'inline', color: 'var(--esmeralda-luz)' }}> · trabajando</em> : null} <em className="mono" style={{ display: 'inline' }}>· {a.llamadas_24h.toLocaleString('es-ES')} en 24 h · {fmtUsd(a.costo_24h_usd)}{a.ultima_actividad ? ` · ${hace(a.ultima_actividad)}` : ''}</em></p>)}</section>)}</Seguro>
+          <Seguro t="Registro de actividad">{() => (<section className="lf-tarj"><h3 className="mono">Registro de actividad<em>{eventos.length ? `${eventos.length} eventos` : ''}</em></h3>
             <div className="lf-ofi__registro">{eventos.map((e) => { const d = describir(e); return d ? <div key={e.clave} className="lf-ev"><span className="mono">{fmtHora(e.hora).slice(-5)}</span><span><i className={d.clase}>{d.texto}</i></span></div> : null })}{!eventos.length && <p className="lf-ctrl__nota mono">Esperando eventos…</p>}</div>
-          </section>
-          <section className="lf-tarj"><h3 className="mono">Trabajos programados</h3>{(estado?.trabajos ?? []).map((t) => <p key={t.nombre} className="lf-nota" style={{ fontSize: '0.8rem' }}><b>{t.etiqueta ?? t.nombre}</b> <em className="mono" style={{ display: 'inline' }}>· cada {t.cada}{t.ultima ? ` · último ${hace(t.ultima)}` : ''}{t.estado && t.estado !== 'ok' ? ` · ${t.estado.replace(/_/g, ' ')}` : ''}</em></p>)}</section>
+          </section>)}</Seguro>
+          <Seguro t="Trabajos programados">{() => (<section className="lf-tarj"><h3 className="mono">Trabajos programados</h3>{(estado?.trabajos ?? []).map((t) => <p key={t.nombre} className="lf-nota" style={{ fontSize: '0.8rem' }}><b>{t.etiqueta ?? t.nombre}</b> <em className="mono" style={{ display: 'inline' }}>· cada {t.cada}{t.ultima ? ` · último ${hace(t.ultima)}` : ''}{t.estado && t.estado !== 'ok' ? ` · ${t.estado.replace(/_/g, ' ')}` : ''}</em></p>)}</section>)}</Seguro>
         </div>
       </div>
     </div>

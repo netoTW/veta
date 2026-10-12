@@ -59,3 +59,11 @@ export const INTERVALO_LABEL: Record<string, string> = { '1h': '1 h', '4h': '4 h
 export const motivoLlano = (m: string | null | undefined) => (m ?? '').replace(/\b[A-Z][A-Za-z]*(Error|Exception)\s*:\s*/g, '').trim()
 /** Una capa vacía (no hay gatillos con nivel de precio) no es un dato que falte: no se avisa. */
 export const esCapaVacia = (m: string | null | undefined) => /no hay gatillos activos/i.test(m ?? '')
+
+/** Una lista de nombres venga como venga: lista, objeto {nombre: verdadero} o texto. Desde v2.2 llega lista. */
+export function lista(v: unknown): string[] {
+  if (Array.isArray(v)) return v.map((x) => (typeof x === 'string' ? x : typeof x === 'object' && x && 'familia' in x ? String((x as { familia: unknown }).familia) : String(x)))
+  if (v && typeof v === 'object') return Object.entries(v as Record<string, unknown>).filter(([, x]) => x !== false && x !== null && x !== undefined).map(([k]) => k)
+  if (typeof v === 'string' && v) return [v]
+  return []
+}

@@ -217,6 +217,30 @@ console.log('\nLUFFY · admin, escritorio')
   await ctx.close()
 }
 
+/* ---------- un dato raro no tumba la vista (el fallo del 12-oct: confluencia como diccionario) ---------- */
+{
+  console.log('\nLUFFY · datos raros: la vista sigue en pie')
+  const { ctx, p } = await contexto(false)
+  await entrar(ctx, env.VETA_ADMIN_EMAIL, env.VETA_ADMIN_PASSWORD)
+  await p.route(/\/api\/luffy\/terminal\/WAL\?/, async (r) => {
+    const res = await r.fetch(); const f = await res.json()
+    if (f.radar) {
+      f.radar.modos_cumplidos = [{ modo: 'squeeze', version: '1', confluencia: { score: 2, obligatorias: { squeeze: true }, apoyo: { posicionamiento: true }, n_apoyo: 1 }, linea_estudio: null, candidata_id: null, decision: 'analizar', p_merece: null }]
+      f.radar.familias = { ...f.radar.familias, rota: { valor: null, z: null, cumple: true, cumple_inverso: false, etiqueta: 'x', frase: null, motivo: null, detalle: 'no es un objeto' } }
+    }
+    f.catalizadores = 'no es una lista'
+    await r.fulfill({ response: res, json: f })
+  })
+  await ir(p, `${BASE}/luffy/terminal/WAL`)
+  await p.waitForSelector('[data-prueba="seccion-precio"] canvas', { timeout: 40000 })
+  await espera(800)
+  ok(!(await p.locator('text=Esta pantalla no se pudo dibujar').count()), 'la ficha no se cae entera con datos raros')
+  ok(/obligatorias squeeze/.test(await p.locator('.lf-modo__e').first().innerText().catch(() => '')), 'la confluencia como diccionario se lee igual')
+  const rotas = await p.locator('[data-prueba="tarjeta-rota"]').count()
+  ok(rotas === 1 && (await p.locator('.lf-ficha__lado .lf-tarj').count()) >= 3, `sólo la tarjeta del dato roto se avisa (${rotas}); el resto sigue`)
+  await ctx.close()
+}
+
 console.log('\nLUFFY · admin, teléfono (390 px)')
 {
   const { ctx, p } = await contexto(true)

@@ -45,7 +45,14 @@ export function LuffyShell() {
   const [costo, setCosto] = useState<Costo | null>(null)
   const [mas, setMas] = useState(false)
   const esPablo = !!yo?.usuario && !yo.impersonando && yo.rol_real === 'admin'
-  useEffect(() => { if (!esPablo) return; luffy.costo().then(setCosto, () => setCosto(null)) }, [esPablo])
+  /* El gasto del mes es un adorno de la barra: se muestra lo último guardado y se pide después de
+     que la vista cargó lo suyo, para no competir con ella en el teléfono. */
+  useEffect(() => {
+    if (!esPablo) return
+    try { const g = sessionStorage.getItem('luffy.costo'); if (g) setCosto(JSON.parse(g) as Costo) } catch { /* sin storage */ }
+    const t = setTimeout(() => luffy.costo().then((c) => { setCosto(c); try { sessionStorage.setItem('luffy.costo', JSON.stringify(c)) } catch { /* lleno */ } }, () => {}), 3500)
+    return () => clearTimeout(t)
+  }, [esPablo])
   useEffect(() => { document.title = 'Luffy · VETA' }, [])
   useEffect(() => { setMas(false) }, [loc.pathname])
   if (cargando) return null
@@ -80,7 +87,8 @@ export function LuffyShell() {
       </header>
       <main className="lf-main">
         <Suspense fallback={null}>
-          <LimiteDeError key={p} donde="luffy"><Outlet /></LimiteDeError>
+          {/* la terminal no se desmonta al cambiar de moneda (la lista, la sincronía y lo pedido siguen); el resto se reinicia por ruta */}
+          <LimiteDeError key={p.startsWith('/luffy/terminal') ? '/luffy/terminal' : p.startsWith('/luffy/informes') ? '/luffy/informes' : p} donde="luffy"><Outlet /></LimiteDeError>
         </Suspense>
       </main>
       {/* barra inferior del teléfono */}

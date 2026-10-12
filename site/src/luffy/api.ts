@@ -38,11 +38,17 @@ async function pedir<T>(ruta: string, init: { metodo?: 'GET' | 'POST' | 'PATCH' 
 /* Caché corta de datos de gráficos por spec (el contrato ya cachea 60 s del otro lado; esto
    evita pedir dos veces el mismo spec al abrir y reabrir un mensaje). */
 const DATOS = new Map<string, { hasta: number; p: Promise<Datos> }>()
+/** Lo último que llegó por spec, sin vencimiento: se muestra al instante mientras se pide lo nuevo. */
+const ULTIMOS = new Map<string, Datos>()
+/** Un pedido que no contesta en este tiempo se corta y se ofrece reintentar: nada se queda pegado. */
+export const TOPE_MS = 30_000
+export function conTope(signal?: AbortSignal, ms = TOPE_MS): AbortSignal { const t = AbortSignal.timeout(ms); return signal ? AbortSignal.any([signal, t]) : t }
+export const esTope = (e: unknown) => e instanceof DOMException && e.name === 'TimeoutError'
 const CAT: { p: Promise<Catalogo> | null; hasta: number } = { p: null, hasta: 0 }
 
 export const luffy = {
   hilos: (limite = 40) => pedir<HiloResumen[]>(`/hilos?limite=${limite}`),
-  hilo: (id: string, n = 80) => pedir<HiloDetalle>(`/hilos/${encodeURIComponent(id)}?n=${n}`),
+  hilo: (id: string, n = 80, signal?: AbortSignal) => pedir<HiloDetalle>(`/hilos/${encodeURIComponent(id)}?n=${n}`, { signal }),
   crearHilo: (titulo: string) => pedir<HiloResumen>('/hilos', { cuerpo: { titulo } }),
   cambiarHilo: (id: string, cambio: { titulo?: string; telegram_activo?: boolean }) => pedir<HiloResumen>(`/hilos/${encodeURIComponent(id)}`, { metodo: 'PATCH', cuerpo: cambio }),
 
@@ -77,13 +83,15 @@ export const luffy = {
     const clave = JSON.stringify(spec)
     const m = DATOS.get(clave)
     if (m && m.hasta > Date.now()) return m.p
-    const p = pedir<Datos>('/graficos/datos', { cuerpo: { spec }, signal })
-    p.catch(() => DATOS.delete(clave))
+    const p = pedir<Datos>('/graficos/datos', { cuerpo: { spec }, signal: conTope(signal) })
+    p.then((d) => { ULTIMOS.delete(clave); ULTIMOS.set(clave, d); if (ULTIMOS.size > 80) ULTIMOS.delete(ULTIMOS.keys().next().value!) }, () => DATOS.delete(clave))
     if (DATOS.size > 60) DATOS.clear()
     DATOS.set(clave, { hasta: Date.now() + 45_000, p })
     return p
   },
   olvidarDatos: () => DATOS.clear(),
+  /** Lo último que llegó para este spec (o null): para pintar al instante mientras llega lo nuevo. */
+  datosGuardados: (spec: Spec): Datos | null => ULTIMOS.get(JSON.stringify(spec)) ?? null,
   spec: (id: string) => pedir<SpecGuardado>(`/graficos/spec/${encodeURIComponent(id)}`),
   guardarSpec: (spec: Spec, titulo?: string, hilo_id?: string | null) => pedir<SpecGuardado>('/graficos/spec', { cuerpo: { spec, titulo, hilo_id: hilo_id ?? undefined } }),
   catalogo(): Promise<Catalogo> {

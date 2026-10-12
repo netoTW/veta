@@ -625,6 +625,76 @@ Corre dentro de `npm run invariantes`; con una carpeta como argumento deja captu
 (`recursos/capturas/luffy/`). `scripts/shots-6b.mjs` captura las vistas nuevas y
 `scripts/shots-pulida.mjs` el antes/después del acabado.
 
+### Pendientes tras la 6b · bloque A: estabilidad y velocidad (12-oct-2026)
+
+Pablo usó el panel real en el teléfono y estaba inutilizable: vistas que se caían enteras y
+cambiar de moneda tardaba casi minutos. Contrato v2.2 de Mugiwara tomado (confluencia como
+listas, frase llana por familia, fills sin `par`, ficha parcial `pendiente`, hora de la vitrina).
+
+**Lo que fallaba y cómo quedó**
+
+- **La ficha se caía entera** (`confluencia.obligatorias.join is not a function`, cuatro veces en
+  producción, CFX y S): llegaba un diccionario. Se lee con `lista()` venga como venga, y cada
+  tarjeta va dentro de `Seguro` (`src/luffy/Seguro.tsx`): si una revienta, se avisa sólo esa
+  tarjeta, se registra en `/api/fallo` y el resto sigue. `Seguro` recibe una función porque un
+  límite de React no atrapa el JSX escrito en línea en el padre. Aplicado a terminal, cartera,
+  caja, radar, control, oficina e informes. Prueba de regresión en `probar-luffy.mjs` («datos raros»).
+- **Cada cambio de moneda rearmaba el panel entero**: el límite de error general de `App.tsx`
+  usaba la ruta como clave y desmontaba Luffy (carcasa, lista de monedas, gasto) en cada
+  navegación. Bajo `/luffy` la clave es fija (el panel tiene su límite por vista), y la terminal
+  y los informes son una sola ruta con el parámetro opcional.
+- **El chat pedía 24 vistas previas de 5,7 s cada una** al servidor de Luffy y seguían ocupando
+  la línea al pasar a la terminal: ahora sólo los diez primeros hilos, de a dos, guardadas por
+  fecha de actualización, y se cortan al salir del chat.
+- **Nada se quedaba sin tope**: todo pedido de la 6b corta a los 30 s (la ficha a los 25) y la
+  vista ofrece «Reintentar»; los gráficos igual.
+- **Al cambiar de moneda**: se cortan los pedidos de la anterior y las precargas; se pinta al
+  instante lo último que se vio de esa moneda (o de otro rango) y lo nuevo lo reemplaza; la ficha
+  parcial (`pendiente`) se vuelve a pedir sola; los gráficos de abajo se montan al acercarse a
+  la pantalla; la terminal no espera los 220 ms del laboratorio; la siguiente de la lista se
+  precarga con los datos de sus dos primeros gráficos, 2,5 s después.
+- **Peso**: el chat ya no baja el módulo de gráficos (lightweight-charts) para mostrar la lista;
+  `/luffy` no carga nada de la portada (ni three.js ni 3D). El gasto de la barra se muestra del
+  guardado y se pide 3,5 s después.
+- **Vidrio en el teléfono**: sobre los gráficos (leyendas) y en la cabecera fija de la ficha, sólido;
+  las barras de arriba y abajo, desenfoque más liviano; `prefers-reduced-transparency`, sólido.
+- **Puente**: manda `Server-Timing: mugiwara;dur=…` con lo que tardó `mugiwara-api`.
+
+**Antes y después, en segundos** (teléfono de gama media: CPU ×4, 4G lento de 150 ms y 1,6 Mbit/s;
+datos reales; mediana de tres vueltas en frío; `scripts/medir-luffy.mjs`, resultados en
+`recursos/medidas/`). «Antes» es lo que sufría Pablo: front anterior y servidor sin vitrina,
+medido con cargas de página completas y sin compresión, así que su primera carga está inflada
+en uno o dos segundos. La columna del medio aísla el front: el anterior, ya con la vitrina.
+
+| paso | antes | front anterior + vitrina | ahora |
+|---|---|---|---|
+| abrir `/luffy` | 7,6 | 4,0 | 3,6 |
+| ir a la terminal | 14,7 | 7,9 | 2,9 |
+| cambiar de moneda | 5,4 a 10,5 | 2,4 | 1,4 a 1,9 |
+| volver a una moneda ya vista | — | 0,9 | 0,7 |
+| cartera | 9,6 | 2,4 | 1,9 |
+| caja | 5,4 | 0,8 | 1,3 |
+| radar | 15,6 | 1,3 | 1,8 |
+| control | 7,5 | 1,2 | 1,2 |
+| oficina | 1,0 | 1,2 | 0,4 |
+| informes | 2,5 | 1,2 | 1,4 |
+
+JavaScript al abrir `/luffy`: 194 kB comprimidos antes, 130 kB ahora. Caja y radar quedan medio
+segundo arriba del front anterior, dentro del ruido de la medida: el radar ahora dibuja la frase
+llana de cada familia (recortado a doce candidatas con «ver más»).
+
+**Red contra servidor.** Por Vercel cada pedido cuesta unos 80 ms más que directo a
+`api.vetalab.io` (300 contra 223 ms con la conexión abierta). No se cambió: llamar directo exige
+la cookie de sesión para todo `vetalab.io` y CORS con credenciales, y eso toca el inicio de sesión
+de todo el sitio. Queda como opción si hace falta raspar esos 80 ms. Lo que más pesa hoy está del
+lado de Mugiwara (`TRASPASO.md` §6): `/graficos/datos` (0,5 a 1,9 s, fuera de la vitrina) y la
+vista previa de hilos.
+
+**Recorrido.** `scripts/recorrer-luffy.mjs` abre cada vista en escritorio y a 390 px y toca cada
+pestaña, filtro, chip, rango, «ver más» y reintentar; abre los formularios sin enviarlos y en
+pánico y cancelar la misión abre la confirmación y responde «No». Verde con la API real y con el
+simulador. Capturas: `recursos/capturas/a-real/`.
+
 ## 8. Huecos del contrato abiertos
 
 Lista completa en `HUECOS-CONTRATO.md`. Lo que sigue abierto, con qué falta de cada uno:

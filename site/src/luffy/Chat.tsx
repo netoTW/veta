@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import { ErrorLuffy, leerImagen, luffy, urlPng } from './api'
 import type { Confirmacion, EventoChat, Fin, GraficoRef, HiloDetalle, HiloResumen, Mensaje, PropuestaResumen } from './tipos'
 import { Md, aTextoPlano } from './md'
-import { Grafico } from './charts/Grafico'
+// el gráfico (lightweight-charts) se baja sólo cuando un mensaje lo trae: la lista de hilos abre sin él
+const Grafico = lazy(() => import('./charts/Grafico').then((m) => ({ default: m.Grafico })))
 import { fmtHora, fmtUsd, hace, quedan } from './formato'
 import { EmptyState } from '../ui/EmptyState'
 
@@ -45,25 +46,41 @@ export function Chat() {
 /* Los hilos de prueba, los clones del banco de calidad y los bancos no son conversación: van a un
    grupo «Archivo», plegado. La vista previa es el último mensaje visible, en texto plano, no el
    memo interno del resumen vivo. */
+const PREVIAS = 'luffy.previas'
+function leerPrevias(): Record<string, string> { try { return JSON.parse(localStorage.getItem(PREVIAS) ?? '{}') as Record<string, string> } catch { return {} } }
+function guardarPrevias(p: Record<string, string>) { try { const ks = Object.keys(p); const r = ks.length > 120 ? Object.fromEntries(ks.slice(-120).map((k) => [k, p[k]])) : p; localStorage.setItem(PREVIAS, JSON.stringify(r)) } catch { /* sin storage */ } }
 const esArchivo = (h: HiloResumen) => /\b(prueba|clon|clones|banco|test)\b/i.test(h.titulo)
 function ListaHilos({ hilos, error, activo, recargar }: { hilos: HiloResumen[] | null; error: string | null; activo: string | null; recargar: () => Promise<void> }) {
   const [nuevo, setNuevo] = useState(false)
-  const [previas, setPrevias] = useState<Record<string, string>>({})
+  const [previas, setPrevias] = useState<Record<string, string>>(leerPrevias)
   const claveHilos = hilos?.map((h) => `${h.id}:${h.actualizado}`).join('|') ?? ''
   useEffect(() => {
     if (!hilos) return
-    let v = true
-    const visibles = hilos.filter((h) => !esArchivo(h)).slice(0, 24)
-    Promise.all(visibles.map(async (h): Promise<[string, string]> => {
-      try { const d = await luffy.hilo(h.id, 4); const m = [...d.mensajes].reverse().find((x) => x.rol === 'luffy' || x.rol === 'usuario'); return [h.id, m ? aTextoPlano(m.contenido).slice(0, 180) : ''] } catch { return [h.id, ''] }
-    })).then((ps) => { if (v) setPrevias(Object.fromEntries(ps)) })
-    return () => { v = false }
+    /* Cada vista previa es un pedido de varios segundos en el servidor de Luffy: sólo los primeros
+       hilos, de a dos, los ya vistos salen del guardado (por fecha de actualización), y lo que sigue
+       en vuelo se corta al salir del chat para no ocupar la línea de la vista siguiente. */
+    const ctl = new AbortController(), guardadas = leerPrevias()
+    const faltan = hilos.filter((h) => !esArchivo(h)).slice(0, 10).filter((h) => guardadas[`${h.id}:${h.actualizado}`] === undefined)
+    const t = setTimeout(async () => {
+      const cola = [...faltan]
+      const trabajador = async () => {
+        for (let h = cola.shift(); h && !ctl.signal.aborted; h = cola.shift()) {
+          try {
+            const d = await luffy.hilo(h.id, 4, ctl.signal); const m = [...d.mensajes].reverse().find((x) => x.rol === 'luffy' || x.rol === 'usuario')
+            const nuevas = { ...leerPrevias(), [`${h.id}:${h.actualizado}`]: m ? aTextoPlano(m.contenido).slice(0, 180) : '' }
+            guardarPrevias(nuevas); setPrevias(nuevas)
+          } catch { /* sin vista previa: el hilo se muestra igual */ }
+        }
+      }
+      await Promise.all([trabajador(), trabajador()])
+    }, 1200)
+    return () => { clearTimeout(t); ctl.abort() }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- se recarga cuando cambia la lista o la fecha de algún hilo
   }, [claveHilos])
   const fila = (h: HiloResumen) => (
     <Link key={h.id} to={`/luffy/h/${h.id}`} className={`lf-hilo ${h.id === activo ? 'is-activo' : ''}`}>
       <span className="lf-hilo__t">{h.titulo}</span>
-      {previas[h.id] ? <span className="lf-hilo__r">{previas[h.id]}</span> : null}
+      {previas[`${h.id}:${h.actualizado}`] ? <span className="lf-hilo__r">{previas[`${h.id}:${h.actualizado}`]}</span> : null}
       <span className="lf-hilo__m mono">{hace(h.actualizado)} · {h.n_mensajes} msj{h.telegram_activo && <em>Telegram</em>}</span>
     </Link>
   )
@@ -241,7 +258,7 @@ function TurnoVivo({ t, cambiar }: { t: Turno; cambiar: (id: string) => void }) 
 
 function GraficoMensaje({ g }: { g: GraficoRef }) {
   if (!g.spec_id) return g.url ? <figure className="lf-m__fig"><img src={urlPng(g.url)} alt={g.titulo} loading="lazy" /><figcaption className="mono">{g.titulo}</figcaption></figure> : null
-  return <Grafico specId={g.spec_id} compacto png={urlPng(g.url)} acciones={<Link to={`/luffy/laboratorio/${g.spec_id}`} className="lf-chip lf-chip--oro">Abrir en el laboratorio</Link>} />
+  return <Suspense fallback={<div className="lf-g lf-g--compacto is-cargando" style={{ minHeight: 220 }} />}><Grafico specId={g.spec_id} compacto png={urlPng(g.url)} acciones={<Link to={`/luffy/laboratorio/${g.spec_id}`} className="lf-chip lf-chip--oro">Abrir en el laboratorio</Link>} /></Suspense>
 }
 
 const ACCION_LABEL: Record<string, string> = { entrada: 'Entrada', mover_stop: 'Mover el stop', cerrar: 'Cerrar', cancelar: 'Cancelar orden', cambio_mandato: 'Cambio de mandato' }

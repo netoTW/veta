@@ -74,7 +74,9 @@ function GuiaVisual() {
    navegar a otra tiene que devolverte una pantalla viva, no el mismo error. */
 function Limite({ donde, children }: { donde: string; children: React.ReactNode }) {
   const { pathname } = useLocation()
-  return <LimiteDeError key={pathname} donde={donde}>{children}</LimiteDeError>
+  /* Bajo /luffy el panel tiene su propio límite por vista (LuffyShell): si este se reiniciara en
+     cada ruta, cambiar de moneda desmontaría el panel entero (carcasa, lista, lo pedido). */
+  return <LimiteDeError key={pathname.startsWith('/luffy') ? '/luffy' : pathname} donde={donde}>{children}</LimiteDeError>
 }
 
 function Producto() {
@@ -114,14 +116,13 @@ export default function App() {
             <Route path="laboratorio/t/:tableroId" element={<LuffyLaboratorio />} />
             <Route path="laboratorio/:specId" element={<LuffyLaboratorio />} />
             <Route path="tableros" element={<LuffyTableros />} />
-            <Route path="terminal" element={<LuffyTerminal />} />
-            <Route path="terminal/:activo" element={<LuffyTerminal />} />
+            {/* una sola ruta con la moneda opcional: pasar de /terminal a /terminal/WAL no remonta la terminal */}
+            <Route path="terminal/:activo?" element={<LuffyTerminal />} />
             <Route path="cartera" element={<LuffyCartera />} />
             <Route path="radar" element={<LuffyRadar />} />
             <Route path="control" element={<LuffyControl />} />
             <Route path="oficina" element={<LuffyOficina />} />
-            <Route path="informes" element={<LuffyInformes />} />
-            <Route path="informes/:fecha" element={<LuffyInformes />} />
+            <Route path="informes/:fecha?" element={<LuffyInformes />} />
           </Route>
           <Route element={<Producto />}>
             <Route path="/gemas" element={<Gemas />} />

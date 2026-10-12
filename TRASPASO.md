@@ -137,6 +137,8 @@ límite de error, archivado de la calibración.
 ## 4. Pendientes, por prioridad
 
 ### Alta
+000. **Pendientes tras la 6b** (`Mugiwara/PROMPT-VETA-pendientes.md`): bloque A (estabilidad y
+    velocidad) hecho el 12-oct, ver `ESTADO-WEB.md`; siguen B (app instalable) y C (oficina rehecha).
 00. **La curva y el efectivo de la cartera de Pablo** dependen de Mugiwara (§6): hoy suman la
     caja. Cuando lo corrija, volver a sacar `shots-6b.mjs` con datos reales y mirar la cartera.
 0. **Encender Luffy en producción** (fase 6a): `MUGIWARA_API_TOKEN` en `/opt/veta-web/site/.env`,
@@ -191,6 +193,17 @@ límite de error, archivado de la calibración.
 ## 6. Lo que se le ha pedido al motor  ·  vive en el contrato
 
 **A Mugiwara (CONTRATO-PANEL.md, sesión `mugiwara`), de la prueba real del 12-oct:**
+- **Tras la vitrina (12-oct, 09:14 CEST), medido con `Server-Timing` desde el puente:** casi todo
+  responde en 2 a 20 ms dentro del servidor. Sigue lento: `POST /graficos/datos` de las secciones de
+  la ficha, 0,5 s de mediana y hasta 1,9 s (no está en la vitrina; cada cambio de moneda pide cuatro);
+  `GET /hilos/{id}?n=4`, 1,6 a 5,7 s, que el panel usa sólo para la vista previa del último mensaje.
+  Pedido: los datos de las cuatro plantillas de cada ficha caliente en la vitrina, y que `GET /hilos`
+  traiga `ultimo_mensaje` (texto llano, 180 caracteres) para no abrir cada hilo.
+- Una vez `GET /terminal/WAL` tardó 3,2 s dentro de `mugiwara-api` con la vitrina activa (09:2x CEST);
+  el contrato dice que el pedido nunca espera.
+- `GET /exchange/fills` sin `par` devolvió `fills: []` con `no_disponibles` por cada par:
+  `BingX code 100410 … frequency limit … disabled period`. La vitrina consulta `myTrades` demasiado
+  seguido y BingX la bloquea un rato. El panel muestra el aviso en llano.
 - `POST /graficos/datos` con `benchmarks: ["categoria"]` sobre un activo sin categoría en DefiLlama
   (WAL) descarta el benchmark en silencio: no entra en `no_disponibles`. El contrato dice que lo que
   no hay se declara con su motivo.

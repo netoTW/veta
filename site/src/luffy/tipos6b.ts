@@ -24,8 +24,12 @@ export interface UniversoFila {
 export interface Universo { filtro: Filtro; q: string | null; n: number; activos: UniversoFila[]; fuentes: Record<string, string>; consultado_en: string; fuente: string }
 
 export interface SeccionFicha { id: 'precio' | 'derivados' | 'fundamento' | 'atencion' | string; titulo: string; plantilla: string; version: string; spec: Spec }
-export interface Familia { valor: number | string | null; z: Num; cumple: boolean; cumple_inverso: boolean; etiqueta: string; detalle: Record<string, unknown>; motivo: string | null }
-export interface Confluencia { score: number; obligatorias: string[]; apoyo: string[]; n_apoyo: number }
+/** v2.2: `etiqueta` y `frase` en llano son lo que se muestra; `detalle` llega vacío y lo técnico va en `detalle_tecnico` (sólo laboratorio). */
+export interface Familia { valor: number | string | null; z: Num; cumple: boolean; cumple_inverso: boolean; etiqueta: string; frase?: string | null; detalle: Record<string, unknown>; detalle_tecnico?: Record<string, unknown>; motivo: string | null }
+/** v2.2: siempre listas. Antes `obligatorias` pudo llegar como objeto y la ficha se rompía: se lee con `lista()`. */
+export interface Confluencia { cumple?: boolean; score: number; obligatorias: string[]; obligatorias_todas?: string[]; obligatorias_faltan?: string[]; apoyo: string[]; apoyo_todas?: string[]; n_apoyo: number; minimo_apoyo?: number | null; sin_dato?: string[] }
+/** v2.2: toda respuesta de la sección 8 servida desde la vitrina trae su hora. `viejo` = se recalcula en el fondo. */
+export interface Vitrina { calculado_en: string | null; edad_s: number | null; cada_s: number | null; estado: 'fresco' | 'viejo' | 'pendiente' | string; duracion_ms: number | null; error: string | null }
 export interface EtiquetaRiesgo { etiqueta: string; fuerte: boolean; detalle: string; llano: string }
 export interface ModoCumplido { modo: string; version: string; confluencia: Confluencia; linea_estudio: string | null; candidata_id: number | null; decision: string; p_merece: Num }
 export interface FichaRadar { familias: Record<string, Familia>; modos_cumplidos: ModoCumplido[]; etiquetas: EtiquetaRiesgo[]; regimen: { lectura: string; detalle?: string } | null; consultado_en: string; fuente: string }
@@ -51,6 +55,8 @@ export interface FichaTerminal {
   secciones: SeccionFicha[]; radar: FichaRadar | null; catalizadores: Catalizador[]; bitacora: Bitacora[]; teorias: Teoria[]
   posiciones: PosicionHistorial[]; gatillos: Gatillo[]; hilos: { id: string; titulo: string; actualizado: string }[]
   no_disponibles: { seccion: string; motivo: string }[]; consultado_en: string; fuente: string
+  /** v2.2: ficha parcial que aún no se calculó; se vuelve a pedir a los `reintentar_en_s`. */
+  pendiente?: boolean; reintentar_en_s?: number; vitrina?: Vitrina
 }
 export interface HiloTerminal { hilo_id: string; titulo: string; nuevo: boolean }
 
@@ -87,7 +93,8 @@ export interface OrdenExchange {
 export interface Ordenes { estado: 'abiertas' | 'historial'; ordenes: OrdenExchange[]; consultado_en: string; fuente: string }
 /** `comision` llega como la da BingX: negativa y en el activo que cobró (−2,23 WAL). */
 export interface Fill { id: string; orden_id: string; par?: string; lado: string; precio: number; cantidad: number; total_usdt: number; comision: number; comision_activo: string | null; maker: boolean; hora: string; propuesta: { id_corto: string; origen: string; accion?: string; rol?: string } | null }
-export interface Fills { par: string | null; fills: Fill[]; consultado_en: string; fuente: string }
+/** v2.2: sin `par` trae los de todos los pares con posición u órdenes en 30 días (`pares`), más nuevos primero. */
+export interface Fills { par: string | null; pares?: string[]; fills: Fill[]; no_disponibles?: { par?: string; motivo: string }[]; consultado_en: string; fuente: string; vitrina?: Vitrina }
 export interface Comisiones { periodo: { desde: string; hasta: string }; origen: string; total_usdt: number; n_fills: number; por_activo: { activo: string; comision_usdt: number; n_fills: number; volumen_usdt: number }[]; tasas: { par: string; maker_pct: number; taker_pct: number }[]; consultado_en: string; fuente: string }
 export type AccionExchange =
   | { accion: 'entrada'; par: string; mandato: 'hold' | 'swing' | 'trade'; tipo: 'market' | 'limit'; cantidad_usdt: number; precio?: number; stop?: number; tesis: string }
@@ -102,7 +109,7 @@ export interface RespuestaPropuestas { propuestas: Propuesta[]; propuesta: Propu
 export interface Seguimiento { fecha: string; ret_pct: Num; ret_btc_pct: Num; exceso_pct: Num }
 export interface Candidata {
   id: number; fecha: string; activo: string; modo: string; version: string; score: number; rango: number; decision: string; p_merece: Num; por_que: string | null
-  precio_ref: Num; btc_ref?: Num; confluencia: Confluencia; familias: Record<string, Pick<Familia, 'valor' | 'z' | 'cumple'> & { detalle?: Record<string, unknown>; inverso?: boolean; motivo?: string | null }>
+  precio_ref: Num; btc_ref?: Num; confluencia: Confluencia; familias: Record<string, Pick<Familia, 'valor' | 'z' | 'cumple'> & { etiqueta?: string; frase?: string | null; cumple_inverso?: boolean; detalle?: Record<string, unknown>; inverso?: boolean; motivo?: string | null }>
   etiquetas: EtiquetaRiesgo[]; regimen: string | { lectura?: string } | null; corrida_ts: string | null; hilo_id: string | null; seguimiento: Record<string, Seguimiento>; linea_estudio: string | null
 }
 export interface Candidatas { desde: string; hasta: string; modo: string | null; candidatas: Candidata[]; consultado_en: string; fuente: string }

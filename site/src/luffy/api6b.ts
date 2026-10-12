@@ -1,5 +1,6 @@
 /* Cliente de la fase 6b sobre el puente /api/luffy/* (CONTRATO-PANEL.md v2.1, §8). */
 import type { Propuesta } from './tipos'
+import { conTope, esTope } from './api'
 import type { AccionExchange, Bitacora, Caja, Candidatas, Cartera, Comisiones, CostoAmpliado, CurvaCapital, Declaracion, DiffManual, EventoOficina, FeedAlertas, FichaTerminal, Fills, Filtro, Gatillo, HiloTerminal, Informe, InformeItem, Manual, Modo, Modos, Movimiento, Oficina, Ordenes, Pagina, RespuestaPropuestas, Revision, Teoria, Universo } from './tipos6b'
 
 const BASE = '/api/luffy'
@@ -7,8 +8,16 @@ export class ErrorLuffy6b extends Error {
   status: number; codigo: string; cuerpo: unknown
   constructor(s: number, c: string, t: string, cuerpo?: unknown) { super(t); this.status = s; this.codigo = c; this.cuerpo = cuerpo }
 }
-async function pedir<T>(ruta: string, init: { metodo?: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE'; cuerpo?: unknown; signal?: AbortSignal } = {}): Promise<T> {
-  const r = await fetch(`${BASE}${ruta}`, { method: init.metodo ?? (init.cuerpo !== undefined ? 'POST' : 'GET'), credentials: 'same-origin', signal: init.signal, headers: init.cuerpo !== undefined ? { 'Content-Type': 'application/json' } : {}, body: init.cuerpo !== undefined ? JSON.stringify(init.cuerpo) : undefined })
+/* Todo pedido lleva tope (30 s): si el servidor no contesta, se corta y la vista ofrece reintentar,
+   en vez de quedarse pegada hasta refrescar. */
+async function pedir<T>(ruta: string, init: { metodo?: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE'; cuerpo?: unknown; signal?: AbortSignal; tope?: number } = {}): Promise<T> {
+  let r: Response
+  try {
+    r = await fetch(`${BASE}${ruta}`, { method: init.metodo ?? (init.cuerpo !== undefined ? 'POST' : 'GET'), credentials: 'same-origin', signal: conTope(init.signal, init.tope), headers: init.cuerpo !== undefined ? { 'Content-Type': 'application/json' } : {}, body: init.cuerpo !== undefined ? JSON.stringify(init.cuerpo) : undefined })
+  } catch (e) {
+    if (esTope(e)) throw new ErrorLuffy6b(0, 'tope', 'El servidor de Luffy tardó demasiado en contestar. Reintenta en un momento.')
+    throw e
+  }
   if (!r.ok) {
     let codigo = String(r.status), texto = `HTTP ${r.status}`, cuerpo: unknown = null
     try {
@@ -24,19 +33,31 @@ async function pedir<T>(ruta: string, init: { metodo?: 'GET' | 'POST' | 'PATCH' 
   return r.json() as Promise<T>
 }
 const qs = (o: Record<string, string | number | boolean | null | undefined>) => { const p = Object.entries(o).filter(([, v]) => v !== undefined && v !== null && v !== ''); return p.length ? `?${p.map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`).join('&')}` : '' }
-const FICHAS = new Map<string, { hasta: number; p: Promise<FichaTerminal> }>()
+const FICHAS = new Map<string, { hasta: number; p: Promise<FichaTerminal>; ctl: AbortController; listo: boolean }>()
+/** La última ficha que llegó de cada moneda, sin vencer: se pinta al instante mientras llega la nueva. */
+const ULTIMAS = new Map<string, FichaTerminal>()
+const claveFicha = (activo: string, rango: string) => `${activo.toUpperCase()}|${rango}`
 
 export const luffy6b = {
   /* 8.1 */
   universo: (filtro: Filtro = 'todo', q = '', limite = 300) => pedir<Universo>(`/terminal/universo${qs({ filtro, q, limite })}`),
-  /** La ficha se recuerda 45 s por activo y rango: volver a una moneda es instantáneo, y la siguiente de la lista se precarga. */
-  ficha(activo: string, rango = '90d'): Promise<FichaTerminal> {
-    const k = `${activo.toUpperCase()}|${rango}`; const m = FICHAS.get(k)
-    if (m && m.hasta > Date.now()) return m.p
-    const p = pedir<FichaTerminal>(`/terminal/${encodeURIComponent(activo.toUpperCase())}${qs({ rango })}`); p.catch(() => FICHAS.delete(k))
-    if (FICHAS.size > 40) FICHAS.clear(); FICHAS.set(k, { hasta: Date.now() + 45_000, p }); return p
+  /** La ficha se recuerda 45 s por activo y rango y lo último queda guardado sin vencer. Una ficha
+      parcial (`pendiente`, v2.2) no se recuerda: se vuelve a pedir con `fresca`. */
+  ficha(activo: string, rango = '90d', o: { fresca?: boolean } = {}): Promise<FichaTerminal> {
+    const k = claveFicha(activo, rango); const m = FICHAS.get(k)
+    if (!o.fresca && m && m.hasta > Date.now()) return m.p
+    const ctl = new AbortController()
+    const p = pedir<FichaTerminal>(`/terminal/${encodeURIComponent(activo.toUpperCase())}${qs({ rango })}`, { signal: ctl.signal, tope: 25_000 })
+    const e = { hasta: Date.now() + 45_000, p, ctl, listo: false }
+    p.then((f) => { e.listo = true; if (f.pendiente) e.hasta = 0; ULTIMAS.delete(k); ULTIMAS.set(k, f); if (ULTIMAS.size > 40) ULTIMAS.delete(ULTIMAS.keys().next().value!) }, () => { if (FICHAS.get(k) === e) FICHAS.delete(k) })
+    if (FICHAS.size > 40) FICHAS.clear(); FICHAS.set(k, e); return p
   },
-  precargar(activo: string, rango = '90d') { void luffy6b.ficha(activo, rango).catch(() => {}) },
+  fichaGuardada: (activo: string, rango = '90d') => ULTIMAS.get(claveFicha(activo, rango)) ?? null,
+  /** La última ficha de esta moneda en cualquier rango: al cambiar de rango se ve algo mientras llega el nuevo. */
+  fichaDeLaMoneda: (activo: string) => { const p = `${activo.toUpperCase()}|`; let f: FichaTerminal | null = null; for (const [k, v] of ULTIMAS) if (k.startsWith(p)) f = v; return f },
+  /** Al cambiar de moneda: corta las fichas que siguen en vuelo (la anterior y las precargas), salvo la de `salvo`. */
+  soltarFichas(salvo?: string) { const s = salvo ? `${salvo.toUpperCase()}|` : null; for (const [k, e] of FICHAS) if (!e.listo && (!s || !k.startsWith(s))) { e.ctl.abort(); FICHAS.delete(k) } },
+  precargar(activo: string, rango = '90d') { if (luffy6b.fichaGuardada(activo, rango) || FICHAS.has(claveFicha(activo, rango))) return; void luffy6b.ficha(activo, rango).catch(() => {}) },
   hiloTerminal: (activo: string) => pedir<HiloTerminal>(`/terminal/${encodeURIComponent(activo.toUpperCase())}/hilo`, { cuerpo: {} }),
 
   /* 8.2 */
@@ -47,8 +68,13 @@ export const luffy6b = {
   borrarMovimiento: (id: number) => pedir<{ ok: boolean }>(`/cartera/movimientos/${id}`, { metodo: 'DELETE' }),
   declarar: (d: Declaracion) => pedir<Propuesta>('/posiciones/declarar', { cuerpo: { origen: 'pablo', ...d } }),
   ordenes: (estado: 'abiertas' | 'historial' = 'abiertas', limite = 100) => pedir<Ordenes>(`/exchange/ordenes${qs({ estado, limite: estado === 'historial' ? limite : undefined })}`),
-  /** El servidor exige `par` (sin él responde 422): se piden por par y se juntan. */
-  fills: (par: string, limite = 100) => pedir<Fills>(`/exchange/fills${qs({ par, limite })}`),
+  /** v2.2: sin `par` trae todos los pares con posición u órdenes en 30 días. */
+  fills: (par?: string, limite = 100) => pedir<Fills>(`/exchange/fills${qs({ par, limite })}`),
+  /** Todas las ejecuciones recientes; si el servidor todavía exige `par` (v2.1 respondía 422), por par y juntas. */
+  async fillsTodos(paresRespaldo: string[], limite = 50): Promise<{ fills: Fills['fills']; avisos: string[] }> {
+    try { const r = await luffy6b.fills(undefined, limite); return { fills: r.fills, avisos: [...new Set((r.no_disponibles ?? []).map((n) => n.motivo))] } }
+    catch (e) { if (e instanceof ErrorLuffy6b && e.status === 422) return { fills: await luffy6b.fillsDe(paresRespaldo), avisos: [] }; throw e }
+  },
   async fillsDe(pares: string[], limite = 30): Promise<Fills['fills']> {
     const rs = await Promise.all([...new Set(pares)].map((p) => luffy6b.fills(p, limite).then((r) => r.fills.map((f) => ({ ...f, par: f.par ?? r.par ?? p })), () => [])))
     return rs.flat().sort((a, b) => b.hora.localeCompare(a.hora))

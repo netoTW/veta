@@ -1,0 +1,3572 @@
+{
+ "base": "http://localhost:5310",
+ "cpu": 4,
+ "vueltas": 3,
+ "cuando": "2026-10-12T07:50:24.652Z",
+ "resumen": [
+  {
+   "nombre": "abrir /luffy en frío",
+   "mediana_s": 4.043,
+   "vueltas_s": [
+    4.043,
+    4.039,
+    4.541
+   ]
+  },
+  {
+   "nombre": "ir a la terminal",
+   "mediana_s": 7.897,
+   "vueltas_s": [
+    9.537,
+    6.464,
+    7.897
+   ]
+  },
+  {
+   "nombre": "cambiar de moneda 1",
+   "mediana_s": 2.351,
+   "vueltas_s": [
+    2.849,
+    1.828,
+    2.351
+   ]
+  },
+  {
+   "nombre": "cambiar de moneda 2",
+   "mediana_s": 2.406,
+   "vueltas_s": [
+    2.406,
+    1.369,
+    3.369
+   ]
+  },
+  {
+   "nombre": "cambiar de moneda 3",
+   "mediana_s": 2.327,
+   "vueltas_s": [
+    2.335,
+    1.845,
+    2.327
+   ]
+  },
+  {
+   "nombre": "volver a una moneda ya vista",
+   "mediana_s": 0.888,
+   "vueltas_s": [
+    0.912,
+    0.885,
+    0.888
+   ]
+  },
+  {
+   "nombre": "ir a la cartera",
+   "mediana_s": 2.36,
+   "vueltas_s": [
+    1.856,
+    2.5,
+    2.36
+   ]
+  },
+  {
+   "nombre": "pasar a la caja",
+   "mediana_s": 0.838,
+   "vueltas_s": [
+    0.818,
+    0.838,
+    1.327
+   ]
+  },
+  {
+   "nombre": "ir al radar",
+   "mediana_s": 1.314,
+   "vueltas_s": [
+    1.83,
+    1.314,
+    1.312
+   ]
+  },
+  {
+   "nombre": "ir a control",
+   "mediana_s": 1.217,
+   "vueltas_s": [
+    1.705,
+    1.176,
+    1.217
+   ]
+  },
+  {
+   "nombre": "ir a la oficina",
+   "mediana_s": 1.195,
+   "vueltas_s": [
+    1.196,
+    0.415,
+    1.195
+   ]
+  },
+  {
+   "nombre": "ir a informes",
+   "mediana_s": 1.234,
+   "vueltas_s": [
+    1.234,
+    1.234,
+    1.208
+   ]
+  }
+ ],
+ "js": {
+  "archivos": 19,
+  "bytes": 198174,
+  "mayores": [
+   {
+    "url": "/assets/index-Z9wwLNaC.js",
+    "bytes": 73132
+   },
+   {
+    "url": "/assets/jsx-runtime-B-hcVAMW.js",
+    "bytes": 3561
+   },
+   {
+    "url": "/assets/chunk-BV7QT456-BagTiCLq.js",
+    "bytes": 14456
+   },
+   {
+    "url": "/assets/sesion-CcPrMfWj.js",
+    "bytes": 13835
+   },
+   {
+    "url": "/assets/acceso-CioYKzkQ.js",
+    "bytes": 331
+   },
+   {
+    "url": "/assets/formato-DYlTusyx.js",
+    "bytes": 1866
+   },
+   {
+    "url": "/assets/TierIcon-Bc1OK4O4.js",
+    "bytes": 653
+   },
+   {
+    "url": "/assets/Loader-Dh4lWw5F.js",
+    "bytes": 1045
+   },
+   {
+    "url": "/assets/EmptyState-BeHVZ30u.js",
+    "bytes": 934
+   },
+   {
+    "url": "/assets/lenguaje-BVWgWjRz.js",
+    "bytes": 5578
+   },
+   {
+    "url": "/assets/piezas-ClSztosB.js",
+    "bytes": 3678
+   },
+   {
+    "url": "/assets/GLBoundary-D9RnugIY.js",
+    "bytes": 1022
+   },
+   {
+    "url": "/assets/LuffyShell-CXuJg7nX.js",
+    "bytes": 2157
+   },
+   {
+    "url": "/assets/api-DzH9v0fV.js",
+    "bytes": 1845
+   },
+   {
+    "url": "/assets/formato-B9oNyOd9.js",
+    "bytes": 1326
+   },
+   {
+    "url": "/assets/Chat-CtYKfvad.js",
+    "bytes": 5479
+   },
+   {
+    "url": "/assets/md-DhLF3rzQ.js",
+    "bytes": 1546
+   },
+   {
+    "url": "/assets/Grafico-BLphCQpU.js",
+    "bytes": 64756
+   },
+   {
+    "url": "/assets/tema-2AScGvLt.js",
+    "bytes": 974
+   }
+  ],
+  "portada": []
+ },
+ "api": [
+  {
+   "ruta": "GET /hilos/{id}",
+   "n": 18,
+   "total_ms": 5765.25699999911,
+   "mugiwara_ms": null,
+   "peor_ms": 6980.249000000185
+  },
+  {
+   "ruta": "GET /terminal/universo",
+   "n": 15,
+   "total_ms": 1279.3630000014673,
+   "mugiwara_ms": null,
+   "peor_ms": 1708.955000001879
+  },
+  {
+   "ruta": "POST /graficos/datos",
+   "n": 42,
+   "total_ms": 1238.7019999951008,
+   "mugiwara_ms": null,
+   "peor_ms": 2990.555000003951
+  },
+  {
+   "ruta": "GET /hilos",
+   "n": 3,
+   "total_ms": 1198.9430000030552,
+   "mugiwara_ms": null,
+   "peor_ms": 1471.8520000024
+  },
+  {
+   "ruta": "GET /radar/candidatas",
+   "n": 3,
+   "total_ms": 891.7170000058832,
+   "mugiwara_ms": null,
+   "peor_ms": 1147.8189999979804
+  },
+  {
+   "ruta": "GET /exchange/comisiones",
+   "n": 3,
+   "total_ms": 692.7049999940209,
+   "mugiwara_ms": null,
+   "peor_ms": 750.1300000003539
+  },
+  {
+   "ruta": "GET /caja",
+   "n": 3,
+   "total_ms": 612.278000000515,
+   "mugiwara_ms": null,
+   "peor_ms": 940.2740000004997
+  },
+  {
+   "ruta": "GET /informes/{fecha}",
+   "n": 3,
+   "total_ms": 606.5640000015264,
+   "mugiwara_ms": null,
+   "peor_ms": 710.8640000005835
+  },
+  {
+   "ruta": "GET /eventos",
+   "n": 2,
+   "total_ms": 507.1449999959441,
+   "mugiwara_ms": null,
+   "peor_ms": 561.2580000015441
+  },
+  {
+   "ruta": "GET /exchange/fills",
+   "n": 6,
+   "total_ms": 424.40999999962514,
+   "mugiwara_ms": null,
+   "peor_ms": 682.6119999968796
+  },
+  {
+   "ruta": "GET /oficina/estado",
+   "n": 3,
+   "total_ms": 423.88100000243867,
+   "mugiwara_ms": null,
+   "peor_ms": 503.2040000005509
+  },
+  {
+   "ruta": "GET /costo",
+   "n": 33,
+   "total_ms": 420.64099999697646,
+   "mugiwara_ms": null,
+   "peor_ms": 4445.621999999275
+  },
+  {
+   "ruta": "GET /informes",
+   "n": 3,
+   "total_ms": 385.44399999955203,
+   "mugiwara_ms": null,
+   "peor_ms": 424.9730000010459
+  },
+  {
+   "ruta": "GET /terminal/{activo}",
+   "n": 18,
+   "total_ms": 341.53800000058254,
+   "mugiwara_ms": null,
+   "peor_ms": 520.9949999989476
+  },
+  {
+   "ruta": "GET /radar/modos",
+   "n": 3,
+   "total_ms": 341.0629999998491,
+   "mugiwara_ms": null,
+   "peor_ms": 348.8710000019637
+  },
+  {
+   "ruta": "GET /cartera/curva",
+   "n": 6,
+   "total_ms": 313.34099999367027,
+   "mugiwara_ms": null,
+   "peor_ms": 501.72500000189757
+  },
+  {
+   "ruta": "GET /cartera",
+   "n": 6,
+   "total_ms": 308.1049999964307,
+   "mugiwara_ms": null,
+   "peor_ms": 599.9979999978677
+  },
+  {
+   "ruta": "GET /gatillos",
+   "n": 3,
+   "total_ms": 301.393999994616,
+   "mugiwara_ms": null,
+   "peor_ms": 510.64900000346825
+  },
+  {
+   "ruta": "GET /exchange/ordenes",
+   "n": 3,
+   "total_ms": 298.03399999946123,
+   "mugiwara_ms": null,
+   "peor_ms": 298.25200000050245
+  }
+ ],
+ "cascadas": [
+  [
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/luffy",
+    "tipo": "Document",
+    "desde_ms": 0,
+    "dur_ms": 172,
+    "bytes": 2495,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/fonts/outfit-latin-wght-normal.woff2",
+    "tipo": "Font",
+    "desde_ms": 178,
+    "dur_ms": 895,
+    "bytes": 32490,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/fonts/Geist-latin.woff2",
+    "tipo": "Font",
+    "desde_ms": 180,
+    "dur_ms": 852,
+    "bytes": 29486,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/index-Z9wwLNaC.js",
+    "tipo": "Script",
+    "desde_ms": 180,
+    "dur_ms": 1286,
+    "bytes": 73132,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/jsx-runtime-B-hcVAMW.js",
+    "tipo": "Script",
+    "desde_ms": 180,
+    "dur_ms": 273,
+    "bytes": 3561,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/chunk-BV7QT456-BagTiCLq.js",
+    "tipo": "Script",
+    "desde_ms": 180,
+    "dur_ms": 544,
+    "bytes": 14456,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/sesion-CcPrMfWj.js",
+    "tipo": "Script",
+    "desde_ms": 180,
+    "dur_ms": 557,
+    "bytes": 13835,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/acceso-CioYKzkQ.js",
+    "tipo": "Script",
+    "desde_ms": 180,
+    "dur_ms": 729,
+    "bytes": 331,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/formato-DYlTusyx.js",
+    "tipo": "Script",
+    "desde_ms": 181,
+    "dur_ms": 779,
+    "bytes": 1866,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/TierIcon-Bc1OK4O4.js",
+    "tipo": "Script",
+    "desde_ms": 181,
+    "dur_ms": 899,
+    "bytes": 653,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/Loader-Dh4lWw5F.js",
+    "tipo": "Script",
+    "desde_ms": 181,
+    "dur_ms": 951,
+    "bytes": 1045,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/EmptyState-BeHVZ30u.js",
+    "tipo": "Script",
+    "desde_ms": 181,
+    "dur_ms": 1023,
+    "bytes": 934,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/lenguaje-BVWgWjRz.js",
+    "tipo": "Script",
+    "desde_ms": 181,
+    "dur_ms": 1158,
+    "bytes": 5578,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/piezas-ClSztosB.js",
+    "tipo": "Script",
+    "desde_ms": 181,
+    "dur_ms": 1134,
+    "bytes": 3678,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/GLBoundary-D9RnugIY.js",
+    "tipo": "Script",
+    "desde_ms": 182,
+    "dur_ms": 1128,
+    "bytes": 1022,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/index-C5Hp7Um3.css",
+    "tipo": "Stylesheet",
+    "desde_ms": 182,
+    "dur_ms": 1201,
+    "bytes": 44362,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/LuffyShell-CXuJg7nX.js",
+    "tipo": "Script",
+    "desde_ms": 1532,
+    "dur_ms": 185,
+    "bytes": 2157,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/api-DzH9v0fV.js",
+    "tipo": "Script",
+    "desde_ms": 1534,
+    "dur_ms": 213,
+    "bytes": 1845,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/formato-B9oNyOd9.js",
+    "tipo": "Script",
+    "desde_ms": 1534,
+    "dur_ms": 176,
+    "bytes": 1326,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/api/auth/get-session",
+    "tipo": "Fetch",
+    "desde_ms": 1545,
+    "dur_ms": 179,
+    "bytes": 974,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/api/yo",
+    "tipo": "Fetch",
+    "desde_ms": 1546,
+    "dur_ms": 187,
+    "bytes": 560,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/api/yo",
+    "tipo": "Fetch",
+    "desde_ms": 1546,
+    "dur_ms": 350,
+    "bytes": 560,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/favicon.png",
+    "tipo": "Other",
+    "desde_ms": 1549,
+    "dur_ms": 219,
+    "bytes": 5685,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/api/yo",
+    "tipo": "Fetch",
+    "desde_ms": 1730,
+    "dur_ms": 444,
+    "bytes": 560,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/img/logo-mark.webp",
+    "tipo": "Image",
+    "desde_ms": 1785,
+    "dur_ms": 533,
+    "bytes": 24030,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/Chat-CtYKfvad.js",
+    "tipo": "Script",
+    "desde_ms": 1793,
+    "dur_ms": 248,
+    "bytes": 5479,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/md-DhLF3rzQ.js",
+    "tipo": "Script",
+    "desde_ms": 1794,
+    "dur_ms": 203,
+    "bytes": 1546,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/Grafico-BLphCQpU.js",
+    "tipo": "Script",
+    "desde_ms": 1794,
+    "dur_ms": 818,
+    "bytes": 64756,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/tema-2AScGvLt.js",
+    "tipo": "Script",
+    "desde_ms": 1794,
+    "dur_ms": 182,
+    "bytes": 974,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/api/luffy/costo",
+    "tipo": "Fetch",
+    "desde_ms": 1843,
+    "dur_ms": 647,
+    "bytes": 4181,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/fonts/JetBrainsMono-latin.woff2",
+    "tipo": "Font",
+    "desde_ms": 1846,
+    "dur_ms": 630,
+    "bytes": 31538,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/api/luffy/hilos?limite=40",
+    "tipo": "Fetch",
+    "desde_ms": 2621,
+    "dur_ms": 1155,
+    "bytes": 47969,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/api/luffy/hilos/2a836218-7a08-4e44-a487-52c34e615c44?n=4",
+    "tipo": "Fetch",
+    "desde_ms": 3801,
+    "dur_ms": 4775,
+    "bytes": 18504,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/api/luffy/hilos/58e0d19f-4990-4e06-b058-665b57b132a5?n=4",
+    "tipo": "Fetch",
+    "desde_ms": 3803,
+    "dur_ms": 6640,
+    "bytes": 12929,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/api/luffy/hilos/57c03077-f0dd-4200-b946-09f6e348d25a?n=4",
+    "tipo": "Fetch",
+    "desde_ms": 3803,
+    "dur_ms": 5741,
+    "bytes": 2226,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/api/luffy/hilos/59ebc476-6e32-4eac-8c18-8608a31f966d?n=4",
+    "tipo": "Fetch",
+    "desde_ms": 3804,
+    "dur_ms": 5765,
+    "bytes": 9147,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/api/luffy/hilos/49f6b50e-d742-48ac-8af8-405d8c9ead4e?n=4",
+    "tipo": "Fetch",
+    "desde_ms": 3805,
+    "dur_ms": 6344,
+    "bytes": 13391,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/api/luffy/hilos/58e0d19f-4990-4e06-b058-665b57b132a5?n=80",
+    "tipo": "Fetch",
+    "desde_ms": 3807,
+    "dur_ms": 6980,
+    "bytes": 85109,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la terminal",
+    "url": "/assets/Terminal-CzIkLjnX.js",
+    "tipo": "Script",
+    "desde_ms": 4885,
+    "dur_ms": 3877,
+    "bytes": 5705,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la terminal",
+    "url": "/assets/api6b-BBNlJkqE.js",
+    "tipo": "Script",
+    "desde_ms": 4885,
+    "dur_ms": 4047,
+    "bytes": 2290,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la terminal",
+    "url": "/assets/Plegable-CFnqVvkc.js",
+    "tipo": "Script",
+    "desde_ms": 4886,
+    "dur_ms": 4214,
+    "bytes": 612,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la terminal",
+    "url": "/favicon.png",
+    "tipo": "Other",
+    "desde_ms": 4886,
+    "dur_ms": 0,
+    "bytes": 0,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la terminal",
+    "url": "/api/luffy/costo",
+    "tipo": "Fetch",
+    "desde_ms": 4896,
+    "dur_ms": 4446,
+    "bytes": 4181,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la terminal",
+    "url": "/api/luffy/terminal/universo?filtro=todo&limite=300",
+    "tipo": "Fetch",
+    "desde_ms": 9105,
+    "dur_ms": 1494,
+    "bytes": 107313,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la terminal",
+    "url": "/api/luffy/terminal/BTC?rango=90d",
+    "tipo": "Fetch",
+    "desde_ms": 10729,
+    "dur_ms": 521,
+    "bytes": 8020,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la terminal",
+    "url": "/api/luffy/terminal/ETH?rango=90d",
+    "tipo": "Fetch",
+    "desde_ms": 10730,
+    "dur_ms": 307,
+    "bytes": 8180,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la terminal",
+    "url": "/api/luffy/graficos/datos",
+    "tipo": "Fetch",
+    "desde_ms": 11478,
+    "dur_ms": 2720,
+    "bytes": 10488,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la terminal",
+    "url": "/api/luffy/graficos/datos",
+    "tipo": "Fetch",
+    "desde_ms": 11480,
+    "dur_ms": 2253,
+    "bytes": 22379,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la terminal",
+    "url": "/api/luffy/graficos/datos",
+    "tipo": "Fetch",
+    "desde_ms": 11481,
+    "dur_ms": 2991,
+    "bytes": 6130,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 1",
+    "url": "/favicon.png",
+    "tipo": "Other",
+    "desde_ms": 15679,
+    "dur_ms": 0,
+    "bytes": 0,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 1",
+    "url": "/api/luffy/terminal/ACIRE?rango=90d",
+    "tipo": "Fetch",
+    "desde_ms": 15716,
+    "dur_ms": 341,
+    "bytes": 5806,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 1",
+    "url": "/api/luffy/costo",
+    "tipo": "Fetch",
+    "desde_ms": 15717,
+    "dur_ms": 348,
+    "bytes": 4181,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 1",
+    "url": "/api/luffy/terminal/universo?filtro=todo&limite=300",
+    "tipo": "Fetch",
+    "desde_ms": 15722,
+    "dur_ms": 1444,
+    "bytes": 107313,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 1",
+    "url": "/api/luffy/graficos/datos",
+    "tipo": "Fetch",
+    "desde_ms": 16282,
+    "dur_ms": 1391,
+    "bytes": 3985,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 1",
+    "url": "/api/luffy/graficos/datos",
+    "tipo": "Fetch",
+    "desde_ms": 16283,
+    "dur_ms": 1175,
+    "bytes": 3268,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 1",
+    "url": "/api/luffy/graficos/datos",
+    "tipo": "Fetch",
+    "desde_ms": 16284,
+    "dur_ms": 1360,
+    "bytes": 1865,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 1",
+    "url": "/api/luffy/graficos/datos",
+    "tipo": "Fetch",
+    "desde_ms": 16285,
+    "dur_ms": 1848,
+    "bytes": 2833,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 1",
+    "url": "/api/luffy/terminal/SIGMAETH?rango=90d",
+    "tipo": "Fetch",
+    "desde_ms": 17268,
+    "dur_ms": 355,
+    "bytes": 5823,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 2",
+    "url": "/favicon.png",
+    "tipo": "Other",
+    "desde_ms": 19127,
+    "dur_ms": 1,
+    "bytes": 0,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 2",
+    "url": "/api/luffy/costo",
+    "tipo": "Fetch",
+    "desde_ms": 19139,
+    "dur_ms": 279,
+    "bytes": 4181,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 2",
+    "url": "/api/luffy/terminal/universo?filtro=todo&limite=300",
+    "tipo": "Fetch",
+    "desde_ms": 19147,
+    "dur_ms": 1279,
+    "bytes": 107313,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 2",
+    "url": "/api/luffy/graficos/datos",
+    "tipo": "Fetch",
+    "desde_ms": 19377,
+    "dur_ms": 1386,
+    "bytes": 2945,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 2",
+    "url": "/api/luffy/graficos/datos",
+    "tipo": "Fetch",
+    "desde_ms": 19378,
+    "dur_ms": 1262,
+    "bytes": 3008,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 2",
+    "url": "/api/luffy/graficos/datos",
+    "tipo": "Fetch",
+    "desde_ms": 19378,
+    "dur_ms": 862,
+    "bytes": 1880,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 2",
+    "url": "/api/luffy/graficos/datos",
+    "tipo": "Fetch",
+    "desde_ms": 19379,
+    "dur_ms": 2178,
+    "bytes": 2575,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 2",
+    "url": "/api/luffy/terminal/NEAR?rango=90d",
+    "tipo": "Fetch",
+    "desde_ms": 20528,
+    "dur_ms": 342,
+    "bytes": 8040,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 3",
+    "url": "/favicon.png",
+    "tipo": "Other",
+    "desde_ms": 22142,
+    "dur_ms": 1,
+    "bytes": 0,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 3",
+    "url": "/api/luffy/costo",
+    "tipo": "Fetch",
+    "desde_ms": 22154,
+    "dur_ms": 246,
+    "bytes": 4181,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 3",
+    "url": "/api/luffy/terminal/universo?filtro=todo&limite=300",
+    "tipo": "Fetch",
+    "desde_ms": 22161,
+    "dur_ms": 1142,
+    "bytes": 107313,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 3",
+    "url": "/api/luffy/graficos/datos",
+    "tipo": "Fetch",
+    "desde_ms": 22393,
+    "dur_ms": 1440,
+    "bytes": 9033,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 3",
+    "url": "/api/luffy/graficos/datos",
+    "tipo": "Fetch",
+    "desde_ms": 22394,
+    "dur_ms": 1239,
+    "bytes": 20577,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 3",
+    "url": "/api/luffy/graficos/datos",
+    "tipo": "Fetch",
+    "desde_ms": 22394,
+    "dur_ms": 1596,
+    "bytes": 5847,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 3",
+    "url": "/api/luffy/terminal/ZEC?rango=90d",
+    "tipo": "Fetch",
+    "desde_ms": 23402,
+    "dur_ms": 408,
+    "bytes": 7882,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "volver a una moneda ya vista",
+    "url": "/favicon.png",
+    "tipo": "Other",
+    "desde_ms": 25060,
+    "dur_ms": 0,
+    "bytes": 0,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "volver a una moneda ya vista",
+    "url": "/api/luffy/costo",
+    "tipo": "Fetch",
+    "desde_ms": 25073,
+    "dur_ms": 245,
+    "bytes": 4181,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "volver a una moneda ya vista",
+    "url": "/api/luffy/terminal/universo?filtro=todo&limite=300",
+    "tipo": "Fetch",
+    "desde_ms": 25079,
+    "dur_ms": 1420,
+    "bytes": 107313,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la cartera",
+    "url": "/assets/Cartera-z8MAlhGm.js",
+    "tipo": "Script",
+    "desde_ms": 25554,
+    "dur_ms": 257,
+    "bytes": 8255,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la cartera",
+    "url": "/assets/echarts-DIexXyHo.js",
+    "tipo": "Script",
+    "desde_ms": 25556,
+    "dur_ms": 1437,
+    "bytes": 178778,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la cartera",
+    "url": "/favicon.png",
+    "tipo": "Other",
+    "desde_ms": 25556,
+    "dur_ms": 0,
+    "bytes": 0,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la cartera",
+    "url": "/api/luffy/costo",
+    "tipo": "Fetch",
+    "desde_ms": 25572,
+    "dur_ms": 683,
+    "bytes": 4181,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la cartera",
+    "url": "/api/luffy/cartera?origen=pablo",
+    "tipo": "Fetch",
+    "desde_ms": 27033,
+    "dur_ms": 224,
+    "bytes": 1299,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la cartera",
+    "url": "/api/luffy/exchange/ordenes?estado=abiertas",
+    "tipo": "Fetch",
+    "desde_ms": 27259,
+    "dur_ms": 298,
+    "bytes": 830,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la cartera",
+    "url": "/api/luffy/cartera/curva?origen=pablo&rango=90d",
+    "tipo": "Fetch",
+    "desde_ms": 27279,
+    "dur_ms": 313,
+    "bytes": 1352,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "pasar a la caja",
+    "url": "/api/luffy/caja?decisiones=30",
+    "tipo": "Fetch",
+    "desde_ms": 27370,
+    "dur_ms": 601,
+    "bytes": 28647,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "pasar a la caja",
+    "url": "/api/luffy/cartera?origen=caja",
+    "tipo": "Fetch",
+    "desde_ms": 27371,
+    "dur_ms": 479,
+    "bytes": 4063,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "pasar a la caja",
+    "url": "/api/luffy/exchange/fills?par=SOL-USDT&limite=30",
+    "tipo": "Fetch",
+    "desde_ms": 27559,
+    "dur_ms": 248,
+    "bytes": 1120,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "pasar a la caja",
+    "url": "/api/luffy/exchange/fills?par=WAL-USDT&limite=30",
+    "tipo": "Fetch",
+    "desde_ms": 27559,
+    "dur_ms": 529,
+    "bytes": 799,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "pasar a la caja",
+    "url": "/api/luffy/exchange/comisiones?desde=2026-09-12&hasta=2026-10-12&origen=pablo",
+    "tipo": "Fetch",
+    "desde_ms": 27559,
+    "dur_ms": 750,
+    "bytes": 706,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "pasar a la caja",
+    "url": "/api/luffy/cartera/curva?origen=caja&rango=90d",
+    "tipo": "Fetch",
+    "desde_ms": 27978,
+    "dur_ms": 325,
+    "bytes": 636,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir al radar",
+    "url": "/assets/Radar-CFjRBOT9.js",
+    "tipo": "Script",
+    "desde_ms": 28199,
+    "dur_ms": 174,
+    "bytes": 3097,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir al radar",
+    "url": "/favicon.png",
+    "tipo": "Other",
+    "desde_ms": 28200,
+    "dur_ms": 0,
+    "bytes": 0,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir al radar",
+    "url": "/api/luffy/costo",
+    "tipo": "Fetch",
+    "desde_ms": 28207,
+    "dur_ms": 317,
+    "bytes": 4181,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir al radar",
+    "url": "/api/luffy/radar/modos",
+    "tipo": "Fetch",
+    "desde_ms": 28504,
+    "dur_ms": 306,
+    "bytes": 14949,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir al radar",
+    "url": "/api/luffy/radar/candidatas?dias=30",
+    "tipo": "Fetch",
+    "desde_ms": 28505,
+    "dur_ms": 1148,
+    "bytes": 125491,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a control",
+    "url": "/assets/Control-Bq0SWwmW.js",
+    "tipo": "Script",
+    "desde_ms": 30416,
+    "dur_ms": 189,
+    "bytes": 4624,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a control",
+    "url": "/favicon.png",
+    "tipo": "Other",
+    "desde_ms": 30417,
+    "dur_ms": 0,
+    "bytes": 0,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a control",
+    "url": "/api/luffy/costo",
+    "tipo": "Fetch",
+    "desde_ms": 30426,
+    "dur_ms": 514,
+    "bytes": 4181,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a control",
+    "url": "/api/luffy/gatillos",
+    "tipo": "Fetch",
+    "desde_ms": 30722,
+    "dur_ms": 511,
+    "bytes": 204,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la oficina",
+    "url": "/assets/Oficina-BmEjjoQR.js",
+    "tipo": "Script",
+    "desde_ms": 32099,
+    "dur_ms": 177,
+    "bytes": 3996,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la oficina",
+    "url": "/favicon.png",
+    "tipo": "Other",
+    "desde_ms": 32100,
+    "dur_ms": 0,
+    "bytes": 0,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la oficina",
+    "url": "/api/luffy/costo",
+    "tipo": "Fetch",
+    "desde_ms": 32107,
+    "dur_ms": 422,
+    "bytes": 4181,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la oficina",
+    "url": "/api/luffy/oficina/estado",
+    "tipo": "Fetch",
+    "desde_ms": 32405,
+    "dur_ms": 424,
+    "bytes": 4951,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la oficina",
+    "url": "/api/luffy/eventos?desde_id=1159",
+    "tipo": "EventSource",
+    "desde_ms": 32843,
+    "dur_ms": 507,
+    "bytes": 0,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a informes",
+    "url": "/assets/Informes-B3hBcvno.js",
+    "tipo": "Script",
+    "desde_ms": 33337,
+    "dur_ms": 170,
+    "bytes": 2913,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a informes",
+    "url": "/favicon.png",
+    "tipo": "Other",
+    "desde_ms": 33338,
+    "dur_ms": 0,
+    "bytes": 0,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a informes",
+    "url": "/api/luffy/costo",
+    "tipo": "Fetch",
+    "desde_ms": 33348,
+    "dur_ms": 518,
+    "bytes": 4181,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a informes",
+    "url": "/api/luffy/informes?limite=30&tipo=diario",
+    "tipo": "Fetch",
+    "desde_ms": 33647,
+    "dur_ms": 425,
+    "bytes": 1285,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a informes",
+    "url": "/api/luffy/informes/2026-10-11?tipo=diario",
+    "tipo": "Fetch",
+    "desde_ms": 34077,
+    "dur_ms": 605,
+    "bytes": 19003,
+    "mugiwara_ms": null,
+    "estado": 200
+   }
+  ],
+  [
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/luffy",
+    "tipo": "Document",
+    "desde_ms": 0,
+    "dur_ms": 169,
+    "bytes": 2495,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/fonts/outfit-latin-wght-normal.woff2",
+    "tipo": "Font",
+    "desde_ms": 177,
+    "dur_ms": 895,
+    "bytes": 32490,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/fonts/Geist-latin.woff2",
+    "tipo": "Font",
+    "desde_ms": 178,
+    "dur_ms": 849,
+    "bytes": 29486,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/index-Z9wwLNaC.js",
+    "tipo": "Script",
+    "desde_ms": 178,
+    "dur_ms": 1285,
+    "bytes": 73132,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/jsx-runtime-B-hcVAMW.js",
+    "tipo": "Script",
+    "desde_ms": 178,
+    "dur_ms": 271,
+    "bytes": 3561,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/chunk-BV7QT456-BagTiCLq.js",
+    "tipo": "Script",
+    "desde_ms": 178,
+    "dur_ms": 544,
+    "bytes": 14456,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/sesion-CcPrMfWj.js",
+    "tipo": "Script",
+    "desde_ms": 178,
+    "dur_ms": 555,
+    "bytes": 13835,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/acceso-CioYKzkQ.js",
+    "tipo": "Script",
+    "desde_ms": 179,
+    "dur_ms": 727,
+    "bytes": 331,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/formato-DYlTusyx.js",
+    "tipo": "Script",
+    "desde_ms": 179,
+    "dur_ms": 785,
+    "bytes": 1866,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/TierIcon-Bc1OK4O4.js",
+    "tipo": "Script",
+    "desde_ms": 179,
+    "dur_ms": 905,
+    "bytes": 653,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/Loader-Dh4lWw5F.js",
+    "tipo": "Script",
+    "desde_ms": 179,
+    "dur_ms": 950,
+    "bytes": 1045,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/EmptyState-BeHVZ30u.js",
+    "tipo": "Script",
+    "desde_ms": 179,
+    "dur_ms": 1013,
+    "bytes": 934,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/lenguaje-BVWgWjRz.js",
+    "tipo": "Script",
+    "desde_ms": 179,
+    "dur_ms": 1155,
+    "bytes": 5578,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/piezas-ClSztosB.js",
+    "tipo": "Script",
+    "desde_ms": 179,
+    "dur_ms": 1143,
+    "bytes": 3678,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/GLBoundary-D9RnugIY.js",
+    "tipo": "Script",
+    "desde_ms": 180,
+    "dur_ms": 1134,
+    "bytes": 1022,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/index-C5Hp7Um3.css",
+    "tipo": "Stylesheet",
+    "desde_ms": 180,
+    "dur_ms": 1198,
+    "bytes": 44362,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/LuffyShell-CXuJg7nX.js",
+    "tipo": "Script",
+    "desde_ms": 1530,
+    "dur_ms": 184,
+    "bytes": 2157,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/api-DzH9v0fV.js",
+    "tipo": "Script",
+    "desde_ms": 1532,
+    "dur_ms": 211,
+    "bytes": 1845,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/formato-B9oNyOd9.js",
+    "tipo": "Script",
+    "desde_ms": 1532,
+    "dur_ms": 177,
+    "bytes": 1326,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/api/auth/get-session",
+    "tipo": "Fetch",
+    "desde_ms": 1542,
+    "dur_ms": 180,
+    "bytes": 974,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/api/yo",
+    "tipo": "Fetch",
+    "desde_ms": 1544,
+    "dur_ms": 186,
+    "bytes": 560,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/api/yo",
+    "tipo": "Fetch",
+    "desde_ms": 1545,
+    "dur_ms": 347,
+    "bytes": 560,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/favicon.png",
+    "tipo": "Other",
+    "desde_ms": 1548,
+    "dur_ms": 216,
+    "bytes": 5685,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/api/yo",
+    "tipo": "Fetch",
+    "desde_ms": 1729,
+    "dur_ms": 437,
+    "bytes": 560,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/img/logo-mark.webp",
+    "tipo": "Image",
+    "desde_ms": 1781,
+    "dur_ms": 556,
+    "bytes": 24030,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/Chat-CtYKfvad.js",
+    "tipo": "Script",
+    "desde_ms": 1789,
+    "dur_ms": 248,
+    "bytes": 5479,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/md-DhLF3rzQ.js",
+    "tipo": "Script",
+    "desde_ms": 1790,
+    "dur_ms": 203,
+    "bytes": 1546,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/Grafico-BLphCQpU.js",
+    "tipo": "Script",
+    "desde_ms": 1790,
+    "dur_ms": 819,
+    "bytes": 64756,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/tema-2AScGvLt.js",
+    "tipo": "Script",
+    "desde_ms": 1790,
+    "dur_ms": 182,
+    "bytes": 974,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/api/luffy/costo",
+    "tipo": "Fetch",
+    "desde_ms": 1840,
+    "dur_ms": 440,
+    "bytes": 4182,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/fonts/JetBrainsMono-latin.woff2",
+    "tipo": "Font",
+    "desde_ms": 1844,
+    "dur_ms": 629,
+    "bytes": 31538,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/api/luffy/hilos?limite=40",
+    "tipo": "Fetch",
+    "desde_ms": 2617,
+    "dur_ms": 1199,
+    "bytes": 47969,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/api/luffy/hilos/2a836218-7a08-4e44-a487-52c34e615c44?n=4",
+    "tipo": "Fetch",
+    "desde_ms": 3842,
+    "dur_ms": 4751,
+    "bytes": 18504,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/api/luffy/hilos/58e0d19f-4990-4e06-b058-665b57b132a5?n=4",
+    "tipo": "Fetch",
+    "desde_ms": 3844,
+    "dur_ms": 5959,
+    "bytes": 12929,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/api/luffy/hilos/57c03077-f0dd-4200-b946-09f6e348d25a?n=4",
+    "tipo": "Fetch",
+    "desde_ms": 3845,
+    "dur_ms": 5688,
+    "bytes": 2226,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/api/luffy/hilos/59ebc476-6e32-4eac-8c18-8608a31f966d?n=4",
+    "tipo": "Fetch",
+    "desde_ms": 3846,
+    "dur_ms": 4471,
+    "bytes": 9147,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/api/luffy/hilos/49f6b50e-d742-48ac-8af8-405d8c9ead4e?n=4",
+    "tipo": "Fetch",
+    "desde_ms": 3846,
+    "dur_ms": 5979,
+    "bytes": 13391,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/api/luffy/hilos/58e0d19f-4990-4e06-b058-665b57b132a5?n=80",
+    "tipo": "Fetch",
+    "desde_ms": 3848,
+    "dur_ms": 6549,
+    "bytes": 85109,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la terminal",
+    "url": "/assets/Terminal-CzIkLjnX.js",
+    "tipo": "Script",
+    "desde_ms": 4875,
+    "dur_ms": 3641,
+    "bytes": 5705,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la terminal",
+    "url": "/assets/api6b-BBNlJkqE.js",
+    "tipo": "Script",
+    "desde_ms": 4876,
+    "dur_ms": 3813,
+    "bytes": 2290,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la terminal",
+    "url": "/assets/Plegable-CFnqVvkc.js",
+    "tipo": "Script",
+    "desde_ms": 4876,
+    "dur_ms": 3882,
+    "bytes": 612,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la terminal",
+    "url": "/favicon.png",
+    "tipo": "Other",
+    "desde_ms": 4877,
+    "dur_ms": 0,
+    "bytes": 0,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la terminal",
+    "url": "/api/luffy/costo",
+    "tipo": "Fetch",
+    "desde_ms": 4887,
+    "dur_ms": 4114,
+    "bytes": 4182,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la terminal",
+    "url": "/api/luffy/terminal/universo?filtro=todo&limite=300",
+    "tipo": "Fetch",
+    "desde_ms": 8764,
+    "dur_ms": 860,
+    "bytes": 107313,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la terminal",
+    "url": "/api/luffy/terminal/BTC?rango=90d",
+    "tipo": "Fetch",
+    "desde_ms": 9754,
+    "dur_ms": 493,
+    "bytes": 8020,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la terminal",
+    "url": "/api/luffy/terminal/ETH?rango=90d",
+    "tipo": "Fetch",
+    "desde_ms": 9756,
+    "dur_ms": 483,
+    "bytes": 8180,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la terminal",
+    "url": "/api/luffy/graficos/datos",
+    "tipo": "Fetch",
+    "desde_ms": 10500,
+    "dur_ms": 362,
+    "bytes": 10487,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la terminal",
+    "url": "/api/luffy/graficos/datos",
+    "tipo": "Fetch",
+    "desde_ms": 10501,
+    "dur_ms": 426,
+    "bytes": 22378,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la terminal",
+    "url": "/api/luffy/graficos/datos",
+    "tipo": "Fetch",
+    "desde_ms": 10502,
+    "dur_ms": 511,
+    "bytes": 6129,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 1",
+    "url": "/favicon.png",
+    "tipo": "Other",
+    "desde_ms": 12595,
+    "dur_ms": 1,
+    "bytes": 0,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 1",
+    "url": "/api/luffy/terminal/ACIRE?rango=90d",
+    "tipo": "Fetch",
+    "desde_ms": 12641,
+    "dur_ms": 281,
+    "bytes": 5806,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 1",
+    "url": "/api/luffy/costo",
+    "tipo": "Fetch",
+    "desde_ms": 12641,
+    "dur_ms": 266,
+    "bytes": 4182,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 1",
+    "url": "/api/luffy/terminal/universo?filtro=todo&limite=300",
+    "tipo": "Fetch",
+    "desde_ms": 12647,
+    "dur_ms": 1314,
+    "bytes": 107313,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 1",
+    "url": "/api/luffy/graficos/datos",
+    "tipo": "Fetch",
+    "desde_ms": 13146,
+    "dur_ms": 642,
+    "bytes": 3984,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 1",
+    "url": "/api/luffy/graficos/datos",
+    "tipo": "Fetch",
+    "desde_ms": 13147,
+    "dur_ms": 625,
+    "bytes": 3267,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 1",
+    "url": "/api/luffy/graficos/datos",
+    "tipo": "Fetch",
+    "desde_ms": 13148,
+    "dur_ms": 610,
+    "bytes": 1864,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 1",
+    "url": "/api/luffy/graficos/datos",
+    "tipo": "Fetch",
+    "desde_ms": 13149,
+    "dur_ms": 619,
+    "bytes": 2832,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 1",
+    "url": "/api/luffy/terminal/SIGMAETH?rango=90d",
+    "tipo": "Fetch",
+    "desde_ms": 14063,
+    "dur_ms": 253,
+    "bytes": 5823,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 2",
+    "url": "/favicon.png",
+    "tipo": "Other",
+    "desde_ms": 15044,
+    "dur_ms": 0,
+    "bytes": 0,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 2",
+    "url": "/api/luffy/costo",
+    "tipo": "Fetch",
+    "desde_ms": 15065,
+    "dur_ms": 237,
+    "bytes": 4182,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 2",
+    "url": "/api/luffy/terminal/universo?filtro=todo&limite=300",
+    "tipo": "Fetch",
+    "desde_ms": 15070,
+    "dur_ms": 1018,
+    "bytes": 107313,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 2",
+    "url": "/api/luffy/graficos/datos",
+    "tipo": "Fetch",
+    "desde_ms": 15302,
+    "dur_ms": 545,
+    "bytes": 2944,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 2",
+    "url": "/api/luffy/graficos/datos",
+    "tipo": "Fetch",
+    "desde_ms": 15302,
+    "dur_ms": 582,
+    "bytes": 3007,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 2",
+    "url": "/api/luffy/graficos/datos",
+    "tipo": "Fetch",
+    "desde_ms": 15303,
+    "dur_ms": 558,
+    "bytes": 1879,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 2",
+    "url": "/api/luffy/graficos/datos",
+    "tipo": "Fetch",
+    "desde_ms": 15304,
+    "dur_ms": 564,
+    "bytes": 2574,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 2",
+    "url": "/api/luffy/terminal/NEAR?rango=90d",
+    "tipo": "Fetch",
+    "desde_ms": 16189,
+    "dur_ms": 267,
+    "bytes": 8040,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 3",
+    "url": "/favicon.png",
+    "tipo": "Other",
+    "desde_ms": 16978,
+    "dur_ms": 0,
+    "bytes": 0,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 3",
+    "url": "/api/luffy/costo",
+    "tipo": "Fetch",
+    "desde_ms": 16998,
+    "dur_ms": 243,
+    "bytes": 4182,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 3",
+    "url": "/api/luffy/terminal/universo?filtro=todo&limite=300",
+    "tipo": "Fetch",
+    "desde_ms": 17003,
+    "dur_ms": 1119,
+    "bytes": 107313,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 3",
+    "url": "/api/luffy/graficos/datos",
+    "tipo": "Fetch",
+    "desde_ms": 17237,
+    "dur_ms": 597,
+    "bytes": 9032,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 3",
+    "url": "/api/luffy/graficos/datos",
+    "tipo": "Fetch",
+    "desde_ms": 17238,
+    "dur_ms": 696,
+    "bytes": 20576,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 3",
+    "url": "/api/luffy/graficos/datos",
+    "tipo": "Fetch",
+    "desde_ms": 17238,
+    "dur_ms": 534,
+    "bytes": 5846,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 3",
+    "url": "/api/luffy/terminal/ZEC?rango=90d",
+    "tipo": "Fetch",
+    "desde_ms": 18225,
+    "dur_ms": 261,
+    "bytes": 7882,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "volver a una moneda ya vista",
+    "url": "/favicon.png",
+    "tipo": "Other",
+    "desde_ms": 19428,
+    "dur_ms": 0,
+    "bytes": 0,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "volver a una moneda ya vista",
+    "url": "/api/luffy/costo",
+    "tipo": "Fetch",
+    "desde_ms": 19448,
+    "dur_ms": 261,
+    "bytes": 4182,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "volver a una moneda ya vista",
+    "url": "/api/luffy/terminal/universo?filtro=todo&limite=300",
+    "tipo": "Fetch",
+    "desde_ms": 19453,
+    "dur_ms": 1564,
+    "bytes": 107313,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la cartera",
+    "url": "/assets/Cartera-z8MAlhGm.js",
+    "tipo": "Script",
+    "desde_ms": 19893,
+    "dur_ms": 275,
+    "bytes": 8255,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la cartera",
+    "url": "/assets/echarts-DIexXyHo.js",
+    "tipo": "Script",
+    "desde_ms": 19893,
+    "dur_ms": 1533,
+    "bytes": 178778,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la cartera",
+    "url": "/favicon.png",
+    "tipo": "Other",
+    "desde_ms": 19895,
+    "dur_ms": 0,
+    "bytes": 0,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la cartera",
+    "url": "/api/luffy/costo",
+    "tipo": "Fetch",
+    "desde_ms": 19907,
+    "dur_ms": 567,
+    "bytes": 4182,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la cartera",
+    "url": "/api/luffy/cartera?origen=pablo",
+    "tipo": "Fetch",
+    "desde_ms": 21460,
+    "dur_ms": 229,
+    "bytes": 1300,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la cartera",
+    "url": "/api/luffy/exchange/ordenes?estado=abiertas",
+    "tipo": "Fetch",
+    "desde_ms": 21691,
+    "dur_ms": 236,
+    "bytes": 830,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la cartera",
+    "url": "/api/luffy/cartera/curva?origen=pablo&rango=90d",
+    "tipo": "Fetch",
+    "desde_ms": 21697,
+    "dur_ms": 410,
+    "bytes": 1351,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la cartera",
+    "url": "/api/luffy/exchange/fills?par=SOL-USDT&limite=30",
+    "tipo": "Fetch",
+    "desde_ms": 21929,
+    "dur_ms": 405,
+    "bytes": 1120,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la cartera",
+    "url": "/api/luffy/exchange/fills?par=WAL-USDT&limite=30",
+    "tipo": "Fetch",
+    "desde_ms": 21929,
+    "dur_ms": 683,
+    "bytes": 799,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la cartera",
+    "url": "/api/luffy/exchange/comisiones?desde=2026-09-12&hasta=2026-10-12&origen=pablo",
+    "tipo": "Fetch",
+    "desde_ms": 21929,
+    "dur_ms": 693,
+    "bytes": 706,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "pasar a la caja",
+    "url": "/api/luffy/caja?decisiones=30",
+    "tipo": "Fetch",
+    "desde_ms": 22381,
+    "dur_ms": 612,
+    "bytes": 28649,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "pasar a la caja",
+    "url": "/api/luffy/cartera?origen=caja",
+    "tipo": "Fetch",
+    "desde_ms": 22382,
+    "dur_ms": 481,
+    "bytes": 4066,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "pasar a la caja",
+    "url": "/api/luffy/cartera/curva?origen=caja&rango=90d",
+    "tipo": "Fetch",
+    "desde_ms": 23000,
+    "dur_ms": 228,
+    "bytes": 636,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir al radar",
+    "url": "/assets/Radar-CFjRBOT9.js",
+    "tipo": "Script",
+    "desde_ms": 23206,
+    "dur_ms": 178,
+    "bytes": 3097,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir al radar",
+    "url": "/favicon.png",
+    "tipo": "Other",
+    "desde_ms": 23208,
+    "dur_ms": 0,
+    "bytes": 0,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir al radar",
+    "url": "/api/luffy/costo",
+    "tipo": "Fetch",
+    "desde_ms": 23214,
+    "dur_ms": 241,
+    "bytes": 4182,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir al radar",
+    "url": "/api/luffy/radar/modos",
+    "tipo": "Fetch",
+    "desde_ms": 23459,
+    "dur_ms": 349,
+    "bytes": 14949,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir al radar",
+    "url": "/api/luffy/radar/candidatas?dias=30",
+    "tipo": "Fetch",
+    "desde_ms": 23461,
+    "dur_ms": 892,
+    "bytes": 125491,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a control",
+    "url": "/assets/Control-Bq0SWwmW.js",
+    "tipo": "Script",
+    "desde_ms": 24891,
+    "dur_ms": 189,
+    "bytes": 4624,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a control",
+    "url": "/favicon.png",
+    "tipo": "Other",
+    "desde_ms": 24891,
+    "dur_ms": 1,
+    "bytes": 0,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a control",
+    "url": "/api/luffy/costo",
+    "tipo": "Fetch",
+    "desde_ms": 24899,
+    "dur_ms": 246,
+    "bytes": 4180,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a control",
+    "url": "/api/luffy/gatillos",
+    "tipo": "Fetch",
+    "desde_ms": 25150,
+    "dur_ms": 301,
+    "bytes": 204,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la oficina",
+    "url": "/assets/Oficina-BmEjjoQR.js",
+    "tipo": "Script",
+    "desde_ms": 26073,
+    "dur_ms": 174,
+    "bytes": 3996,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la oficina",
+    "url": "/favicon.png",
+    "tipo": "Other",
+    "desde_ms": 26073,
+    "dur_ms": 0,
+    "bytes": 0,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la oficina",
+    "url": "/api/luffy/costo",
+    "tipo": "Fetch",
+    "desde_ms": 26079,
+    "dur_ms": 237,
+    "bytes": 4180,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a informes",
+    "url": "/api/luffy/oficina/estado",
+    "tipo": "Fetch",
+    "desde_ms": 26321,
+    "dur_ms": 503,
+    "bytes": 4950,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a informes",
+    "url": "/assets/Informes-B3hBcvno.js",
+    "tipo": "Script",
+    "desde_ms": 26540,
+    "dur_ms": 173,
+    "bytes": 2913,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a informes",
+    "url": "/favicon.png",
+    "tipo": "Other",
+    "desde_ms": 26542,
+    "dur_ms": 0,
+    "bytes": 0,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a informes",
+    "url": "/api/luffy/costo",
+    "tipo": "Fetch",
+    "desde_ms": 26548,
+    "dur_ms": 491,
+    "bytes": 4180,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a informes",
+    "url": "/api/luffy/informes?limite=30&tipo=diario",
+    "tipo": "Fetch",
+    "desde_ms": 26846,
+    "dur_ms": 385,
+    "bytes": 1286,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a informes",
+    "url": "/api/luffy/informes/2026-10-11?tipo=diario",
+    "tipo": "Fetch",
+    "desde_ms": 27240,
+    "dur_ms": 607,
+    "bytes": 19003,
+    "mugiwara_ms": null,
+    "estado": 200
+   }
+  ],
+  [
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/luffy",
+    "tipo": "Document",
+    "desde_ms": 0,
+    "dur_ms": 171,
+    "bytes": 2495,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/fonts/outfit-latin-wght-normal.woff2",
+    "tipo": "Font",
+    "desde_ms": 176,
+    "dur_ms": 895,
+    "bytes": 32490,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/fonts/Geist-latin.woff2",
+    "tipo": "Font",
+    "desde_ms": 177,
+    "dur_ms": 852,
+    "bytes": 29486,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/index-Z9wwLNaC.js",
+    "tipo": "Script",
+    "desde_ms": 177,
+    "dur_ms": 1286,
+    "bytes": 73132,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/jsx-runtime-B-hcVAMW.js",
+    "tipo": "Script",
+    "desde_ms": 177,
+    "dur_ms": 271,
+    "bytes": 3561,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/chunk-BV7QT456-BagTiCLq.js",
+    "tipo": "Script",
+    "desde_ms": 177,
+    "dur_ms": 544,
+    "bytes": 14456,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/sesion-CcPrMfWj.js",
+    "tipo": "Script",
+    "desde_ms": 177,
+    "dur_ms": 559,
+    "bytes": 13835,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/acceso-CioYKzkQ.js",
+    "tipo": "Script",
+    "desde_ms": 177,
+    "dur_ms": 728,
+    "bytes": 331,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/formato-DYlTusyx.js",
+    "tipo": "Script",
+    "desde_ms": 178,
+    "dur_ms": 784,
+    "bytes": 1866,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/TierIcon-Bc1OK4O4.js",
+    "tipo": "Script",
+    "desde_ms": 178,
+    "dur_ms": 906,
+    "bytes": 653,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/Loader-Dh4lWw5F.js",
+    "tipo": "Script",
+    "desde_ms": 178,
+    "dur_ms": 951,
+    "bytes": 1045,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/EmptyState-BeHVZ30u.js",
+    "tipo": "Script",
+    "desde_ms": 178,
+    "dur_ms": 1021,
+    "bytes": 934,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/lenguaje-BVWgWjRz.js",
+    "tipo": "Script",
+    "desde_ms": 178,
+    "dur_ms": 1156,
+    "bytes": 5578,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/piezas-ClSztosB.js",
+    "tipo": "Script",
+    "desde_ms": 179,
+    "dur_ms": 1143,
+    "bytes": 3678,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/GLBoundary-D9RnugIY.js",
+    "tipo": "Script",
+    "desde_ms": 179,
+    "dur_ms": 1137,
+    "bytes": 1022,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/index-C5Hp7Um3.css",
+    "tipo": "Stylesheet",
+    "desde_ms": 179,
+    "dur_ms": 1201,
+    "bytes": 44362,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/LuffyShell-CXuJg7nX.js",
+    "tipo": "Script",
+    "desde_ms": 1527,
+    "dur_ms": 194,
+    "bytes": 2157,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/api-DzH9v0fV.js",
+    "tipo": "Script",
+    "desde_ms": 1529,
+    "dur_ms": 214,
+    "bytes": 1845,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/formato-B9oNyOd9.js",
+    "tipo": "Script",
+    "desde_ms": 1529,
+    "dur_ms": 181,
+    "bytes": 1326,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/api/auth/get-session",
+    "tipo": "Fetch",
+    "desde_ms": 1540,
+    "dur_ms": 175,
+    "bytes": 974,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/api/yo",
+    "tipo": "Fetch",
+    "desde_ms": 1542,
+    "dur_ms": 187,
+    "bytes": 560,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/api/yo",
+    "tipo": "Fetch",
+    "desde_ms": 1543,
+    "dur_ms": 351,
+    "bytes": 560,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/favicon.png",
+    "tipo": "Other",
+    "desde_ms": 1545,
+    "dur_ms": 220,
+    "bytes": 5685,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/api/yo",
+    "tipo": "Fetch",
+    "desde_ms": 1721,
+    "dur_ms": 451,
+    "bytes": 560,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/img/logo-mark.webp",
+    "tipo": "Image",
+    "desde_ms": 1781,
+    "dur_ms": 535,
+    "bytes": 24030,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/Chat-CtYKfvad.js",
+    "tipo": "Script",
+    "desde_ms": 1789,
+    "dur_ms": 249,
+    "bytes": 5479,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/md-DhLF3rzQ.js",
+    "tipo": "Script",
+    "desde_ms": 1789,
+    "dur_ms": 204,
+    "bytes": 1546,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/Grafico-BLphCQpU.js",
+    "tipo": "Script",
+    "desde_ms": 1789,
+    "dur_ms": 821,
+    "bytes": 64756,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/assets/tema-2AScGvLt.js",
+    "tipo": "Script",
+    "desde_ms": 1789,
+    "dur_ms": 182,
+    "bytes": 974,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/api/luffy/costo",
+    "tipo": "Fetch",
+    "desde_ms": 1838,
+    "dur_ms": 665,
+    "bytes": 4180,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/fonts/JetBrainsMono-latin.woff2",
+    "tipo": "Font",
+    "desde_ms": 1842,
+    "dur_ms": 616,
+    "bytes": 31538,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/api/luffy/hilos?limite=40",
+    "tipo": "Fetch",
+    "desde_ms": 2624,
+    "dur_ms": 1472,
+    "bytes": 47969,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/api/luffy/hilos/2a836218-7a08-4e44-a487-52c34e615c44?n=4",
+    "tipo": "Fetch",
+    "desde_ms": 4121,
+    "dur_ms": 5040,
+    "bytes": 18504,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/api/luffy/hilos/58e0d19f-4990-4e06-b058-665b57b132a5?n=4",
+    "tipo": "Fetch",
+    "desde_ms": 4122,
+    "dur_ms": 6441,
+    "bytes": 12929,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/api/luffy/hilos/57c03077-f0dd-4200-b946-09f6e348d25a?n=4",
+    "tipo": "Fetch",
+    "desde_ms": 4123,
+    "dur_ms": 5401,
+    "bytes": 2226,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/api/luffy/hilos/59ebc476-6e32-4eac-8c18-8608a31f966d?n=4",
+    "tipo": "Fetch",
+    "desde_ms": 4124,
+    "dur_ms": 5208,
+    "bytes": 9147,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/api/luffy/hilos/49f6b50e-d742-48ac-8af8-405d8c9ead4e?n=4",
+    "tipo": "Fetch",
+    "desde_ms": 4125,
+    "dur_ms": 6452,
+    "bytes": 13391,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "abrir /luffy en frío",
+    "url": "/api/luffy/hilos/58e0d19f-4990-4e06-b058-665b57b132a5?n=80",
+    "tipo": "Fetch",
+    "desde_ms": 4126,
+    "dur_ms": 6945,
+    "bytes": 85109,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la terminal",
+    "url": "/assets/Terminal-CzIkLjnX.js",
+    "tipo": "Script",
+    "desde_ms": 5389,
+    "dur_ms": 3965,
+    "bytes": 5705,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la terminal",
+    "url": "/assets/api6b-BBNlJkqE.js",
+    "tipo": "Script",
+    "desde_ms": 5390,
+    "dur_ms": 4120,
+    "bytes": 2290,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la terminal",
+    "url": "/assets/Plegable-CFnqVvkc.js",
+    "tipo": "Script",
+    "desde_ms": 5390,
+    "dur_ms": 4127,
+    "bytes": 612,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la terminal",
+    "url": "/favicon.png",
+    "tipo": "Other",
+    "desde_ms": 5391,
+    "dur_ms": 0,
+    "bytes": 0,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la terminal",
+    "url": "/api/luffy/costo",
+    "tipo": "Fetch",
+    "desde_ms": 5400,
+    "dur_ms": 4411,
+    "bytes": 4181,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la terminal",
+    "url": "/api/luffy/terminal/universo?filtro=todo&limite=300",
+    "tipo": "Fetch",
+    "desde_ms": 9522,
+    "dur_ms": 1340,
+    "bytes": 107313,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la terminal",
+    "url": "/api/luffy/terminal/BTC?rango=90d",
+    "tipo": "Fetch",
+    "desde_ms": 10990,
+    "dur_ms": 273,
+    "bytes": 8020,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la terminal",
+    "url": "/api/luffy/terminal/ETH?rango=90d",
+    "tipo": "Fetch",
+    "desde_ms": 10991,
+    "dur_ms": 464,
+    "bytes": 8180,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la terminal",
+    "url": "/api/luffy/graficos/datos",
+    "tipo": "Fetch",
+    "desde_ms": 11515,
+    "dur_ms": 1323,
+    "bytes": 10488,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la terminal",
+    "url": "/api/luffy/graficos/datos",
+    "tipo": "Fetch",
+    "desde_ms": 11516,
+    "dur_ms": 1751,
+    "bytes": 22379,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la terminal",
+    "url": "/api/luffy/graficos/datos",
+    "tipo": "Fetch",
+    "desde_ms": 11517,
+    "dur_ms": 1521,
+    "bytes": 6130,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 1",
+    "url": "/favicon.png",
+    "tipo": "Other",
+    "desde_ms": 14542,
+    "dur_ms": 1,
+    "bytes": 0,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 1",
+    "url": "/api/luffy/terminal/ACIRE?rango=90d",
+    "tipo": "Fetch",
+    "desde_ms": 14592,
+    "dur_ms": 269,
+    "bytes": 5806,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 1",
+    "url": "/api/luffy/costo",
+    "tipo": "Fetch",
+    "desde_ms": 14593,
+    "dur_ms": 917,
+    "bytes": 4181,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 1",
+    "url": "/api/luffy/terminal/universo?filtro=todo&limite=300",
+    "tipo": "Fetch",
+    "desde_ms": 14597,
+    "dur_ms": 1086,
+    "bytes": 107313,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 1",
+    "url": "/api/luffy/graficos/datos",
+    "tipo": "Fetch",
+    "desde_ms": 15085,
+    "dur_ms": 927,
+    "bytes": 3985,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 1",
+    "url": "/api/luffy/graficos/datos",
+    "tipo": "Fetch",
+    "desde_ms": 15086,
+    "dur_ms": 2054,
+    "bytes": 3268,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 1",
+    "url": "/api/luffy/graficos/datos",
+    "tipo": "Fetch",
+    "desde_ms": 15087,
+    "dur_ms": 1126,
+    "bytes": 1865,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 1",
+    "url": "/api/luffy/graficos/datos",
+    "tipo": "Fetch",
+    "desde_ms": 15088,
+    "dur_ms": 1784,
+    "bytes": 2833,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 1",
+    "url": "/api/luffy/terminal/SIGMAETH?rango=90d",
+    "tipo": "Fetch",
+    "desde_ms": 15783,
+    "dur_ms": 359,
+    "bytes": 5823,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 2",
+    "url": "/favicon.png",
+    "tipo": "Other",
+    "desde_ms": 18525,
+    "dur_ms": 0,
+    "bytes": 0,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 2",
+    "url": "/api/luffy/costo",
+    "tipo": "Fetch",
+    "desde_ms": 18546,
+    "dur_ms": 246,
+    "bytes": 4181,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 2",
+    "url": "/api/luffy/terminal/universo?filtro=todo&limite=300",
+    "tipo": "Fetch",
+    "desde_ms": 18552,
+    "dur_ms": 1099,
+    "bytes": 107313,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 2",
+    "url": "/api/luffy/graficos/datos",
+    "tipo": "Fetch",
+    "desde_ms": 18784,
+    "dur_ms": 1177,
+    "bytes": 2945,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 2",
+    "url": "/api/luffy/graficos/datos",
+    "tipo": "Fetch",
+    "desde_ms": 18784,
+    "dur_ms": 1604,
+    "bytes": 3008,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 2",
+    "url": "/api/luffy/graficos/datos",
+    "tipo": "Fetch",
+    "desde_ms": 18787,
+    "dur_ms": 686,
+    "bytes": 1880,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 2",
+    "url": "/api/luffy/graficos/datos",
+    "tipo": "Fetch",
+    "desde_ms": 18789,
+    "dur_ms": 1809,
+    "bytes": 2575,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 2",
+    "url": "/api/luffy/terminal/NEAR?rango=90d",
+    "tipo": "Fetch",
+    "desde_ms": 19745,
+    "dur_ms": 459,
+    "bytes": 8040,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 3",
+    "url": "/favicon.png",
+    "tipo": "Other",
+    "desde_ms": 21457,
+    "dur_ms": 0,
+    "bytes": 0,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 3",
+    "url": "/api/luffy/costo",
+    "tipo": "Fetch",
+    "desde_ms": 21477,
+    "dur_ms": 256,
+    "bytes": 4181,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 3",
+    "url": "/api/luffy/terminal/universo?filtro=todo&limite=300",
+    "tipo": "Fetch",
+    "desde_ms": 21482,
+    "dur_ms": 1089,
+    "bytes": 107313,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 3",
+    "url": "/api/luffy/graficos/datos",
+    "tipo": "Fetch",
+    "desde_ms": 21716,
+    "dur_ms": 1443,
+    "bytes": 9033,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 3",
+    "url": "/api/luffy/graficos/datos",
+    "tipo": "Fetch",
+    "desde_ms": 21717,
+    "dur_ms": 1284,
+    "bytes": 20577,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 3",
+    "url": "/api/luffy/graficos/datos",
+    "tipo": "Fetch",
+    "desde_ms": 21717,
+    "dur_ms": 1640,
+    "bytes": 5847,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "cambiar de moneda 3",
+    "url": "/api/luffy/terminal/ZEC?rango=90d",
+    "tipo": "Fetch",
+    "desde_ms": 22667,
+    "dur_ms": 419,
+    "bytes": 7882,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "volver a una moneda ya vista",
+    "url": "/favicon.png",
+    "tipo": "Other",
+    "desde_ms": 24382,
+    "dur_ms": 0,
+    "bytes": 0,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "volver a una moneda ya vista",
+    "url": "/api/luffy/costo",
+    "tipo": "Fetch",
+    "desde_ms": 24396,
+    "dur_ms": 692,
+    "bytes": 4181,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "volver a una moneda ya vista",
+    "url": "/api/luffy/terminal/universo?filtro=todo&limite=300",
+    "tipo": "Fetch",
+    "desde_ms": 24402,
+    "dur_ms": 1709,
+    "bytes": 107313,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la cartera",
+    "url": "/assets/Cartera-z8MAlhGm.js",
+    "tipo": "Script",
+    "desde_ms": 24840,
+    "dur_ms": 283,
+    "bytes": 8255,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la cartera",
+    "url": "/assets/echarts-DIexXyHo.js",
+    "tipo": "Script",
+    "desde_ms": 24841,
+    "dur_ms": 1614,
+    "bytes": 178778,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la cartera",
+    "url": "/favicon.png",
+    "tipo": "Other",
+    "desde_ms": 24842,
+    "dur_ms": 1,
+    "bytes": 0,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la cartera",
+    "url": "/api/luffy/costo",
+    "tipo": "Fetch",
+    "desde_ms": 24856,
+    "dur_ms": 640,
+    "bytes": 4181,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la cartera",
+    "url": "/api/luffy/cartera?origen=pablo",
+    "tipo": "Fetch",
+    "desde_ms": 26488,
+    "dur_ms": 308,
+    "bytes": 1300,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la cartera",
+    "url": "/api/luffy/exchange/ordenes?estado=abiertas",
+    "tipo": "Fetch",
+    "desde_ms": 26798,
+    "dur_ms": 298,
+    "bytes": 829,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la cartera",
+    "url": "/api/luffy/cartera/curva?origen=pablo&rango=90d",
+    "tipo": "Fetch",
+    "desde_ms": 26817,
+    "dur_ms": 502,
+    "bytes": 1351,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la cartera",
+    "url": "/api/luffy/exchange/fills?par=SOL-USDT&limite=30",
+    "tipo": "Fetch",
+    "desde_ms": 27099,
+    "dur_ms": 424,
+    "bytes": 1120,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la cartera",
+    "url": "/api/luffy/exchange/fills?par=WAL-USDT&limite=30",
+    "tipo": "Fetch",
+    "desde_ms": 27099,
+    "dur_ms": 642,
+    "bytes": 799,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la cartera",
+    "url": "/api/luffy/exchange/comisiones?desde=2026-09-12&hasta=2026-10-12&origen=pablo",
+    "tipo": "Fetch",
+    "desde_ms": 27099,
+    "dur_ms": 250,
+    "bytes": 707,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "pasar a la caja",
+    "url": "/api/luffy/caja?decisiones=30",
+    "tipo": "Fetch",
+    "desde_ms": 27175,
+    "dur_ms": 940,
+    "bytes": 28648,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "pasar a la caja",
+    "url": "/api/luffy/cartera?origen=caja",
+    "tipo": "Fetch",
+    "desde_ms": 27175,
+    "dur_ms": 600,
+    "bytes": 4066,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "pasar a la caja",
+    "url": "/api/luffy/cartera/curva?origen=caja&rango=90d",
+    "tipo": "Fetch",
+    "desde_ms": 28122,
+    "dur_ms": 240,
+    "bytes": 635,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir al radar",
+    "url": "/assets/Radar-CFjRBOT9.js",
+    "tipo": "Script",
+    "desde_ms": 28504,
+    "dur_ms": 181,
+    "bytes": 3097,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir al radar",
+    "url": "/favicon.png",
+    "tipo": "Other",
+    "desde_ms": 28505,
+    "dur_ms": 0,
+    "bytes": 0,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir al radar",
+    "url": "/api/luffy/costo",
+    "tipo": "Fetch",
+    "desde_ms": 28510,
+    "dur_ms": 239,
+    "bytes": 4181,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir al radar",
+    "url": "/api/luffy/radar/modos",
+    "tipo": "Fetch",
+    "desde_ms": 28758,
+    "dur_ms": 341,
+    "bytes": 14948,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir al radar",
+    "url": "/api/luffy/radar/candidatas?dias=30",
+    "tipo": "Fetch",
+    "desde_ms": 28759,
+    "dur_ms": 890,
+    "bytes": 125492,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a control",
+    "url": "/assets/Control-Bq0SWwmW.js",
+    "tipo": "Script",
+    "desde_ms": 30203,
+    "dur_ms": 185,
+    "bytes": 4624,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a control",
+    "url": "/favicon.png",
+    "tipo": "Other",
+    "desde_ms": 30204,
+    "dur_ms": 0,
+    "bytes": 0,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a control",
+    "url": "/api/luffy/costo",
+    "tipo": "Fetch",
+    "desde_ms": 30213,
+    "dur_ms": 260,
+    "bytes": 4181,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a control",
+    "url": "/api/luffy/gatillos",
+    "tipo": "Fetch",
+    "desde_ms": 30477,
+    "dur_ms": 296,
+    "bytes": 204,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la oficina",
+    "url": "/assets/Oficina-BmEjjoQR.js",
+    "tipo": "Script",
+    "desde_ms": 31404,
+    "dur_ms": 179,
+    "bytes": 3996,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la oficina",
+    "url": "/favicon.png",
+    "tipo": "Other",
+    "desde_ms": 31405,
+    "dur_ms": 0,
+    "bytes": 0,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la oficina",
+    "url": "/api/luffy/costo",
+    "tipo": "Fetch",
+    "desde_ms": 31411,
+    "dur_ms": 421,
+    "bytes": 4181,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la oficina",
+    "url": "/api/luffy/oficina/estado",
+    "tipo": "Fetch",
+    "desde_ms": 31708,
+    "dur_ms": 347,
+    "bytes": 4951,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a la oficina",
+    "url": "/api/luffy/eventos?desde_id=1163",
+    "tipo": "EventSource",
+    "desde_ms": 32069,
+    "dur_ms": 561,
+    "bytes": 0,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a informes",
+    "url": "/assets/Informes-B3hBcvno.js",
+    "tipo": "Script",
+    "desde_ms": 32622,
+    "dur_ms": 168,
+    "bytes": 2913,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a informes",
+    "url": "/favicon.png",
+    "tipo": "Other",
+    "desde_ms": 32623,
+    "dur_ms": 0,
+    "bytes": 0,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a informes",
+    "url": "/api/luffy/costo",
+    "tipo": "Fetch",
+    "desde_ms": 32629,
+    "dur_ms": 470,
+    "bytes": 4181,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a informes",
+    "url": "/api/luffy/informes?limite=30&tipo=diario",
+    "tipo": "Fetch",
+    "desde_ms": 32925,
+    "dur_ms": 364,
+    "bytes": 1286,
+    "mugiwara_ms": null,
+    "estado": 200
+   },
+   {
+    "etapa": "ir a informes",
+    "url": "/api/luffy/informes/2026-10-11?tipo=diario",
+    "tipo": "Fetch",
+    "desde_ms": 33294,
+    "dur_ms": 711,
+    "bytes": 19003,
+    "mugiwara_ms": null,
+    "estado": 200
+   }
+  ]
+ ]
+}

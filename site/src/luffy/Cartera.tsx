@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
+import { Seguro } from './Seguro'
 import { Link } from 'react-router-dom'
 import { luffy6b, ErrorLuffy6b } from './api6b'
 import type { AccionExchange, Caja, Cartera as CarteraT, Comisiones, CurvaCapital, Fill, Ordenes, PosicionCartera } from './tipos6b'
@@ -148,6 +149,7 @@ function CarteraPablo() {
   const [c, setC] = useState<CarteraT | null>(null)
   const [ordenes, setOrdenes] = useState<Ordenes | null>(null)
   const [fills, setFills] = useState<Fill[] | null>(null)
+  const [avisoFills, setAvisoFills] = useState<string | null>(null)
   const [comis, setComis] = useState<Comisiones | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [propuestas, setPropuestas] = useState<Propuesta[]>([])
@@ -157,7 +159,7 @@ function CarteraPablo() {
     try { cart = await luffy6b.cartera('pablo'); setC(cart); setError(null) } catch (e) { setError(e instanceof ErrorLuffy6b ? e.message : String(e)) }
     try { ords = await luffy6b.ordenes('abiertas'); setOrdenes(ords) } catch { setOrdenes(null) }
     const pares = [...(cart?.posiciones ?? []).map((p) => `${p.activo}-USDT`), ...(cart?.cerradas_recientes ?? []).map((p) => `${p.activo}-USDT`), ...(ords?.ordenes ?? []).map((o) => o.par)]
-    luffy6b.fillsDe(pares).then(setFills, () => setFills(null))
+    luffy6b.fillsTodos(pares).then((r) => { setFills(r.fills); setAvisoFills(r.avisos.length ? r.avisos.map((m) => (/100410|frequency limit/i.test(m) ? 'BingX limitó las consultas por un rato; vuelven solas en unos minutos.' : m)).filter((m, i, a) => a.indexOf(m) === i).join(' · ') : null) }, (e) => { setFills(null); setAvisoFills(e instanceof Error ? e.message : String(e)) })
     luffy6b.comisiones(haceDias(30), hoy(), 'pablo').then(setComis, () => setComis(null))
   }, [])
   useEffect(() => { void cargar() }, [cargar])
@@ -167,9 +169,9 @@ function CarteraPablo() {
   return (
     <>
       {error && <p className="lf-m__error">{error}</p>}
-      <Kpis c={c} />
+      <Seguro t="Resumen">{() => (<Kpis c={c} />)}</Seguro>
       {propuestas.length > 0 && <div className="lf-props">{propuestas.length > 1 && <p className="lf-ctrl__nota mono">Se confirman en este orden: primero la 1, después la 2.</p>}{propuestas.map((p) => <TarjetaPropuesta key={p.id_corto} p={p} alCambiar={cargar} cambiar={() => {}} />)}</div>}
-      <section className="lf-tarj">
+      <Seguro t="Posiciones abiertas">{() => (<section className="lf-tarj">
         <h3 className="mono">Posiciones abiertas<em>consultado {fmtHora(c.consultado_en)}</em></h3>
         <TablaPosiciones posiciones={c.posiciones} acciones={(p) => <AccionesPosicion p={p} onProponer={proponer} />} />
         <div className="lf-acc-fila">
@@ -178,9 +180,9 @@ function CarteraPablo() {
         </div>
         {formulario === 'declarar' && <Declarar onPropuesta={(p) => { setPropuestas([p]); setFormulario(null) }} />}
         {formulario === 'orden' && <OrdenNueva onProponer={async (a) => { await proponer(a); setFormulario(null) }} />}
-      </section>
-      <div className="lf-dos"><TarjetaCurva origen="pablo" /><Exposicion c={c} /></div>
-      <section className="lf-tarj">
+      </section>)}</Seguro>
+      <Seguro t="Curva y exposición">{() => (<div className="lf-dos"><TarjetaCurva origen="pablo" /><Exposicion c={c} /></div>)}</Seguro>
+      <Seguro t="Órdenes abiertas">{() => (<section className="lf-tarj">
         <h3 className="mono">Órdenes abiertas en BingX<em>{ordenes ? `${ordenes.ordenes.length} · ${fmtHora(ordenes.consultado_en)}` : ''}</em></h3>
         {ordenes?.ordenes.length ? (
           <div className="lf-tabla__scroll"><table className="lf-tabla"><thead><tr><th>Par</th><th>Tipo</th><th className="num">Precio · stop</th><th className="num">Cantidad</th><th>Origen</th><th>Hora</th><th /></tr></thead>
@@ -188,22 +190,22 @@ function CarteraPablo() {
               <td>{o.propuesta ? <small>#{o.propuesta.id_corto} · {o.propuesta.origen} · {o.propuesta.rol}</small> : <small className="lf-sim">externa (puesta a mano en BingX)</small>}</td><td><small>{hace(o.hora)}</small></td>
               <td><div className="lf-acc-fila"><button type="button" className="lf-chip" onClick={() => proponer({ accion: 'cancelar', orden_id: o.id, razon: 'cancelada desde el panel' })}>Cancelar</button>{o.propuesta?.rol !== 'stop' && <ModificarOrden id={o.id} onProponer={proponer} />}</div></td></tr>)}</tbody></table></div>
         ) : <p className="lf-ctrl__nota mono">{ordenes ? 'Sin órdenes abiertas.' : 'Las órdenes de BingX no respondieron.'}</p>}
-      </section>
+      </section>)}</Seguro>
       <div className="lf-dos">
-        <section className="lf-tarj">
+        <Seguro t="Ejecuciones recientes">{() => (<section className="lf-tarj">
           <h3 className="mono">Ejecuciones recientes<em>{fills ? `${fills.length} · bingx` : ''}</em></h3>
           {fills?.length ? (
             <div className="lf-tabla__scroll"><table className="lf-tabla"><thead><tr><th>Hora</th><th>Par</th><th>Lado</th><th className="num">Precio</th><th className="num">Total</th><th className="num">Comisión</th></tr></thead>
               <tbody>{fills.map((f) => <tr key={f.id}><td><small>{fmtFecha(f.hora, true)}</small></td><td><b>{f.par ?? '—'}</b><small>{f.propuesta ? `#${f.propuesta.id_corto} · ${f.propuesta.origen}` : 'externa'}</small></td><td className={f.lado === 'compra' ? 'is-pos' : 'is-neg'}>{f.lado}<small>{f.maker ? 'maker' : 'taker'}</small></td><td className="num">{fmtPrecio(f.precio)}</td><td className="num">{fmt(f.total_usdt, 'USDT')}</td><td className="num">{fmt(Math.abs(f.comision))} {f.comision_activo ?? 'USDT'}</td></tr>)}</tbody></table></div>
-          ) : <p className="lf-ctrl__nota mono">Sin ejecuciones.</p>}
-        </section>
-        <section className="lf-tarj">
+          ) : <p className="lf-ctrl__nota mono">{avisoFills ?? 'Sin ejecuciones.'}</p>}
+        </section>)}</Seguro>
+        <Seguro t="Comisiones">{() => (<section className="lf-tarj">
           <h3 className="mono">Comisiones · 30 días<em>{comis ? `${fmt(comis.total_usdt, 'USDT')} en ${comis.n_fills} ejecuciones` : ''}</em></h3>
           {comis?.por_activo.length ? <div className="lf-tabla__scroll"><table className="lf-tabla"><tbody>{comis.por_activo.map((x) => <tr key={x.activo}><td><b>{x.activo}</b><small>{x.n_fills} ejecuciones · volumen {fmt(x.volumen_usdt, 'USDT')}</small></td><td className="num">{fmt(x.comision_usdt, 'USDT')}</td></tr>)}</tbody></table></div> : <p className="lf-ctrl__nota mono">Sin comisiones en el periodo.</p>}
           {comis?.tasas.length ? <p className="lf-ctrl__nota mono">Tasas: {comis.tasas.map((t) => `${t.par} maker ${fmt(t.maker_pct)} % · taker ${fmt(t.taker_pct)} %`).join(' · ')}</p> : null}
-        </section>
+        </section>)}</Seguro>
       </div>
-      <Cerradas c={c} />
+      <Seguro t="Cerradas recientes">{() => (<Cerradas c={c} />)}</Seguro>
     </>
   )
 }
@@ -264,24 +266,30 @@ function CarteraCaja() {
   const [error, setError] = useState<string | null>(null)
   const [confirmar, setConfirmar] = useState<'cancelar' | 'panico' | null>(null)
   const [resultado, setResultado] = useState<string | null>(null)
-  const cargar = useCallback(async () => { try { const [a, b] = await Promise.all([luffy6b.caja(30), luffy6b.cartera('caja')]); setCaja(a); setCartera(b); setError(null) } catch (e) { setError(e instanceof ErrorLuffy6b ? e.message : String(e)) } }, [])
+  const cargar = useCallback(async () => {
+    const [a, b] = await Promise.allSettled([luffy6b.caja(30), luffy6b.cartera('caja')])
+    if (a.status === 'fulfilled') setCaja(a.value)
+    if (b.status === 'fulfilled') setCartera(b.value)
+    const f = [a, b].find((x) => x.status === 'rejected') as PromiseRejectedResult | undefined
+    setError(f ? (f.reason instanceof Error ? f.reason.message : String(f.reason)) : null)
+  }, [])
   useEffect(() => { void cargar() }, [cargar])
   const accionMision = async (a: 'pausar' | 'reanudar' | 'cancelar') => { if (!caja?.mision) return; try { await luffy6b.mision(caja.mision.id, a); setResultado(`Misión: ${a === 'pausar' ? 'pausada' : a === 'reanudar' ? 'reanudada' : 'cancelada'}.`); setConfirmar(null); await cargar() } catch (e) { setError(e instanceof Error ? e.message : String(e)) } }
   const panico = async () => { try { const r = await luffy6b.panico(caja?.mision?.hilo_id ?? undefined); setResultado(String((r as { texto?: string }).texto ?? 'Pánico ejecutado.')); setConfirmar(null); await cargar() } catch (e) { setError(e instanceof Error ? e.message : String(e)) } }
   if (error && !caja) return <EmptyState kind="error" title="No se pudo cargar la caja." detail={error} />
-  if (!caja || !cartera) return <div className="lf-lab__vacio"><span className="lf-gema is-latiendo" /></div>
+  if (!caja) return <div className="lf-lab__vacio"><span className="lf-gema is-latiendo" /></div>
   const m = caja.mision, e = caja.estado
   return (
     <>
       {error && <p className="lf-m__error">{error}</p>}
       {resultado && <p className="lf-lab__msg mono">{resultado}</p>}
-      <div className="lf-kpis">
+      <Seguro t="Resumen de la caja">{() => (<div className="lf-kpis">
         <div className="lf-kpi"><span className="mono">Valor de la caja</span><b>{fmt(e.valor_total_usdt, 'USDT')}</b><small>{e.simulado ? <span className="lf-sim">simulada</span> : `real · ${e.exchange}`} · asignado {fmt(e.capital_asignado_usdt, 'USDT')}</small></div>
         <div className="lf-kpi"><span className="mono">Resultado</span><b className={tono(e.pnl_total_pct)}>{signo(e.pnl_total_pct, '%')}</b><small>realizado {signo(e.pnl_realizado_usdt, 'USDT')} · no realizado {signo(e.pnl_no_realizado_usdt, 'USDT')}</small></div>
         {m && <div className="lf-kpi"><span className="mono">Misión · {m.estado}</span><b>{m.avance_pct !== null ? `${fmt(m.avance_pct)} %` : '—'}<small style={{ fontSize: '0.7rem' }}> de {fmt(m.objetivo_pct)} %</small></b><small>{m.tiempo_restante ? (m.tiempo_restante.vencida ? 'vencida' : `quedan ${fmt(m.tiempo_restante.dias)} días`) : ''}{m.horizonte ? ` · hasta ${m.horizonte}` : ''}</small></div>}
         {m && <div className="lf-kpi"><span className="mono">Presupuesto de API</span><b>{fmtUsd(m.gasto_api_usd)}</b><small>de {fmtUsd(m.presupuesto_api_usd, 0)} · {e.ordenes_hoy} de {m.max_ordenes_dia ?? '—'} órdenes hoy</small></div>}
-      </div>
-      {m ? (
+      </div>)}</Seguro>
+      <Seguro t="La misión">{() => (m ? (
         <section className="lf-tarj"><h3 className="mono">La misión<em>#{m.id} · activada {m.activada_en ?? ''}{m.simulado ? ' · simulada' : ''}</em></h3>
           <p className="lf-nota">{m.objetivo}</p>
           {m.plan && <p className="lf-ctrl__nota mono">Plan: {m.plan}</p>}
@@ -300,13 +308,13 @@ function CarteraCaja() {
             {m.hilo_id && <Link to={`/luffy/h/${m.hilo_id}`} className="lf-chip">Hilo de la caja</Link>}
           </div>
         </section>
-      ) : <section className="lf-tarj"><h3 className="mono">La misión</h3><p className="lf-ctrl__nota mono">Sin misión vigente. Se le encarga a Luffy conversando.</p></section>}
-      <section className="lf-tarj"><h3 className="mono">Posiciones de la caja<em>se miran, no se operan: las lleva Luffy</em></h3><TablaPosiciones posiciones={cartera.posiciones} /></section>
-      <div className="lf-dos"><TarjetaCurva origen="caja" /><Exposicion c={cartera} /></div>
-      <section className="lf-tarj"><h3 className="mono">Decisiones de cada ciclo<em>{caja.ciclos ? `cada ${fmt(caja.ciclos.cada_h)} h · último ${hace(caja.ciclos.ultimo)}${caja.ciclos.proximo ? ` · próximo ${fmtHora(caja.ciclos.proximo)}` : ''}` : ''}</em></h3>
+      ) : <section className="lf-tarj"><h3 className="mono">La misión</h3><p className="lf-ctrl__nota mono">Sin misión vigente. Se le encarga a Luffy conversando.</p></section>)}</Seguro>
+      <Seguro t="Posiciones de la caja">{() => (cartera && <section className="lf-tarj"><h3 className="mono">Posiciones de la caja<em>se miran, no se operan: las lleva Luffy</em></h3><TablaPosiciones posiciones={cartera.posiciones} /></section>)}</Seguro>
+      <Seguro t="Curva y exposición">{() => (<div className="lf-dos"><TarjetaCurva origen="caja" />{cartera && <Exposicion c={cartera} />}</div>)}</Seguro>
+      <Seguro t="Decisiones de cada ciclo">{() => (<section className="lf-tarj"><h3 className="mono">Decisiones de cada ciclo<em>{caja.ciclos ? `cada ${fmt(caja.ciclos.cada_h)} h · último ${hace(caja.ciclos.ultimo)}${caja.ciclos.proximo ? ` · próximo ${fmtHora(caja.ciclos.proximo)}` : ''}` : ''}</em></h3>
         <div className="lf-decis"><Plegable items={caja.decisiones} tope={10} texto="Ver todas las decisiones" pintar={(d, i) => <div key={i} className="lf-decis__d"><span className="mono">{fmtHora(d.fecha)}</span><span className="lf-decis__a"><b className={d.accion === 'salir' || d.accion === 'fin_mision' || d.accion === 'quitar_stop' ? 'is-salir' : d.accion === 'mover_stop' ? 'is-mover' : d.accion === 'esperar' || d.accion === 'pausa' ? 'is-esperar' : ''}>{d.accion.replace(/_/g, ' ')}{d.activo && d.activo !== 'CAJA' ? ` ${d.activo}` : ''}</b> · {d.tesis}{d.orden ? <em className="mono"> · #{d.orden.id_corto} {d.orden.estado}</em> : null}{d.modo ? <em className="mono"> · modo {d.modo} v{d.modo_version}</em> : null}</span></div>} /></div>
-      </section>
-      <Cerradas c={cartera} />
+      </section>)}</Seguro>
+      <Seguro t="Cerradas recientes">{() => (cartera && <Cerradas c={cartera} />)}</Seguro>
     </>
   )
 }

@@ -48,6 +48,7 @@ if (ENV.LUFFY === 'simulado') {
     const senales = [c.req.raw.signal]
     if (!esChat) senales.push(AbortSignal.timeout(60_000))
     let r: Response
+    const t0 = performance.now()
     try {
       r = await fetch(`${ENV.MUGIWARA_URL}${ruta}${q}`, {
         method: c.req.method, headers: cabeceras,
@@ -61,6 +62,9 @@ if (ENV.LUFFY === 'simulado') {
       return c.json({ error: 'luffy_caido', texto: `mugiwara-api no responde en ${ENV.MUGIWARA_URL}: ${m}` }, 502)
     }
     const salida = new Headers()
+    /* Cuánto tardó mugiwara-api en contestar (hasta las cabeceras): el navegador lo lee y separa
+       la red (Vercel → Contabo) de lo que cuesta el servidor de Mugiwara. */
+    salida.set('Server-Timing', `mugiwara;dur=${(performance.now() - t0).toFixed(0)}`)
     for (const k of ['content-type', 'content-disposition', 'content-length']) { const v = r.headers.get(k); if (v) salida.set(k, v) }
     if ((r.headers.get('content-type') ?? '').includes('text/event-stream')) {
       salida.delete('content-length')

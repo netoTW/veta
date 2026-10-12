@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Seguro } from './Seguro'
 import { Plegable } from './Plegable'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { luffy } from './api'
@@ -7,7 +8,7 @@ import type { FichaTerminal, Filtro, PosicionHistorial, UniversoFila } from './t
 import type { Propuesta, Spec } from './tipos'
 import { Grafico } from './charts/Grafico'
 import { Sincronia } from './charts/sincronia'
-import { fmt, fmtFecha, fmtPrecio, hace, RANGO_LABEL } from './formato'
+import { fmt, fmtFecha, fmtHora, fmtPrecio, hace, lista, RANGO_LABEL } from './formato'
 import { EmptyState } from '../ui/EmptyState'
 import { TarjetaPropuesta } from './Chat'
 
@@ -50,12 +51,25 @@ export function Terminal() {
     return () => { v = false; clearTimeout(t) }
   }, [filtro, q])
 
-  const seleccion = (activo ?? filas?.[0]?.simbolo ?? '').toUpperCase().replace(/-USDT$/, '')
+  // sin moneda en la ruta abre la última que se miró, sin esperar a la lista
+  const [ultima] = useState(() => { try { return localStorage.getItem('luffy.terminal.ultima') } catch { return null } })
+  const seleccion = (activo ?? ultima ?? filas?.[0]?.simbolo ?? '').toUpperCase().replace(/-USDT$/, '')
+  useEffect(() => { if (seleccion) try { localStorage.setItem('luffy.terminal.ultima', seleccion) } catch { /* sin storage */ } }, [seleccion])
   const indice = filas ? filas.findIndex((f) => f.simbolo === seleccion) : -1
   const irA = useCallback((d: 1 | -1) => { if (!filas?.length) return; const i = indice < 0 ? 0 : Math.min(filas.length - 1, Math.max(0, indice + d)); nav(`/luffy/terminal/${filas[i].simbolo}`) }, [filas, indice, nav])
   const alTeclado = useCallback((e: KeyboardEvent) => { const t = e.target as HTMLElement; if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT')) return; if (e.key === 'ArrowDown') { e.preventDefault(); irA(1) } else if (e.key === 'ArrowUp') { e.preventDefault(); irA(-1) } }, [irA])
   useEffect(() => { window.addEventListener('keydown', alTeclado); return () => window.removeEventListener('keydown', alTeclado) }, [alTeclado])
-  useEffect(() => { if (!filas || indice < 0) return; if (filas[indice + 1]) luffy6b.precargar(filas[indice + 1].simbolo, rango); if (filas[indice - 1]) luffy6b.precargar(filas[indice - 1].simbolo, rango) }, [filas, indice, rango])
+  // las vecinas se precargan después, para no competir con la moneda que se está abriendo
+  useEffect(() => {
+    if (!filas || indice < 0) return
+    const t = setTimeout(() => {
+      const sig = filas[indice + 1], ant = filas[indice - 1]
+      // la siguiente (la de deslizar o ↓) también con los datos de sus gráficos; la anterior, sólo la ficha
+      if (sig) luffy6b.ficha(sig.simbolo, rango).then((f) => { if (!f.pendiente) for (const x of f.secciones.slice(0, 2)) void luffy.datos({ ...x.spec, titulo: x.spec.titulo ?? x.titulo }).catch(() => {}) }, () => {})
+      if (ant) luffy6b.precargar(ant.simbolo, rango)
+    }, 2500)
+    return () => clearTimeout(t)
+  }, [filas, indice, rango])
   useEffect(() => { setHoja(false) }, [activo])
   const toque = useRef<{ x: number; y: number } | null>(null)
   const alTocar = (e: React.TouchEvent) => { toque.current = { x: e.touches[0].clientX, y: e.touches[0].clientY } }
@@ -98,13 +112,41 @@ export function Terminal() {
   )
 }
 
+/** Monta su contenido cuando está por entrar en pantalla: en el teléfono se ve un gráfico a la vez,
+    y los de abajo no piden ni dibujan hasta acercarse. `ya` monta de inmediato (el de precio). */
+function AlVerse({ alto, ya = false, children }: { alto: number; ya?: boolean; children: React.ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [visto, setVisto] = useState(ya)
+  useEffect(() => {
+    if (visto || !ref.current) return
+    if (typeof IntersectionObserver === 'undefined') { setVisto(true); return }
+    const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { setVisto(true); io.disconnect() } }, { rootMargin: '500px 0px' })
+    io.observe(ref.current); return () => io.disconnect()
+  }, [visto])
+  return visto ? <>{children}</> : <div ref={ref} className="lf-g lf-g--compacto is-cargando" style={{ minHeight: alto }} aria-hidden="true" />
+}
+
 function Ficha({ activo, rango, setRango, sincronia, abrirLista, fila, onTocar, onSoltar }: { activo: string; rango: string; setRango: (r: string) => void; sincronia: Sincronia; abrirLista: () => void; fila: UniversoFila | null; onTocar: (e: React.TouchEvent) => void; onSoltar: (e: React.TouchEvent) => void }) {
   const nav = useNavigate()
-  const [ficha, setFicha] = useState<FichaTerminal | null>(null)
+  // lo último que se vio de esta moneda se pinta al instante; la ficha nueva lo reemplaza al llegar
+  const [ficha, setFicha] = useState<FichaTerminal | null>(() => luffy6b.fichaGuardada(activo, rango) ?? luffy6b.fichaDeLaMoneda(activo))
   const [error, setError] = useState<string | null>(null)
   const [abriendo, setAbriendo] = useState<string | null>(null)
   const [propuestas, setPropuestas] = useState<Propuesta[]>([])
-  useEffect(() => { let v = true; setFicha(null); setError(null); luffy6b.ficha(activo, rango).then((f) => { if (v) setFicha(f) }, (e) => { if (v) setError(e instanceof ErrorLuffy6b ? e.message : String(e)) }); return () => { v = false } }, [activo, rango])
+  const [intento, setIntento] = useState(0)
+  useEffect(() => {
+    let v = true, otra: ReturnType<typeof setTimeout> | null = null
+    // lo que seguía en vuelo de la moneda anterior y las precargas se corta: la de ahora va primero
+    luffy6b.soltarFichas(activo)
+    const traer = (fresca: boolean) => luffy6b.ficha(activo, rango, { fresca }).then((f) => {
+      if (!v) return
+      setFicha(f); setError(null)
+      // v2.2: ficha parcial que el servidor todavía calcula; se vuelve a pedir cuando dice
+      if (f.pendiente) otra = setTimeout(() => traer(true), Math.max(1, f.reintentar_en_s ?? 3) * 1000)
+    }, (e) => { if (v && !(e instanceof DOMException && e.name === 'AbortError')) setError(e instanceof ErrorLuffy6b ? e.message : String(e)) })
+    void traer(intento > 0)
+    return () => { v = false; if (otra) clearTimeout(otra) }
+  }, [activo, rango, intento])
   const stopVigente = (ficha?.posiciones ?? []).find((p) => p.stop_vigente)?.stop_vigente?.precio ?? null
   const moverStop = async (a: string, precio: number) => {
     try { const r = await luffy6b.proponer({ accion: 'mover_stop', par: `${a}-USDT`, stop: precio, afloja: stopVigente !== null && precio < stopVigente, razon: 'movido desde el terminal' }); setPropuestas(r.propuestas) }
@@ -124,6 +166,7 @@ function Ficha({ activo, rango, setRango, sincronia, abrirLista, fila, onTocar, 
       <div className="lf-ficha__marcas mono">
         {fila?.modos_hoy.map((m) => <i key={m} className="lf-mini lf-mini--oro">{NOMBRE_MODO[m] ?? m}</i>)}
         {fila?.squeeze && <i className={`lf-mini ${fila.squeeze === 'ignicion' ? 'lf-mini--rojo' : 'lf-mini--esm'}`}>squeeze {fila.squeeze === 'ignicion' ? 'ignición' : 'cargado'}</i>}
+        {ficha?.pendiente ? <i className="lf-mini lf-mini--oro">calculando la ficha…</i> : ficha?.vitrina?.estado === 'viejo' && ficha.vitrina.calculado_en ? <i className="lf-mini" title="El servidor la está recalculando">datos de las {fmtHora(ficha.vitrina.calculado_en)}</i> : null}
         {fila && <i className="lf-mini"><small>vs BTC 7 d</small> <b className={tono(fila.vs_btc_7d_pct)}>{signo(fila.vs_btc_7d_pct)}</b> · <small>30 d</small> <b className={tono(fila.vs_btc_30d_pct)}>{signo(fila.vs_btc_30d_pct)}</b></i>}
       </div>
       <div className="lf-ficha__acc">
@@ -132,7 +175,7 @@ function Ficha({ activo, rango, setRango, sincronia, abrirLista, fila, onTocar, 
       </div>
     </header>
   )
-  if (error && !ficha) return <>{cab}<div className="lf-lab__vacio"><EmptyState kind="error" title={`No se pudo armar la ficha de ${activo}.`} detail={error} /></div></>
+  if (error && !ficha) return <>{cab}<div className="lf-lab__vacio"><EmptyState kind="error" title={`No se pudo armar la ficha de ${activo}.`} detail={error} action={<button type="button" className="btn" onClick={() => { setError(null); setIntento((n) => n + 1) }} data-prueba="reintentar-ficha">Reintentar</button>} /></div></>
   if (!ficha) return <>{cab}<div className="lf-lab__vacio"><span className="lf-gema is-latiendo" /></div></>
   const noDisp = new Map(ficha.no_disponibles.map((n) => [n.seccion, n.motivo]))
   const radar = ficha.radar
@@ -144,60 +187,62 @@ function Ficha({ activo, rango, setRango, sincronia, abrirLista, fila, onTocar, 
       <div className="lf-ficha__cuerpo">
         <div className="lf-ficha__graficos">
           {ficha.secciones.map((s) => (
-            <section key={s.id} className="lf-ficha__sec" data-prueba={`seccion-${s.id}`}>
+            <Seguro key={s.id} t={s.titulo || 'Gráfico'}>{() => (
+            <section className="lf-ficha__sec" data-prueba={`seccion-${s.id}`}>
               {noDisp.has(s.id) ? (
                 <div className="lf-g lf-g--nota"><div className="lf-g__cab"><span className="lf-g__titulo">{s.titulo}</span></div><p className="lf-g__nota">Sin datos: {noDisp.get(s.id)}</p></div>
               ) : (
-                <Grafico spec={{ ...s.spec, titulo: s.spec.titulo ?? s.titulo }} interactivo rangos={false} sincronia={sincronia} compacto alto={s.id === 'precio' ? 400 : 340} onMoverStop={s.id === 'precio' && stopVigente !== null ? moverStop : undefined}
-                  acciones={<button type="button" className="lf-chip lf-chip--oro" onClick={() => abrirEnLab(s.spec, s.titulo)} disabled={abriendo === s.titulo} data-prueba={`lab-${s.id}`}>{abriendo === s.titulo ? 'Abriendo…' : 'Abrir en el laboratorio'}</button>} />
+                <AlVerse alto={s.id === 'precio' ? 400 : 340} ya={s.id === 'precio'}><Grafico spec={{ ...s.spec, titulo: s.spec.titulo ?? s.titulo }} demora={0} interactivo rangos={false} sincronia={sincronia} compacto alto={s.id === 'precio' ? 400 : 340} onMoverStop={s.id === 'precio' && stopVigente !== null ? moverStop : undefined}
+                  acciones={<button type="button" className="lf-chip lf-chip--oro" onClick={() => abrirEnLab(s.spec, s.titulo)} disabled={abriendo === s.titulo} data-prueba={`lab-${s.id}`}>{abriendo === s.titulo ? 'Abriendo…' : 'Abrir en el laboratorio'}</button>} /></AlVerse>
               )}
             </section>
+            )}</Seguro>
           ))}
         </div>
         <aside className="lf-ficha__lado">
-          {radar ? (
+          <Seguro t="Ficha del radar">{() => (radar ? (
             <section className="lf-tarj">
-              <h3 className="mono">Ficha del radar<em>{radar.regimen ? `régimen ${radar.regimen.lectura.replace('_', ' ')}` : ''}</em></h3>
-              {radar.etiquetas.length > 0 && <div className="lf-etiq">{radar.etiquetas.map((e) => <p key={e.etiqueta} className={`lf-etiq__e ${e.fuerte ? 'is-fuerte' : ''}`}><b>{e.llano}</b>{e.detalle ? <em className="mono"> · {e.detalle}</em> : null}</p>)}</div>}
+              <h3 className="mono">Ficha del radar<em>{radar.regimen?.lectura ? `régimen ${radar.regimen.lectura.replace('_', ' ')}` : ''}</em></h3>
+              {(radar.etiquetas ?? []).length > 0 && <div className="lf-etiq">{(radar.etiquetas ?? []).map((e) => <p key={e.etiqueta} className={`lf-etiq__e ${e.fuerte ? 'is-fuerte' : ''}`}><b>{e.llano}</b>{e.detalle ? <em className="mono"> · {e.detalle}</em> : null}</p>)}</div>}
               <div className="lf-modos">
-                {radar.modos_cumplidos.length ? radar.modos_cumplidos.map((m) => (
+                {(radar.modos_cumplidos ?? []).length ? (radar.modos_cumplidos ?? []).map((m) => (
                   <div key={`${m.modo}-${m.version}`} className="lf-modo is-on">
                     <span className="lf-modo__n">{NOMBRE_MODO[m.modo] ?? m.modo} <em className="mono">v{m.version} · {m.decision}{m.p_merece !== null ? ` · ${Math.round(m.p_merece * 100)} %` : ''}</em></span>
-                    <span className="lf-modo__e mono">confluencia {fmt(m.confluencia.score)} · obligatorias {m.confluencia.obligatorias.join(', ')}{m.confluencia.apoyo.length ? ` · apoyo ${m.confluencia.apoyo.join(', ')}` : ''}</span>
+                    <span className="lf-modo__e mono">confluencia {fmt(m.confluencia?.score)}{lista(m.confluencia?.obligatorias).length ? ` · obligatorias ${lista(m.confluencia?.obligatorias).join(', ')}` : ''}{lista(m.confluencia?.apoyo).length ? ` · apoyo ${lista(m.confluencia?.apoyo).join(', ')}` : ''}</span>
                     {m.linea_estudio && <span className="lf-modo__e">{m.linea_estudio}</span>}
                   </div>
                 )) : <p className="lf-ctrl__nota mono">Hoy no se cumple ningún modo.</p>}
               </div>
               <div className="lf-fam">
-                {Object.entries(radar.familias).map(([k, f]) => (
+                {Object.entries(radar.familias ?? {}).map(([k, f]) => (
                   <div key={k} className={`lf-fam__f ${f.cumple ? 'is-on' : ''} ${f.cumple_inverso ? 'is-inverso' : ''}`}>
                     <span className="lf-fam__n mono"><i className="lf-gema" />{NOMBRE_FAMILIA[k] ?? k}{f.etiqueta && f.etiqueta.toLowerCase() !== k && f.etiqueta.toLowerCase() !== (NOMBRE_FAMILIA[k] ?? '').toLowerCase() ? ` · ${f.etiqueta}` : ''}{f.z !== null ? <em> z {fmt(f.z)}</em> : null}</span>
-                    {f.motivo ? <span className="lf-fam__m">{f.motivo}</span> : <>
+                    {f.frase ? <span className="lf-fam__m">{f.frase}</span> : f.motivo ? <span className="lf-fam__m">{f.motivo}</span> : <>
                       <span className="lf-fam__c"><small>valor</small><b className="num">{valorFamilia(f.valor)}</b></span>
-                      {Object.entries(f.detalle).filter(([, v]) => typeof v === 'number' || typeof v === 'string').slice(0, 3).map(([dk, dv]) => <span key={dk} className="lf-fam__c"><small>{etiquetaDetalle(dk)}</small><b className="num">{cifraDetalle(dk, dv)}</b></span>)}
+                      {Object.entries(f.detalle ?? {}).filter(([, v]) => typeof v === 'number' || typeof v === 'string').slice(0, 3).map(([dk, dv]) => <span key={dk} className="lf-fam__c"><small>{etiquetaDetalle(dk)}</small><b className="num">{cifraDetalle(dk, dv)}</b></span>)}
                     </>}
                   </div>
                 ))}
               </div>
             </section>
-          ) : <section className="lf-tarj"><h3 className="mono">Ficha del radar</h3><p className="lf-ctrl__nota mono">Sin perfil del radar para {activo}.</p></section>}
-          <section className="lf-tarj">
+          ) : <section className="lf-tarj"><h3 className="mono">Ficha del radar</h3><p className="lf-ctrl__nota mono">Sin perfil del radar para {activo}.</p></section>)}</Seguro>
+          <Seguro t="Catalizadores próximos">{() => (<section className="lf-tarj">
             <h3 className="mono">Catalizadores próximos</h3>
             {ficha.catalizadores.length ? ficha.catalizadores.map((c, i) => <p key={i} className="lf-nota"><b className="num">{c.dias !== null ? `en ${c.dias} d` : fmtFecha(c.fecha)}</b> · {c.url ? <a href={c.url} target="_blank" rel="noopener noreferrer">{c.titulo}</a> : c.titulo} <em className="mono">{c.tipo} · {c.fuente ?? ''}{c.impacto ? ` · impacto ${c.impacto}` : ''}</em></p>) : <p className="lf-ctrl__nota mono">Ninguno en los próximos 30 días.</p>}
-          </section>
-          <section className="lf-tarj">
+          </section>)}</Seguro>
+          <Seguro t="Posiciones y gatillos">{() => (<section className="lf-tarj">
             <h3 className="mono">Posiciones y gatillos</h3>
             {ficha.posiciones.map((p, i) => <PosicionFicha key={i} p={p} precio={precio} />)}
             {ficha.gatillos.map((g) => <p key={g.id} className="lf-nota"><em className="mono">gatillo {g.id_corto} · {g.estado}{g.vigilancia.precio ? ` · nivel ${fmtPrecio(g.vigilancia.precio.nivel)} ${g.vigilancia.precio.direccion}` : ''}</em>{g.texto}</p>)}
             {!ficha.posiciones.length && !ficha.gatillos.length && <p className="lf-ctrl__nota mono">Sin posición ni gatillos sobre {activo}.</p>}
-          </section>
-          <section className="lf-tarj">
+          </section>)}</Seguro>
+          <Seguro t="Bitácora y teorías">{() => (<section className="lf-tarj">
             <h3 className="mono">Bitácora y teorías</h3>
             <Plegable items={ficha.bitacora} tope={4} texto="Ver toda la bitácora" pintar={(b) => <p key={b.id} className="lf-nota"><em className="mono">bitácora · {b.tipo}{b.origen ? ` · ${b.origen}` : ''} · {fmtFecha(b.fecha, true)}{b.resultado ? ` · ${b.resultado}` : ''}</em>{b.tesis}{b.hilo_id && <> <Link to={`/luffy/h/${b.hilo_id}`} className="lf-nota__ir mono">ver hilo</Link></>}</p>} />
             {ficha.teorias.map((t) => <p key={t.id} className="lf-nota"><em className="mono">teoría · {t.estado}{t.confianza ? ` · confianza ${t.confianza}` : ''}</em><b>{t.titulo}</b> · {t.hipotesis}</p>)}
             {!ficha.bitacora.length && !ficha.teorias.length && <p className="lf-ctrl__nota mono">Nada todavía.</p>}
             {ficha.hilos.length > 0 && <p className="lf-ctrl__nota mono">Hilos: {ficha.hilos.map((h, i) => <span key={h.id}>{i > 0 && ' · '}<Link to={`/luffy/h/${h.id}`} className="lf-nota__ir">{h.titulo}</Link> ({hace(h.actualizado)})</span>)}</p>}
-          </section>
+          </section>)}</Seguro>
         </aside>
       </div>
     </>

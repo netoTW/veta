@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { Seguro } from './Seguro'
 import { Link } from 'react-router-dom'
 import { luffy6b, ErrorLuffy6b } from './api6b'
 import type { AlertaFeed, CostoAmpliado, Gatillo, Manual } from './tipos6b'
@@ -17,10 +18,10 @@ export function Control() {
       <div className="lf-pag__cab"><h1 className="lf-pag__t">Control <em>de Luffy</em></h1>
         <div className="lf-tabs" role="tablist">{(['gatillos', 'manual', 'gasto', 'alertas'] as const).map((p) => <button key={p} type="button" className={pestana === p ? 'is-on' : ''} onClick={() => setPestana(p)}>{p === 'manual' ? 'Manual vivo' : p}</button>)}</div>
       </div>
-      {pestana === 'gatillos' && <Gatillos />}
-      {pestana === 'manual' && <ManualVivo />}
-      {pestana === 'gasto' && <Gasto />}
-      {pestana === 'alertas' && <Feed />}
+      {pestana === 'gatillos' && <Seguro t="Gatillos"><Gatillos /></Seguro>}
+      {pestana === 'manual' && <Seguro t="Manual vivo"><ManualVivo /></Seguro>}
+      {pestana === 'gasto' && <Seguro t="Gasto"><Gasto /></Seguro>}
+      {pestana === 'alertas' && <Seguro t="Alertas"><Feed /></Seguro>}
     </div>
   )
 }
@@ -78,7 +79,7 @@ function ManualVivo() {
   if (!m) return <div className="lf-lab__vacio"><span className="lf-gema is-latiendo" /></div>
   return (
     <div className="lf-dos">
-      <section className="lf-tarj">
+      <Seguro t="Propuestas de cambio">{() => (<section className="lf-tarj">
         <h3 className="mono">Propuestas de cambio<em>{m.propuestas_pendientes.length} pendiente{m.propuestas_pendientes.length === 1 ? '' : 's'}</em></h3>
         {aviso && <p className="lf-lab__msg mono">{aviso}</p>}
         {m.propuestas_pendientes.map((p) => (
@@ -88,8 +89,8 @@ function ManualVivo() {
           </div>
         ))}
         {!m.propuestas_pendientes.length && <p className="lf-ctrl__nota mono">Nada pendiente. Las propuestas salen de la revisión quincenal.</p>}
-      </section>
-      <section className="lf-tarj">
+      </section>)}</Seguro>
+      <Seguro t="Versiones del manual">{() => (<section className="lf-tarj">
         <h3 className="mono">Versiones<em>{m.vigente ? `vigente v${m.vigente.version}` : ''}</em></h3>
         {m.vigente && <>{m.vigente.resumen && <p className="lf-nota">{m.vigente.resumen}</p>}<button type="button" className="lf-chip" onClick={() => setVerTexto((v) => !v)}>{verTexto ? 'Ocultar' : 'Leer'} el manual vigente</button>{verTexto && <pre className="lf-diff">{m.vigente.texto}</pre>}</>}
         {m.versiones.map((v, i) => (
@@ -99,7 +100,7 @@ function ManualVivo() {
           </div>
         ))}
         {diff && <><p className="lf-gat__m mono">v{diff.de} → v{diff.a}</p><Diff texto={diff.texto} /></>}
-      </section>
+      </section>)}</Seguro>
     </div>
   )
 }
@@ -133,8 +134,8 @@ function Gasto() {
         {pres && <div className="lf-kpi"><span className="mono">Del presupuesto</span><b className={pres.estado === 'normal' ? '' : 'is-neg'}>{((total / pres.presupuesto_api_usd) * 100).toFixed(1).replace('.', ',')} %</b><small>{pres.estado === 'degradado' ? 'el chat bajó a Sonnet' : pres.estado === 'aviso' ? 'en zona de aviso' : 'en orden'}</small></div>}
       </div>
       <div className="lf-dos">
-        <section className="lf-tarj"><h3 className="mono">Por día<em><span className="lf-seg lf-seg--mini">{[14, 30, 60].map((d) => <button key={d} type="button" className={dias === d ? 'is-on' : ''} onClick={() => setDias(d)}>{d} d</button>)}</span></em></h3>{c.por_dia?.length ? <><div ref={ref} className="lf-gasto" /><p className="lf-ctrl__nota mono">Luffy en esmeralda · Jev, Haiku y Sonnet en hueso · hora de Chile</p></> : <p className="lf-ctrl__nota mono">El servidor todavía no entrega el gasto por día.</p>}</section>
-        <section className="lf-tarj"><h3 className="mono">Por tipo de turno, agente y modelo<em>mes en curso</em></h3>
+        <Seguro t="Gasto por día">{() => (<section className="lf-tarj"><h3 className="mono">Por día<em><span className="lf-seg lf-seg--mini">{[14, 30, 60].map((d) => <button key={d} type="button" className={dias === d ? 'is-on' : ''} onClick={() => setDias(d)}>{d} d</button>)}</span></em></h3>{c.por_dia?.length ? <><div ref={ref} className="lf-gasto" /><p className="lf-ctrl__nota mono">Luffy en esmeralda · Jev, Haiku y Sonnet en hueso · hora de Chile</p></> : <p className="lf-ctrl__nota mono">El servidor todavía no entrega el gasto por día.</p>}</section>)}</Seguro>
+        <Seguro t="Gasto por tipo">{() => (<section className="lf-tarj"><h3 className="mono">Por tipo de turno, agente y modelo<em>mes en curso</em></h3>
           <div className="lf-tabla__scroll"><table className="lf-tabla"><tbody>
             {(c.por_tipo ?? []).map((t) => <tr key={t.tipo_turno}><td>Luffy · {t.etiqueta}<small>{t.n} turnos · {fmtUsd(t.promedio_usd)} cada uno{t.iteraciones ? ` · ${String(t.iteraciones).replace('.', ',')} vuelta${t.iteraciones === 1 ? '' : 's'}` : ''}</small></td><td className="num">{fmtUsd(t.costo_usd)}</td></tr>)}
             {(c.agentes ?? []).map((a) => <tr key={a.quien}><td>{a.quien}<small>{a.n} encargos</small></td><td className="num">{fmtUsd(a.costo_usd)}</td></tr>)}
@@ -142,7 +143,7 @@ function Gasto() {
             {!c.por_tipo && (c.por_modelo ?? []).map((t) => <tr key={t.modelo}><td>{t.modelo}<small>{t.n} respuestas</small></td><td className="num">{fmtUsd(t.costo_usd)}</td></tr>)}
           </tbody></table></div>
           {c.estilo && <p className="lf-ctrl__nota mono">Reescrituras de estilo: {c.estilo.reescrituras ?? c.estilo.reescritos ?? 0} de {c.estilo.turnos} turnos ({String(c.estilo.porcentaje ?? c.estilo.tasa_pct ?? 0).replace('.', ',')} %) · {fmtUsd(c.estilo.costo_extra_usd ?? c.estilo.costo_usd ?? 0)}{c.estilo.lectura ? ` · ${c.estilo.lectura}` : ''}</p>}
-        </section>
+        </section>)}</Seguro>
       </div>
     </>
   )

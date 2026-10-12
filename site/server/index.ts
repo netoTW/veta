@@ -12,6 +12,7 @@
 import { Hono, type Context } from 'hono'
 import { serve } from '@hono/node-server'
 import { serveStatic } from '@hono/node-server/serve-static'
+import { compress } from 'hono/compress'
 import { accessSync, constants, existsSync, readdirSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { ENV, RAIZ_SITE } from './entorno.ts'
@@ -254,6 +255,8 @@ function spa(c: Context) {
   return existsSync(f) ? c.html(readFileSync(f, 'utf8')) : c.text('Sin build: corre `npm run build`', 404)
 }
 if (ENV.SERVIR_DIST) {
+  // comprimido, como lo sirve Vercel en producción: así las medidas locales de peso y tiempo valen
+  app.use('/assets/*', compress())
   app.use('/*', serveStatic({ root: './dist' }))
 }
 

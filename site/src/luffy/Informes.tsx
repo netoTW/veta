@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { Seguro } from './Seguro'
 import { Link, NavLink, useParams } from 'react-router-dom'
 import { luffy6b, ErrorLuffy6b } from './api6b'
 import type { Bitacora, Informe, InformeItem, Revision, Teoria } from './tipos6b'
@@ -28,23 +29,23 @@ export function Informes() {
       </div>
       {pestana === 'diarios' && (
         <div className="lf-inf">
-          <section className="lf-tarj lf-inf__lista"><h3 className="mono">Por día</h3>{lista.map((i) => <NavLink key={i.id} to={`/luffy/informes/${i.fecha}`} className={i.fecha === activa ? 'is-active' : ''} end><em>{fmtFecha(i.fecha)}{i.enviado ? ' · enviado' : ''}</em>{aTextoPlano(i.resumen ?? '')}</NavLink>)}{!lista.length && <p className="lf-ctrl__nota mono">Todavía no hay informes.</p>}</section>
+          <Seguro t="Informes por día">{() => (<section className="lf-tarj lf-inf__lista"><h3 className="mono">Por día</h3>{lista.map((i) => <NavLink key={i.id} to={`/luffy/informes/${i.fecha}`} className={i.fecha === activa ? 'is-active' : ''} end><em>{fmtFecha(i.fecha)}{i.enviado ? ' · enviado' : ''}</em>{aTextoPlano(i.resumen ?? '')}</NavLink>)}{!lista.length && <p className="lf-ctrl__nota mono">Todavía no hay informes.</p>}</section>)}</Seguro>
           <div className="lf-ficha__graficos">
             {!activa ? null : !informe ? <div className="lf-lab__vacio"><span className="lf-gema is-latiendo" /></div> : (
               <>
-                <section className="lf-tarj"><h3 className="mono">{fmtFecha(informe.fecha)}<em>{informe.modelo.replace('claude-', '')} · {fmtUsd(informe.costo_usd)}{informe.hilo_id ? <> · <Link to={`/luffy/h/${informe.hilo_id}`} className="lf-nota__ir">hilo</Link></> : null}</em></h3><p className="lf-pag__t" style={{ fontSize: '1.3rem' }}>Informe diario</p></section>
-                {(informe.secciones.length ? informe.secciones : [{ titulo: '', texto: informe.texto }]).map((s, i) => (
-                  <section key={i} className="lf-tarj lf-inf__sec">{s.titulo && <h3>{s.titulo}</h3>}<Md texto={s.texto} /></section>
+                <section className="lf-tarj"><h3 className="mono">{fmtFecha(informe.fecha)}<em>{(informe.modelo ?? '').replace('claude-', '')} · {fmtUsd(informe.costo_usd)}{informe.hilo_id ? <> · <Link to={`/luffy/h/${informe.hilo_id}`} className="lf-nota__ir">hilo</Link></> : null}</em></h3><p className="lf-pag__t" style={{ fontSize: '1.3rem' }}>Informe diario</p></section>
+                {((informe.secciones ?? []).length ? informe.secciones : [{ titulo: '', texto: informe.texto ?? '' }]).map((s, i) => (
+                  <Seguro key={i} t={s.titulo || 'Informe'}>{() => <section className="lf-tarj lf-inf__sec">{s.titulo && <h3>{s.titulo}</h3>}<Md texto={s.texto ?? ''} /></section>}</Seguro>
                 ))}
-                {informe.graficos.map((g) => <Grafico key={g.spec_id} specId={g.spec_id} compacto acciones={<Link to={`/luffy/laboratorio/${g.spec_id}`} className="lf-chip lf-chip--oro">Abrir en el laboratorio</Link>} />)}
+                {(informe.graficos ?? []).map((g) => <Grafico key={g.spec_id} specId={g.spec_id} compacto acciones={<Link to={`/luffy/laboratorio/${g.spec_id}`} className="lf-chip lf-chip--oro">Abrir en el laboratorio</Link>} />)}
               </>
             )}
           </div>
         </div>
       )}
-      {pestana === 'revisiones' && <Revisiones />}
-      {pestana === 'bitacora' && <BitacoraLista />}
-      {pestana === 'teorias' && <Teorias />}
+      {pestana === 'revisiones' && <Seguro t="Revisiones"><Revisiones /></Seguro>}
+      {pestana === 'bitacora' && <Seguro t="Bitácora"><BitacoraLista /></Seguro>}
+      {pestana === 'teorias' && <Seguro t="Teorías"><Teorias /></Seguro>}
     </div>
   )
 }

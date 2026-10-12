@@ -255,3 +255,11 @@
 /* listas largas recortadas (bitácora, decisiones de la caja) */
 .lf-mas { display: inline-flex; align-items: center; margin-top: 10px; padding: 6px 12px; border: 1px solid var(--hilo-suave); border-radius: var(--r-capsula); background: transparent; color: var(--ceniza); font-size: 0.56rem; letter-spacing: 0.14em; text-transform: uppercase; cursor: pointer; }
 .lf-mas:hover { color: var(--hueso); border-color: var(--hilo-metal); }
+
+/* radar v2.2: la frase llana de cada familia que cuenta */
+.lf-cand__fr { display: flex; gap: 8px; margin: 6px 0 0; font-size: 0.8rem; line-height: 1.45; color: var(--hueso); }
+.lf-cand__fr i { flex: none; width: 7px; height: 7px; margin-top: 0.45em; border-radius: 2px; background: var(--esmeralda); transform: rotate(45deg); }
+.lf-cand__fr.is-inverso i { background: var(--rojo-luz); }
+/* una tarjeta que no se pudo dibujar */
+.lf-seguro { border-color: rgba(214, 120, 104, 0.28); }
+.lf-cand > .lf-mas { grid-column: 1 / -1; justify-self: start; }

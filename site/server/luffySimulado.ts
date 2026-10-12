@@ -620,6 +620,18 @@ function familiasDe(sym: string) {
     squeeze: { valor: sq, z: null, cumple: sq === 'cargado', cumple_inverso: false, etiqueta: 'Short squeeze', detalle: sq ? { estado: sq, oi_pctl: 98, funding: -0.041, basis_pct: -0.3 } : {}, motivo: sq ? null : 'sin cortos apilados' },
     onchain: { valor: null, z: null, cumple: false, cumple_inverso: false, etiqueta: 'Movimientos en cadena', detalle: {}, motivo: 'sólo lo calcula el Investigador a pedido' },
   }
+  // v2.2 (CONTRATO-PANEL §7): `frase` llana para toda familia, `detalle` vacío, lo técnico en `detalle_tecnico`
+  const FRASE: Record<string, (x: typeof f[string]) => string> = {
+    impulso: (x) => `Va ${x.valor !== null ? `${Number(x.valor) > 0 ? '+' : ''}${String(x.valor).replace('.', ',')} %` : 'sin cifra'} contra BTC en 30 días${x.cumple ? ': le saca ventaja clara.' : ': sin ventaja que destaque.'}`,
+    preparacion: (x) => `La volatilidad está en el percentil ${x.valor} de 90 días${x.cumple ? ': comprimida, como antes de un movimiento.' : '.'}`,
+    fundamento: (x) => (x.valor === null ? 'No hay ingresos ni dinero depositado que medir para esta moneda.' : `Los ingresos de 7 días van a ${String(x.valor).replace('.', ',')} veces su media de 30${x.cumple_inverso ? ': caen mientras el precio sube.' : '.'}`),
+    posicionamiento: (x) => `El dinero apalancado abierto está en el percentil ${x.valor} de 30 días${x.cumple ? ': muy cargado.' : '.'}`,
+    atencion: (x) => `Las personas que la nombran van a ${String(x.valor).replace('.', ',')} veces su media${x.cumple ? ': atención real creciendo.' : '.'}`,
+    catalizadores: (x) => (x.cumple ? 'Tiene un hecho con fecha dentro de la ventana.' : 'Sin hecho con fecha en la ventana.'),
+    squeeze: (x) => (x.valor === 'cargado' ? 'Hay cortos apilados pagando por mantenerse: combustible para una subida brusca.' : x.valor === 'ignicion' ? 'El squeeze se encendió: los cortos están cerrando.' : 'Sin cortos apilados.'),
+    onchain: () => 'Lo calcula el Investigador cuando se le pide.',
+  }
+  for (const [k, x] of Object.entries(f)) Object.assign(x, { frase: FRASE[k]?.(x) ?? x.etiqueta, detalle_tecnico: x.detalle, detalle: {} })
   return f
 }
 const CANDIDATAS_BASE = [
@@ -638,8 +650,8 @@ function candidata(x: typeof CANDIDATAS_BASE[number]) {
   for (const d of [7, 14, 30]) { const listo = x.dias >= d; const r = listo ? pct6(v[i + d][1], v[i][1]) : null, rb = listo ? pct6(b[i + d][1], b[i][1]) : null; seguimiento[`${d}d`] = { fecha: diaAtras(x.dias - d), ret_pct: r, ret_btc_pct: rb, exceso_pct: r !== null && rb !== null ? redondeo(r - rb, 2) : null } }
   const fam = familiasDe(x.activo); const modo = MODOS_SIM.find((m) => m.id === x.modo)!
   return { id: x.id, fecha: diaAtras(x.dias), activo: x.activo, modo: x.modo, version: modo.version, score: x.score, rango: 1, decision: x.decision, p_merece: x.p, por_que: x.por_que, precio_ref: redondeo(v[i][1], 5), btc_ref: Math.round(b[i][1]),
-    confluencia: { score: x.score, obligatorias: modo.familias_obligatorias, apoyo: modo.apoyo.familias.filter((f) => fam[f]?.cumple), n_apoyo: modo.apoyo.familias.filter((f) => fam[f]?.cumple).length },
-    familias: Object.fromEntries(Object.entries(fam).filter(([, f]) => f.valor !== null).map(([k, f]) => [k, { valor: f.valor, z: f.z, cumple: f.cumple, detalle: f.detalle }])),
+    confluencia: { cumple: true, score: x.score, obligatorias: modo.familias_obligatorias.filter((f) => fam[f]?.cumple), obligatorias_todas: modo.familias_obligatorias, obligatorias_faltan: modo.familias_obligatorias.filter((f) => !fam[f]?.cumple), apoyo: modo.apoyo.familias.filter((f) => fam[f]?.cumple), apoyo_todas: modo.apoyo.familias, n_apoyo: modo.apoyo.familias.filter((f) => fam[f]?.cumple).length, minimo_apoyo: modo.apoyo.minimo ?? null, sin_dato: modo.apoyo.familias.filter((f) => fam[f]?.valor === null) },
+    familias: Object.fromEntries(Object.entries(fam).map(([k, f]) => [k, { valor: f.valor, z: f.z, cumple: f.cumple, cumple_inverso: f.cumple_inverso, etiqueta: f.etiqueta, frase: (f as { frase?: string }).frase ?? null, motivo: f.motivo, detalle: {} }])),
     etiquetas: x.etiquetas.map((e) => ({ etiqueta: e, fuerte: e === 'granja_o_bots', detalle: e === 'granja_o_bots' ? '61 % de las menciones son bots' : '', llano: ETIQUETAS_LLANO[e] ?? e })),
     regimen: 'risk_on', corrida_ts: `${diaAtras(x.dias)}T20:02:00+00:00`, hilo_id: null, seguimiento, linea_estudio: modo.linea_estudio }
 }
@@ -876,6 +888,8 @@ function catalizadores6(sym: string) {
     : sym === 'WAL' ? [{ fecha: isoDia(-6), dias: 6, titulo: 'Votación (snapshot): parámetros del staking', tipo: 'votacion', fuente: 'snapshot', url: 'https://snapshot.box/#/s:walrus', estado: 'active' }, { fecha: diaAtras(-8), dias: 8, titulo: 'Mainnet v2', tipo: 'agenda', fuente: 'motor', impacto: 'alto' }]
     : sym === 'STONK' ? [{ fecha: diaAtras(-9), dias: 9, titulo: 'Desbloqueo del equipo (1,8 % del circulante)', tipo: 'agenda', fuente: 'motor', impacto: 'medio' }] : []
 }
+/** v2.2: la hora de la vitrina del servidor, con su ciclo. */
+function vitrina(cada_s: number) { const edad = Math.round(Math.random() * cada_s * 0.6); return { calculado_en: new Date(Date.now() - edad * 1000).toISOString(), edad_s: edad, cada_s, estado: 'fresco', duracion_ms: 120 + Math.round(Math.random() * 400), error: null } }
 function ficha6(sym: string, rango: string) {
   const a = ACTIVOS[sym]
   const cats = catalizadores6(sym)
@@ -918,7 +932,14 @@ luffySimulado.get('/terminal/universo', (c) => {
 })
 luffySimulado.get('/terminal/plantillas', (c) => c.json({ plantillas: ficha6('{activo}' in ACTIVOS ? '{activo}' : 'BTC', '90d').secciones.map((s) => ({ id: s.id, version: s.version, titulo: s.titulo, descripcion: s.titulo, spec: JSON.parse(JSON.stringify(s.spec).replace(/"BTC"/g, '"{activo}"')) })), consultado_en: ahora(), fuente: 'graficos/plantillas' }))
 luffySimulado.get('/terminal/plantillas/:id', (c) => { const sym = (c.req.query('activo') ?? 'BTC').toUpperCase().replace(/-USDT$/, ''); if (!ACTIVOS[sym]) return c.json({ detail: 'activo no existe' }, 404); const s = ficha6(sym, c.req.query('rango') ?? '90d').secciones.find((x) => x.id === c.req.param('id')); return s ? c.json(s) : c.json({ detail: 'plantilla no existe' }, 404) })
-luffySimulado.get('/terminal/:activo', (c) => { const sym = c.req.param('activo').toUpperCase().replace(/-USDT$/, ''); if (!ACTIVOS[sym]) return c.json({ detail: `${sym} no está en el universo` }, 404); return c.json(ficha6(sym, c.req.query('rango') ?? '90d')) })
+const FICHAS_CALIENTES = new Set(['WAL', 'STONK', 'STRK', 'CFX', 'KAIA', 'BTC', 'ETH', 'SOL'])
+luffySimulado.get('/terminal/:activo', (c) => {
+  const sym = c.req.param('activo').toUpperCase().replace(/-USDT$/, ''); if (!ACTIVOS[sym]) return c.json({ detail: `${sym} no está en el universo` }, 404)
+  const f = ficha6(sym, c.req.query('rango') ?? '90d')
+  // v2.2: una moneda que nadie abrió vuelve al instante como ficha parcial; a los 3 s ya está
+  if (!FICHAS_CALIENTES.has(sym)) { FICHAS_CALIENTES.add(sym); return c.json({ ...f, pendiente: true, reintentar_en_s: 3, radar: null, catalizadores: [], bitacora: [], teorias: [], posiciones: [], gatillos: [], hilos: [], no_disponibles: [{ seccion: 'ficha', motivo: 'se está calculando: vuelve en unos segundos' }], vitrina: { ...vitrina(600), estado: 'pendiente' } }) }
+  return c.json({ ...f, vitrina: vitrina(sym === 'WAL' ? 180 : 600) })
+})
 luffySimulado.post('/terminal/:activo/hilo', (c) => { const sym = c.req.param('activo').toUpperCase().replace(/-USDT$/, ''); if (!ACTIVOS[sym]) return c.json({ detail: 'no existe' }, 404); return c.json(hiloTerminal(sym)) })
 
 /* ---------- 8.2 cartera y exchange ---------- */
@@ -946,7 +967,7 @@ luffySimulado.get('/exchange/ordenes', (c) => {
   const par = c.req.query('par')
   return c.json({ estado, ordenes: ordenes.filter((o) => !par || o.par.startsWith(par.toUpperCase())), consultado_en: ahora(), fuente: 'bingx' })
 })
-luffySimulado.get('/exchange/fills', (c) => { const par = c.req.query('par'); if (!par) return c.json({ detail: [{ type: 'missing', loc: ['query', 'par'], msg: 'Field required', input: null }] }, 422); const lim = Number(c.req.query('limite') ?? 100) || 100; return c.json({ par: par ?? null, fills: FILLS_SIM.filter((f) => !par || f.par.startsWith(par.toUpperCase())).slice(0, lim), consultado_en: ahora(), fuente: 'bingx:myTrades' }) })
+luffySimulado.get('/exchange/fills', (c) => { const par = c.req.query('par'); const lim = Number(c.req.query('limite') ?? 100) || 100; const fs = FILLS_SIM.filter((f) => !par || f.par.startsWith(par.toUpperCase())).sort((a, b) => b.hora.localeCompare(a.hora)); return c.json({ par: par ?? null, pares: [...new Set(fs.map((f) => f.par))], fills: fs.slice(0, lim), no_disponibles: [], consultado_en: ahora(), fuente: 'bingx:myTrades', vitrina: vitrina(30) }) })
 luffySimulado.get('/exchange/comisiones', (c) => {
   const desde = c.req.query('desde') ?? diaAtras(30), hasta = c.req.query('hasta') ?? diaAtras(0), origen = c.req.query('origen') ?? 'pablo'
   const fs = FILLS_SIM.filter((f) => f.propuesta?.origen === origen && f.hora.slice(0, 10) >= desde && f.hora.slice(0, 10) <= hasta)
