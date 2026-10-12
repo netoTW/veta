@@ -1,0 +1,59 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>
+  html, body { margin: 0; background: transparent; }
+  svg { display: block; }
+</style></head>
+<body>
+<!-- Fuente del ícono de la app Luffy (public/img/app/gema-*.png; se renderiza con Playwright a 512, 192 y 180, y con ?seguro=1 la versión maskable): la gema esmeralda facetada del panel, sobre roca, con filo de oro.
+     ?seguro=1 deja la gema dentro del 62 % central (zona segura de los íconos «maskable»). -->
+<svg id="ic" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <radialGradient id="roca" cx="38%" cy="30%" r="85%">
+      <stop offset="0" stop-color="#1B1F23"/>
+      <stop offset="0.55" stop-color="#111316"/>
+      <stop offset="1" stop-color="#08090A"/>
+    </radialGradient>
+    <filter id="grano" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="7" result="r"/>
+      <feColorMatrix type="saturate" values="0" in="r" result="g"/>
+      <feComponentTransfer in="g" result="a"><feFuncA type="table" tableValues="0 0.07"/></feComponentTransfer>
+      <feComposite in="a" in2="SourceGraphic" operator="in"/>
+    </filter>
+    <linearGradient id="fA" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8CF0C4"/><stop offset="1" stop-color="#2FB57E"/></linearGradient>
+    <linearGradient id="fB" x1="1" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3FCB8F"/><stop offset="1" stop-color="#127A52"/></linearGradient>
+    <linearGradient id="fC" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#0C5A3B"/><stop offset="1" stop-color="#1A9665"/></linearGradient>
+    <linearGradient id="fD" x1="1" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#083F2A"/><stop offset="1" stop-color="#14794F"/></linearGradient>
+    <linearGradient id="oro" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F2D58C"/><stop offset="0.5" stop-color="#C9A24C"/><stop offset="1" stop-color="#8A6A2A"/></linearGradient>
+    <filter id="sombra" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="8"/></filter>
+    <radialGradient id="brillo" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#3FE0A0" stop-opacity="0.26"/><stop offset="1" stop-color="#3FE0A0" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#roca)"/>
+  <rect width="512" height="512" fill="#fff" filter="url(#grano)"/>
+  <g id="gema">
+    <ellipse cx="256" cy="448" rx="92" ry="16" fill="#000" opacity="0.55" filter="url(#sombra)"/>
+    <circle cx="256" cy="250" r="200" fill="url(#brillo)"/>
+    <!-- el cristal esmeralda de la V, vertical, con cuatro caras y su arista central -->
+    <polygon points="256,66 334,148 322,382 256,446 190,382 178,148" fill="#06301F"/>
+    <polygon points="256,66 178,148 212,204 262,252" fill="url(#fA)"/>
+    <polygon points="256,66 334,148 302,206 262,252" fill="url(#fB)"/>
+    <polygon points="178,148 212,204 262,252 256,446 190,382" fill="url(#fC)"/>
+    <polygon points="334,148 322,382 256,446 262,252 302,206" fill="url(#fD)"/>
+    <polyline points="178,148 212,204 262,252 302,206 334,148" fill="none" stroke="#C8FFE6" stroke-opacity="0.45" stroke-width="2"/>
+    <line x1="262" y1="252" x2="256" y2="446" stroke="#9DF2CB" stroke-opacity="0.22" stroke-width="2"/>
+    <line x1="256" y1="66" x2="262" y2="252" stroke="#E6FFF4" stroke-opacity="0.5" stroke-width="2"/>
+    <!-- luz en la cara alta -->
+    <polygon points="238,96 252,84 230,176 214,182" fill="#F2FFF9" opacity="0.42"/>
+    <!-- la veta de oro que lo cruza, como las grietas del logo -->
+    <polyline points="184,318 214,304 232,326 262,306 288,330 318,316" fill="none" stroke="#F6D88A" stroke-width="9" stroke-linejoin="round" stroke-linecap="round" opacity="0.25" filter="url(#sombra)"/>
+    <polyline points="184,318 214,304 232,326 262,306 288,330 318,316" fill="none" stroke="url(#oro)" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round"/>
+    <!-- filo -->
+    <polygon points="256,66 334,148 322,382 256,446 190,382 178,148" fill="none" stroke="url(#oro)" stroke-width="3.5" stroke-linejoin="round" opacity="0.9"/>
+  </g>
+</svg>
+<script>
+  const q = new URLSearchParams(location.search)
+  const lado = Number(q.get('lado') || 512)
+  const svg = document.getElementById('ic'); svg.setAttribute('width', lado); svg.setAttribute('height', lado)
+  if (q.get('seguro') === '1') document.getElementById('gema').setAttribute('transform', 'translate(256 256) scale(0.74) translate(-256 -256)')
+</script>
+</body></html>

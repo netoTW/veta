@@ -51,6 +51,9 @@ export function cabecerasApi(): Record<string, string> {
   return v ? { 'x-veta-ver-como': v } : {}
 }
 
+/** Lo último que se supo de la sesión del admin real: sólo para abrir el panel instalado sin red. */
+const ULTIMO_YO = 'veta.yo.admin'
+
 export function ProveedorSesion({ children }: { children: ReactNode }) {
   const [yo, setYo] = useState<Yo | null>(null)
   const [cargando, setCargando] = useState(true)
@@ -59,8 +62,17 @@ export function ProveedorSesion({ children }: { children: ReactNode }) {
   const recargar = useCallback(async () => {
     try {
       const r = await fetch('/api/yo', { credentials: 'same-origin', headers: cabecerasApi() })
-      setYo(r.ok ? await r.json() : null)
-    } catch { setYo(null) }
+      const y = r.ok ? await r.json() as Yo : null
+      setYo(y)
+      try { if (y?.usuario && y.rol_real === 'admin' && !y.impersonando) localStorage.setItem(ULTIMO_YO, JSON.stringify(y)); else localStorage.removeItem(ULTIMO_YO) } catch { /* sin storage */ }
+    } catch {
+      /* Sin red (no un «no hay sesión»: eso contesta el servidor). El panel de Pablo instalado como
+         app abre igual con lo último que se supo de su sesión; cualquier dato sigue pidiendo la cookie
+         al servidor, así que esto sólo dibuja la carcasa y lo que el teléfono tenga guardado. */
+      let g: Yo | null = null
+      try { g = JSON.parse(localStorage.getItem(ULTIMO_YO) ?? 'null') as Yo | null } catch { /* nada */ }
+      setYo(g)
+    }
     setCargando(false)
   }, [])
 
@@ -77,6 +89,9 @@ export function ProveedorSesion({ children }: { children: ReactNode }) {
   }, [])
 
   const salir = useCallback(async () => {
+    try { localStorage.removeItem(ULTIMO_YO) } catch { /* sin storage */ }
+    // lo que el panel de Luffy guardó en el teléfono (datos y carcasa) se borra con la sesión
+    try { navigator.serviceWorker?.controller?.postMessage('luffy:olvidar'); void caches?.keys().then((ks) => Promise.all(ks.filter((k) => k.startsWith('luffy-')).map((k) => caches.delete(k)))) } catch { /* sin caché */ }
     await authClient.signOut()
     setVerComo(null)
     await recargar()

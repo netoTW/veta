@@ -59,13 +59,17 @@ export class LimiteDeError extends Component<Props, Estado> {
 
   render() {
     if (!this.state.fallo) return this.props.children
-    const viejo = esFalloDeFragmento(this.state.fallo)
+    // sin red, lo que falta es la conexión, no una versión nueva
+    const sinRed = typeof navigator !== 'undefined' && navigator.onLine === false
+    const viejo = !sinRed && esFalloDeFragmento(this.state.fallo)
     return (
       <div className="shell">
         <EmptyState
           kind="error"
-          title={viejo ? 'Esta página se actualizó mientras la tenías abierta.' : 'Esta pantalla no se pudo dibujar.'}
-          detail={viejo
+          title={sinRed ? 'Sin conexión.' : viejo ? 'Esta página se actualizó mientras la tenías abierta.' : 'Esta pantalla no se pudo dibujar.'}
+          detail={sinRed
+            ? 'Esta parte todavía no está guardada en el teléfono. Con red vuelve a abrir.'
+            : viejo
             ? 'Hay una versión nueva. Cárgala y sigues donde estabas.'
             : 'Ya quedó registrado de nuestro lado y lo vamos a mirar. Puedes reintentar o volver al inicio.'}
           action={

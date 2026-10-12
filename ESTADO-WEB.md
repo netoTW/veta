@@ -695,6 +695,60 @@ pestaña, filtro, chip, rango, «ver más» y reintentar; abre los formularios s
 pánico y cancelar la misión abre la confirmación y responde «No». Verde con la API real y con el
 simulador. Capturas: `recursos/capturas/a-real/`.
 
+### Pendientes tras la 6b · bloque B: /luffy como app instalable (12-oct-2026)
+
+**Qué es.** `/luffy` se instala como app («Luffy», el ícono de la gema esmeralda con su veta de
+oro) y abre a pantalla completa, sin la barra del navegador. Fuente del ícono:
+`recursos/icono-app-luffy.html` (se renderiza a `public/img/app/gema-*.png`, también en versión
+adaptable para Android).
+
+**Nadie más la ve.** El manifiesto y el service worker se sirven en `/api/luffy/app/`
+(`server/luffyApp.ts`), detrás del mismo control del puente: para cualquiera que no sea el admin
+real dan 404. La página sólo enlaza el manifiesto, el ícono de la app y las etiquetas del iPhone
+después de verificar la sesión (`src/luffy/pwa.ts`, desde `LuffyShell`); el título «Luffy» también.
+Los íconos son públicos, pero son una gema sin nombre. El service worker vive en `/api/luffy/app/sw.js`
+y controla `/luffy` con la cabecera `Service-Worker-Allowed`.
+
+**Abre al instante.** El service worker guarda la carcasa (`/luffy`) y los archivos con hash; la
+carcasa se responde de lo guardado y se actualiza por detrás. Con el service worker activo, el
+panel baja en segundo plano las vistas (terminal, cartera, radar…), así que también abren sin red
+y, con red, cambiar de vista no espera su archivo. Su versión es la hora de arranque del servidor:
+cada despliegue instala la nueva. Medido con el teléfono de gama media: la segunda apertura dibuja
+la carcasa en 0,9 s (la primera, 2,0); con las vistas precalentadas la cartera abre en 0,4 s y el
+radar en 0,8 (sin app, 1,9 y 1,8).
+
+**Sin conexión.** Los datos del panel van siempre a la red; si no hay red, el service worker
+responde la última respuesta guardada (también los gráficos, que van por POST), marcada con
+`X-Luffy-Guardado`, y el panel muestra «Sin conexión · lo que ves es lo último que llegó». El aviso
+se enciende también cuando un pedido falla por red, porque `navigator.onLine` sigue en «sí» con
+una wifi que no deja pasar nada. Sin red y sin nada guardado, una pantalla propia (roca, la gema,
+«Luffy vuelve con la red», reintentar, y se recarga sola al volver la red). Los errores de red se
+leen «Sin conexión», no «TypeError». Para abrir sin red, la sesión recuerda lo último que se supo
+del admin real (`veta.yo.admin`); cualquier dato sigue pidiendo la cookie al servidor. Al cerrar
+sesión se borra eso y todo lo guardado del panel.
+
+**iPhone.** «Agregar a inicio» toma la gema (`apple-touch-icon`), abre a pantalla completa
+(`apple-mobile-web-app-capable`, barra de estado translúcida, `viewport-fit=cover`) y la barra
+superior y lo que se pega debajo suman la zona segura (`--lf-arriba`).
+
+**Notificaciones push: preparadas, sin activar.** El service worker ya muestra un aviso
+`{titulo, texto, url, tag}` y al tocarlo abre esa vista; `suscribirPush(claveVapid)` en `pwa.ts`
+pide permiso y devuelve la suscripción. Falta, del lado de Mugiwara: la clave VAPID, una ruta para
+guardar suscripciones y el envío de las alertas por push. En el iPhone exige la app instalada
+(iOS 16.4 o más).
+
+**Pruebas.** `scripts/probar-app.mjs` (en las invariantes): visitante y suscriptor pro sin
+manifiesto, sin service worker y sin título que nombre a Luffy; para Pablo, manifiesto sin errores,
+instalable en Chrome, service worker al mando, carcasa y datos guardados, sin red abre el radar con
+lo último que llegó y avisa, y la pantalla sin conexión en escritorio y a 390 px. Verde con el
+simulador y con la API real. Capturas: `recursos/capturas/app/` y `app-real/`. La instalación en
+un iPhone y en un Android de verdad la tiene que probar Pablo (no hay forma de hacerlo desde aquí).
+
+**Un hallazgo de paso.** En `pulida.css` un `@media (prefers-reduced-motion)` estaba sin cerrar desde
+la 6b; al estar al final no daba error, pero todo lo que se agregó después quedaba adentro: el vidrio
+liviano del teléfono del bloque A sólo se aplicaba a quien tuviera el movimiento reducido. Cerrado, y
+`pruebas/unidad/estilos.test.ts` revisa que toda hoja cierre sus llaves.
+
 ## 8. Huecos del contrato abiertos
 
 Lista completa en `HUECOS-CONTRATO.md`. Lo que sigue abierto, con qué falta de cada uno:

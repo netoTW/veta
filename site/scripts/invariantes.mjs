@@ -8,7 +8,8 @@
      5. matriz de acceso en el servidor
      6. tenencia declarada fuera de todo lo público
      7. barrido de rutas: 5 roles × 2 anchos
-     8. /luffy: nadie que no sea admin lo ve; el caso guiado del laboratorio con Playwright
+     8. /luffy: nadie que no sea admin lo ve; el caso guiado del laboratorio con Playwright;
+        la app instalable (manifiesto y service worker sólo para Pablo, sin red abre con lo guardado)
      9. prueba de contrato, integridad v1 y v2 (§20.2, §20.3) e historial sin borrados (§17.1), sobre las fixtures
 
    Uso: npm run invariantes   Sale con 0 sólo si pasan todos. */
@@ -63,6 +64,7 @@ if (ok) {
     && paso('tenencia declarada', 'node', ['scripts/probar-tenencia.mjs'])
     && paso('barrido', 'node', ['scripts/barrido.mjs'])
     && paso('luffy (acceso y caso guiado)', 'node', ['scripts/probar-luffy.mjs'])
+    && paso('luffy como app (sólo Pablo la ve)', 'node', ['scripts/probar-app.mjs'])
   if (ok) {
     if (existsSync('scripts/probar-contrato.mjs')) ok = paso('prueba de contrato', 'node', ['scripts/probar-contrato.mjs'])
       && paso('integridad v1', 'node', ['scripts/probar-integridad.mjs'])

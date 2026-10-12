@@ -138,7 +138,9 @@ límite de error, archivado de la calibración.
 
 ### Alta
 000. **Pendientes tras la 6b** (`Mugiwara/PROMPT-VETA-pendientes.md`): bloque A (estabilidad y
-    velocidad) hecho el 12-oct, ver `ESTADO-WEB.md`; siguen B (app instalable) y C (oficina rehecha).
+    velocidad) y B (app instalable) hechos el 12-oct, ver `ESTADO-WEB.md`; sigue C (oficina rehecha).
+    **Pablo:** instalar la app en su iPhone (Safari → compartir → «Agregar a inicio») y en Android
+    (Chrome → «Instalar app») y contar si abre a pantalla completa con la gema.
 00. **La curva y el efectivo de la cartera de Pablo** dependen de Mugiwara (§6): hoy suman la
     caja. Cuando lo corrija, volver a sacar `shots-6b.mjs` con datos reales y mirar la cartera.
 0. **Encender Luffy en producción** (fase 6a): `MUGIWARA_API_TOKEN` en `/opt/veta-web/site/.env`,
@@ -227,6 +229,10 @@ límite de error, archivado de la calibración.
 - La capa `gatillos` de `/graficos/datos` declara `no_disponibles: [{serie: "gat", motivo: "ValueError: no
   hay gatillos activos con nivel de precio para este activo"}]` cuando simplemente no hay gatillos: una
   capa vacía no es un dato que falte. La web la oculta y quita el nombre de la excepción de los motivos.
+- **Push (para cuando se quiera reemplazar Telegram):** el panel ya tiene el service worker que muestra el
+  aviso y la función que suscribe (`src/luffy/pwa.ts`). Hace falta del lado de Mugiwara: una clave VAPID
+  (la pública, por `GET /push/clave`), `POST /push/suscripciones` para guardar la suscripción del teléfono
+  y mandar cada alerta como `{titulo, texto, url, tag}`.
 - `por_que` de las candidatas llega a veces como código (`confluencia_solida`); la web lo pasa a texto.
 - Las velas diarias de BingX vienen con `t` a las 16:00 UTC (no a las 00:00); el panel coloca cada marcador en
   la vela abierta en ese momento, así que funciona, pero conviene decirlo en el contrato.

@@ -1,6 +1,7 @@
 /* Cliente de la fase 6b sobre el puente /api/luffy/* (CONTRATO-PANEL.md v2.1, §8). */
 import type { Propuesta } from './tipos'
 import { conTope, esTope } from './api'
+import { marcarRed } from './pwa'
 import type { AccionExchange, Bitacora, Caja, Candidatas, Cartera, Comisiones, CostoAmpliado, CurvaCapital, Declaracion, DiffManual, EventoOficina, FeedAlertas, FichaTerminal, Fills, Filtro, Gatillo, HiloTerminal, Informe, InformeItem, Manual, Modo, Modos, Movimiento, Oficina, Ordenes, Pagina, RespuestaPropuestas, Revision, Teoria, Universo } from './tipos6b'
 
 const BASE = '/api/luffy'
@@ -16,8 +17,11 @@ async function pedir<T>(ruta: string, init: { metodo?: 'GET' | 'POST' | 'PATCH' 
     r = await fetch(`${BASE}${ruta}`, { method: init.metodo ?? (init.cuerpo !== undefined ? 'POST' : 'GET'), credentials: 'same-origin', signal: conTope(init.signal, init.tope), headers: init.cuerpo !== undefined ? { 'Content-Type': 'application/json' } : {}, body: init.cuerpo !== undefined ? JSON.stringify(init.cuerpo) : undefined })
   } catch (e) {
     if (esTope(e)) throw new ErrorLuffy6b(0, 'tope', 'El servidor de Luffy tardó demasiado en contestar. Reintenta en un momento.')
+    if (e instanceof TypeError || !navigator.onLine) { marcarRed(false); throw new ErrorLuffy6b(0, 'sin_red', 'Sin conexión. En cuanto vuelva la red, esto se carga.') }
     throw e
   }
+  // una respuesta que el service worker sacó de lo guardado quiere decir que no hay red
+  marcarRed(r.headers.get('X-Luffy-Guardado') !== '1')
   if (!r.ok) {
     let codigo = String(r.status), texto = `HTTP ${r.status}`, cuerpo: unknown = null
     try {

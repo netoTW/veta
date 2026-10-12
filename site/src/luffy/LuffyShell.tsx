@@ -6,6 +6,7 @@ import { LimiteDeError } from '../ui/LimiteDeError'
 import { luffy } from './api'
 import type { Costo } from './tipos'
 import { fmtUsd } from './formato'
+import { montarApp, useConexion } from './pwa'
 
 /* ============================================================================
    /luffy: la sección privada de Mugiwara. Sólo para el rol admin real; para
@@ -53,7 +54,9 @@ export function LuffyShell() {
     const t = setTimeout(() => luffy.costo().then((c) => { setCosto(c); try { sessionStorage.setItem('luffy.costo', JSON.stringify(c)) } catch { /* lleno */ } }, () => {}), 3500)
     return () => clearTimeout(t)
   }, [esPablo])
-  useEffect(() => { document.title = 'Luffy · VETA' }, [])
+  // la app (manifiesto, íconos, service worker) y el título, sólo para Pablo: para el resto esto no existe
+  useEffect(() => { if (esPablo) return montarApp() }, [esPablo])
+  const enLinea = useConexion()
   useEffect(() => { setMas(false) }, [loc.pathname])
   if (cargando) return null
   if (!esPablo) return <NoExiste />
@@ -85,6 +88,7 @@ export function LuffyShell() {
           <Link to="/admin/bandeja" className="lf-top__veta">VETA</Link>
         </div>
       </header>
+      {!enLinea && <p className="lf-sinred mono" role="status">Sin conexión · lo que ves es lo último que llegó</p>}
       <main className="lf-main">
         <Suspense fallback={null}>
           {/* la terminal no se desmonta al cambiar de moneda (la lista, la sincronía y lo pedido siguen); el resto se reinicia por ruta */}

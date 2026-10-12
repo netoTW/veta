@@ -4,6 +4,8 @@
    ========================================================================== */
 import type { Catalogo, Confirmacion, Costo, Datos, EventoChat, HiloDetalle, HiloResumen, HistorialPosiciones, ImagenAdjunta, Propuesta, Spec, SpecGuardado, Tablero } from './tipos'
 
+import { marcarRed } from './pwa'
+
 const BASE = '/api/luffy'
 
 export class ErrorLuffy extends Error {
@@ -27,10 +29,18 @@ async function errorDe(r: Response): Promise<ErrorLuffy> {
 }
 
 async function pedir<T>(ruta: string, init: { metodo?: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE'; cuerpo?: unknown; signal?: AbortSignal } = {}): Promise<T> {
-  const r = await fetch(`${BASE}${ruta}`, {
-    method: init.metodo ?? (init.cuerpo !== undefined ? 'POST' : 'GET'), credentials: 'same-origin', signal: init.signal,
-    headers: init.cuerpo !== undefined ? { 'Content-Type': 'application/json' } : {}, body: init.cuerpo !== undefined ? JSON.stringify(init.cuerpo) : undefined,
-  })
+  let r: Response
+  try {
+    r = await fetch(`${BASE}${ruta}`, {
+      method: init.metodo ?? (init.cuerpo !== undefined ? 'POST' : 'GET'), credentials: 'same-origin', signal: init.signal,
+      headers: init.cuerpo !== undefined ? { 'Content-Type': 'application/json' } : {}, body: init.cuerpo !== undefined ? JSON.stringify(init.cuerpo) : undefined,
+    })
+  } catch (e) {
+    if (e instanceof TypeError || (typeof navigator !== 'undefined' && !navigator.onLine)) { marcarRed(false); throw new ErrorLuffy(0, 'sin_red', 'Sin conexión. En cuanto vuelva la red, esto se carga.') }
+    throw e
+  }
+  // una respuesta que el service worker sacó de lo guardado quiere decir que no hay red
+  marcarRed(r.headers.get('X-Luffy-Guardado') !== '1')
   if (!r.ok) throw await errorDe(r)
   return r.json() as Promise<T>
 }
