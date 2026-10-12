@@ -235,7 +235,8 @@ límite de error, archivado de la calibración.
 - La capa `gatillos` de `/graficos/datos` declara `no_disponibles: [{serie: "gat", motivo: "ValueError: no
   hay gatillos activos con nivel de precio para este activo"}]` cuando simplemente no hay gatillos: una
   capa vacía no es un dato que falte. La web la oculta y quita el nombre de la excepción de los motivos.
-- **Gasto en la oficina (12-oct):** la web lee `GET /oficina/gasto` tal como está en v2.3 (hoy da 404 en producción).
+- **Gasto en la oficina (12-oct, desplegado):** la web lee `GET /oficina/gasto` tal como está en v2.3; hasta que Mugiwara la
+  despliegue (daba 404), la tarjeta lo dice en una línea y se enciende sola cuando llegue.
   Falta en el contrato **la lista de llamadas** que se ve al tocar un origen o un agente:
   `GET /oficina/gasto/llamadas?periodo=hoy|siete_dias|mes&origen=&agente=&limite=60` →
   `{items: [{hora, origen, agente, modelo, costo_usd, tokens: {entrada, cache_lectura, salida}, hilo_id, mensaje_id, tipo_turno, inferido}]}`,
