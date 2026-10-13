@@ -92,6 +92,9 @@ console.log('\nTERMINAL v2 · escritorio')
   const despues = p.url().split('/').pop()
   const h1 = await p.waitForFunction((d) => document.querySelector('[data-prueba="encabezado2"] h1')?.textContent === d, despues, { timeout: 8000 }).then(() => true, () => false)
   ok(p.url() !== antes && h1, `↓ pasa a la siguiente moneda (${despues})`)
+  // la ficha nueva vuelve a enganchar el teclado después de pintarse: se le da ese momento (con la máquina cargada,
+  // en los invariantes, una flecha inmediata a veces llegaba antes)
+  await p.evaluate(() => (document.activeElement)?.blur?.()); await espera(400)
   await p.keyboard.press('ArrowUp')
   ok(await enRuta(p, /\/luffy\/terminal\/WAL$/), '↑ vuelve a la anterior')
 
