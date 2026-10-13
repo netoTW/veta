@@ -7,8 +7,8 @@
    ========================================================================== */
 import { Hono } from 'hono'
 
-const ORIGENES: [string, string, number][] = [['caja', 'Caja autónoma', 0.34], ['telegram', 'Pablo en Telegram', 0.24], ['panel', 'Pablo en el panel', 0.12], ['monitor', 'Monitor e informe diario', 0.1], ['radar', 'Radar y escáner', 0.08], ['programado', 'Clasificación, narrativas y resúmenes', 0.07], ['gatillo', 'Gatillos', 0.03], ['terminal', 'Pablo en el CLI', 0.02]]
-const AGENTES: [string, string, number][] = [['luffy', 'Luffy', 0.74], ['cuant', 'Cuant', 0.06], ['investigador', 'Investigador', 0.07], ['estratega', 'Estratega', 0.03], ['estilo', 'Reescritura de estilo', 0.02], ['resumen', 'Resúmenes', 0.02], ['informe', 'Informe diario', 0.01], ['jev', 'Jev', 0.02], ['haiku', 'Haiku por lotes', 0.01], ['radar', 'Sonnet del radar', 0.02]]
+const ORIGENES: [string, string, number][] = [['caja', 'Caja autónoma', 0.34], ['telegram', 'Pablo en Telegram', 0.24], ['panel', 'Pablo en el panel', 0.12], ['monitor', 'Monitor e informe diario', 0.1], ['radar', 'Radar y escáner', 0.08], ['programado', 'Clasificación, narrativas y resúmenes', 0.07], ['gatillo', 'Gatillos', 0.03], ['fuente_telegram', 'Grupos de Telegram (lectura de la fuente)', 0.01], ['terminal', 'Pablo en el CLI', 0.01]]
+const AGENTES: [string, string, number][] = [['luffy', 'Luffy', 0.74], ['cuant', 'Cuant', 0.06], ['investigador', 'Investigador', 0.07], ['estratega', 'Estratega', 0.03], ['estilo', 'Reescritura de estilo', 0.02], ['resumen', 'Resúmenes', 0.02], ['informe', 'Informe diario', 0.01], ['jev', 'Jev', 0.02], ['haiku', 'Haiku por lotes', 0.01], ['radar', 'Sonnet del radar', 0.01], ['telegram_grupos', 'Lectura de grupos de Telegram', 0.01]]
 const r2 = (v: number) => Math.round(v * 100) / 100
 /* el día en hora de Chile (UTC−3) */
 const diaChile = (t: number) => new Date(t - 3 * 3600_000).toISOString().slice(0, 10)
@@ -56,9 +56,10 @@ simuladorGasto.get('/oficina/gasto/llamadas', (c) => {
   const items = Array.from({ length: Math.min(limite, 24) }, (_, i) => {
     const o = origen ?? ORIGENES[Math.floor(r() * ORIGENES.length)][0], a = agente ?? (o === 'programado' ? 'haiku' : r() < 0.8 ? 'luffy' : 'cuant')
     const caro = a === 'luffy' || a === 'investigador'
-    return { hora: new Date(Date.now() - (i + r()) * (horas / 24) * 3600_000).toISOString(), origen: o, agente: a, modelo: caro ? 'claude-fable-5-1' : a === 'haiku' ? 'claude-haiku-4-5' : 'claude-sonnet-5', costo_usd: r2((caro ? 0.08 + r() * 0.5 : 0.002 + r() * 0.02) * 100) / 100, tokens: { entrada: Math.round(800 + r() * 4000), cache_lectura: caro ? Math.round(20000 + r() * 30000) : 0, salida: Math.round(120 + r() * 900) }, hilo_id: 'c0ffee00-0000-4000-8000-000000000001', mensaje_id: 1300 + i, tipo_turno: o === 'caja' ? 'caja' : o === 'radar' ? 'radar' : 'dato_grafico', inferido: r() < 0.1 }
+    const etiqueta = AGENTES.find(([k]) => k === a)?.[1] ?? a
+    return { hora: new Date(Date.now() - (i + r()) * (horas / 24) * 3600_000).toISOString(), origen: o, agente: a, agente_etiqueta: etiqueta, hilo_titulo: o === 'caja' ? 'Caja · la misión del mes' : null, modelo: caro ? 'claude-fable-5-1' : a === 'haiku' ? 'claude-haiku-4-5' : 'claude-sonnet-5', costo_usd: r2((caro ? 0.08 + r() * 0.5 : 0.002 + r() * 0.02) * 100) / 100, tokens: { entrada: Math.round(800 + r() * 4000), cache_lectura: caro ? Math.round(20000 + r() * 30000) : 0, salida: Math.round(120 + r() * 900) }, hilo_id: 'c0ffee00-0000-4000-8000-000000000001', mensaje_id: 1300 + i, tipo_turno: o === 'caja' ? 'caja' : o === 'radar' ? 'radar' : 'dato_grafico', inferido: r() < 0.1 }
   })
-  return c.json({ items, periodo, origen: origen ?? null, agente: agente ?? null, consultado_en: new Date().toISOString(), fuente: 'simulador' })
+  return c.json({ items, siguiente: items.length >= Math.min(limite, 24) ? items[items.length - 1].hora : null, periodo, origen: origen ?? null, agente: agente ?? null, consultado_en: new Date().toISOString(), fuente: 'simulador' })
 })
 
 /* la línea de un turno (v2.3, `GET /oficina/turnos/{mensaje_id}`), la del turno del guion de la oficina. Aparte del

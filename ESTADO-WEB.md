@@ -872,7 +872,7 @@ real: `VETA_SIMULAR=gasto` (también `terminal2`).
 0,061 US$») con su globo, y la barra suma lo gastado («llevamos 0,669 US$ de 0,806 US$»). Sin línea, se arma con los eventos
 como antes. Probado con un ciclo real de la caja de 14 pasos.
 
-### Terminal v2, adelantado con datos simulados (12-oct-2026)
+### Terminal v2: adelantado con datos simulados (12-oct) y conectado al contrato real (13-oct-2026)
 
 La pantalla que reemplaza la ficha del terminal (`Mugiwara/PROMPT-TERMINAL-v2-veta.md`, maqueta aprobada
 `Mugiwara/MAQUETA-TERMINAL-v2.dc.html`), construida **antes de que Mugiwara publique su contrato**. Vive en
@@ -937,8 +937,51 @@ qué hora corta cada bolsa la vela diaria. Con datos de ejemplo (`simulado: true
 corrida; con un dedo ahora sólo está la propia (con dos, el zoom sigue siendo de la librería). Prueba en
 `probar-terminal2.mjs`: el arrastre deja todos los gráficos en la misma fecha, sin mover la página.
 
-**Falta, para cerrarlo:** conectar con el contrato real (ajustar `contrato.ts` y el simulador), capturas con
-datos reales de WAL y de una moneda sin perpetuo, pasar `/luffy/terminal` a esta pantalla y desplegar.
+**Conectado al contrato real y en el menú (13-oct-2026).** Mugiwara publicó la §8.8 de CONTRATO-PANEL v2.5 con la
+forma de `contrato.ts` tal cual: el adaptador sólo sumó la calidad del mapa por lado. «Terminal» del menú abre esta
+pantalla en `/luffy/terminal/:activo?`; el terminal anterior queda unos días en `/luffy/terminal1/:activo?` (con una línea
+que lleva al nuevo) y `/luffy/t2` lleva a la ruta nueva. Los enlaces de cartera, radar, oficina, informes y alertas a
+`/luffy/terminal/SYM` abren el v2. El simulador queda para las pruebas. Capturas con datos reales de WAL y STONK (sin
+perpetuo), escritorio y 390 px, en `recursos/capturas/terminal2-real/` (`scripts/capturar-secciones-t2.mjs`, con
+`RUTA=/luffy/terminal`).
+
+Lo que cambió al verlo con datos reales:
+- **Ficha parcial:** una moneda que nadie abrió llega con `pendiente: true`; se muestra igual (chip «calculando la
+  ficha», lo que falta en su lugar) y se vuelve a pedir a los `reintentar_en_s` hasta que llega completa. Probado.
+- **`no_disponibles` siempre en su lugar:** en la cifra (con el motivo; si la siguiente tiene el mismo, dice «el mismo
+  motivo» y el texto entero va al pasar el ratón), en el mapa, el delta spot y futuros, los derivados, el flujo con
+  exchanges, los movimientos grandes y las wallets. Lo que no tiene un lugar propio va al pie de su sección
+  (`Resto`), así nada queda sin decirse. En on-chain hoy son seis cifras sin dato (tenedores, 30 d, nuevos, flujo).
+- **Calidad del mapa por lado, tal como llega:** el chip dice «cortos: 1,35 veces mejor que el azar · largos: no se
+  distingue del azar» (leído de `calidad.frase`; si Mugiwara manda `calidad.lados` armado, se toma ése) y la frase
+  completa va bajo el gráfico. Antes decía «calibrado: 1,35× mejor que el azar» para los dos lados.
+- **Derivados:** el funding real varía (19 valores distintos en WAL); 252 de 270 intervalos están en la tasa base de
+  Binance (0,005 % cada 4 h) y el panel lo dice en una línea, para que la franja pareja no parezca un error. Las
+  series que empiezan después que las velas (funding 45 días, largos contra cortos 48 h) se rellenan con huecos y
+  comparten el eje del precio.
+- **Sincronía:** sólo reparte el rango el gráfico del precio o el que la persona toca (antes uno de abajo, al
+  acomodarse, encogía a todos a dos días); los bordes del eje quedan en los datos (alejar con la rueda ya no deja medio
+  panel vacío).
+- **Mapa:** con 62 niveles los rótulos se pisaban; ahora van los más intensos y sólo si hay lugar (7, o 4 en el
+  teléfono), con el monto en US$.
+- **Nombres llanos:** escenarios con los de la maqueta («Mediana de su categoría», «Su propio máximo»…), los modos del
+  radar sin guiones bajos, el régimen («apetito por riesgo» en vez de `risk_on`); el nombre no se repite cuando es
+  igual al ticker.
+
+### Telegram como fuente y el gasto con datos reales (13-oct-2026, contrato v2.4)
+
+- **Tarjeta «Telegram como fuente»** en la oficina, debajo del gasto (`src/luffy/oficina/Telegram.tsx`, de
+  `GET /fuentes/telegram`): estado de la lectura y la última pasada; los grupos que se leen con su moneda, quién lo
+  eligió y por qué, participantes y última lectura; los que están en la cuenta sin elegir, plegados; la medición de 8
+  días (llegan, pasan el filtro, hechos, costo) y lo último que se extrajo, que sale de los eventos `fuente_leida` de
+  `telegram_grupos` (los hechos con su texto y su moneda, sin los cambios de la lista). Se refresca cada 2 min.
+  `telegram_grupos` va al puerto social de la sala.
+- **Gasto:** `/oficina/gasto` ya responde en producción, así que la línea de aviso se fue. Entra el origen
+  `fuente_telegram` (y el agente `telegram_grupos`) con su etiqueta del contrato. Las llamadas piden
+  `periodo=hoy|siete_dias|mes`; como el servidor lo toma como días corridos (hoy = 24 h), la web las recorta al
+  `desde` del período en hora de Chile, el mismo de las barras. Cada llamada muestra la etiqueta del agente y el
+  título del hilo; si hay más de 60, lo dice.
+- Pruebas en `probar-luffy.mjs` (simulador): el grupo elegido, los no elegidos aparte, los 8 días y los hechos.
 
 ## 8. Huecos del contrato abiertos
 

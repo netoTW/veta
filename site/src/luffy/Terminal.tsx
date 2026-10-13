@@ -56,7 +56,7 @@ export function Terminal() {
   const seleccion = (activo ?? ultima ?? filas?.[0]?.simbolo ?? '').toUpperCase().replace(/-USDT$/, '')
   useEffect(() => { if (seleccion) try { localStorage.setItem('luffy.terminal.ultima', seleccion) } catch { /* sin storage */ } }, [seleccion])
   const indice = filas ? filas.findIndex((f) => f.simbolo === seleccion) : -1
-  const irA = useCallback((d: 1 | -1) => { if (!filas?.length) return; const i = indice < 0 ? 0 : Math.min(filas.length - 1, Math.max(0, indice + d)); nav(`/luffy/terminal/${filas[i].simbolo}`) }, [filas, indice, nav])
+  const irA = useCallback((d: 1 | -1) => { if (!filas?.length) return; const i = indice < 0 ? 0 : Math.min(filas.length - 1, Math.max(0, indice + d)); nav(`/luffy/terminal1/${filas[i].simbolo}`) }, [filas, indice, nav])
   const alTeclado = useCallback((e: KeyboardEvent) => { const t = e.target as HTMLElement; if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT')) return; if (e.key === 'ArrowDown') { e.preventDefault(); irA(1) } else if (e.key === 'ArrowUp') { e.preventDefault(); irA(-1) } }, [irA])
   useEffect(() => { window.addEventListener('keydown', alTeclado); return () => window.removeEventListener('keydown', alTeclado) }, [alTeclado])
   // las vecinas se precargan después, para no competir con la moneda que se está abriendo
@@ -79,6 +79,7 @@ export function Terminal() {
     <div className="lf-term">
       <aside className={`lf-term__lista ${hoja ? 'is-open' : ''}`} aria-label="Monedas">
         <div className="lf-lab__ctrl-cab mono"><span>Monedas</span><button type="button" className="lf-lab__cerrar" onClick={() => setHoja(false)} aria-label="Cerrar">×</button></div>
+        <p className="lf-term__anterior mono" data-prueba="terminal-anterior">Terminal anterior · queda unos días. <Link to={`/luffy/terminal${activo ? `/${activo}` : ''}`}>Ir al terminal nuevo</Link></p>
         <div className="lf-term__filtros">
           <input className="lf-term__busca" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar moneda" aria-label="Buscar" />
           <div className="lf-chips">{FILTROS.map(([k, l]) => <button key={k} type="button" className={`lf-chip ${filtro === k ? 'is-on' : ''}`} onClick={() => setFiltro(k)}>{l}</button>)}</div>
@@ -86,7 +87,7 @@ export function Terminal() {
         {errorLista && <p className="lf-hilos__error">{errorLista}</p>}
         <div className="lf-term__filas" role="listbox" aria-label="Monedas">
           {filas?.map((f) => (
-            <Link key={f.simbolo} to={`/luffy/terminal/${f.simbolo}`} className={`lf-fila ${f.simbolo === seleccion ? 'is-activa' : ''}`} role="option" aria-selected={f.simbolo === seleccion} data-prueba="moneda" data-simbolo={f.simbolo}>
+            <Link key={f.simbolo} to={`/luffy/terminal1/${f.simbolo}`} className={`lf-fila ${f.simbolo === seleccion ? 'is-activa' : ''}`} role="option" aria-selected={f.simbolo === seleccion} data-prueba="moneda" data-simbolo={f.simbolo}>
               <span className="lf-fila__sym">{f.simbolo}<em>{f.nombre ?? ''}</em></span>
               <span className="lf-fila__precio num">{fmtPrecio(f.precio)}<em className={tono(f.cambio_24h_pct)}>{signo(f.cambio_24h_pct)}</em></span>
               <span className="lf-fila__btc num"><small>vs BTC 7 d</small><em className={tono(f.vs_btc_7d_pct)}>{signo(f.vs_btc_7d_pct)}</em></span>

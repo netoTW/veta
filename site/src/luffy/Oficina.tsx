@@ -10,6 +10,7 @@ import { HojaAgente, HojaFuentes, SALUD_LLANO, describirPaso } from './oficina/H
 import { actividad as actividadDe, alCambiar, anotar as anotarHistoria, historia, lineaTurno, MODO_LLANO, monedasDe, pasoDe, rotuloDe, todos, type Ev, type Turno } from './oficina/historia'
 import { TarjetaCurva } from './Cartera'
 import { GastoOficina } from './oficina/Gasto'
+import { TelegramOficina } from './oficina/Telegram'
 
 /* ============================================================================
    La oficina en vivo (CONTRATO-PANEL.md §8.5): una sala isométrica con un
@@ -356,6 +357,7 @@ export function Oficina() {
       )}</Seguro>
 
       <Seguro t="Gasto"><GastoOficina /></Seguro>
+      <Seguro t="Telegram"><TelegramOficina /></Seguro>
 
       <div className="lf-ofi2__abajo">
         <Seguro t="Curva de la caja"><TarjetaCurva origen="caja" /></Seguro>

@@ -57,7 +57,7 @@ const PUESTO: Record<IdAgente, { x: number; y: number; z?: number }> = {
 const PANTALLA = { x: 392, y: 22, w: 416, h: 214 }
 const CUBO = { x: PANTALLA.x + PANTALLA.w / 2, y: PANTALLA.y + 104 }
 const GRUPO_FUENTE: Record<string, GrupoFuente> = {
-  x: 'antena', telegram_fuente: 'antena', telegram: 'antena',
+  x: 'antena', telegram_fuente: 'antena', telegram_grupos: 'antena', telegram: 'antena',
   binance: 'parabolica', upbit: 'parabolica', bithumb: 'parabolica', coinbase: 'parabolica', snapshot: 'parabolica', tally: 'parabolica', gobernanza: 'parabolica', listados: 'parabolica',
 }
 export const grupoDe = (nombre: string): GrupoFuente => GRUPO_FUENTE[nombre] ?? 'servidor'
@@ -66,7 +66,7 @@ export const PUERTO: Record<Puerto, { x: number; y: number; rotulo: string }> = 
   social: { x: PANTALLA.x + 22, y: PANTALLA.y + 22, rotulo: 'X · TELEGRAM' }, anuncios: { x: PANTALLA.x + PANTALLA.w - 22, y: PANTALLA.y + 22, rotulo: 'LISTADOS' },
   datos: { x: PANTALLA.x + 22, y: PANTALLA.y + PANTALLA.h - 20, rotulo: 'DATOS' }, votaciones: { x: PANTALLA.x + PANTALLA.w - 22, y: PANTALLA.y + PANTALLA.h - 20, rotulo: 'VOTACIONES' },
 }
-const PUERTO_DE: Record<string, Puerto> = { x: 'social', telegram_fuente: 'social', telegram: 'social', binance: 'anuncios', upbit: 'anuncios', bithumb: 'anuncios', coinbase: 'anuncios', listados: 'anuncios', snapshot: 'votaciones', tally: 'votaciones', gobernanza: 'votaciones' }
+const PUERTO_DE: Record<string, Puerto> = { x: 'social', telegram_fuente: 'social', telegram_grupos: 'social', telegram: 'social', binance: 'anuncios', upbit: 'anuncios', bithumb: 'anuncios', coinbase: 'anuncios', listados: 'anuncios', snapshot: 'votaciones', tally: 'votaciones', gobernanza: 'votaciones' }
 export const puertoDe = (fuente: string, grupo?: string): Puerto => PUERTO_DE[fuente] ?? (grupo ? PUERTO_DE[grupo] : undefined) ?? 'datos'
 const LUZ: Record<EstadoFuente, string> = { al_dia: '#5FE0A6', atrasada: '#EAD189', caida: '#E0705F', apagada: '#3A3F43', sin_datos: '#5C605D' }
 const COLOR_MONEDA: Record<MonedaEscena['tipo'], string> = { pablo: '#5FE0A6', caja: '#5FE0A6', candidata: '#EAD189', gatillo: '#ECE6D8', actividad: '#C9A24B', vigilancia: '#8E918C' }

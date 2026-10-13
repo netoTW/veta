@@ -38,7 +38,8 @@ function crear(el: HTMLElement, o: { horas?: boolean; izq?: boolean; margen?: { 
     crosshair: { mode: CrosshairMode.Normal, vertLine: { color: rgba(C.hueso, 0.35), width: 1, style: LineStyle.Dashed, labelBackgroundColor: C.roca3 }, horzLine: { color: rgba(C.hueso, 0.3), width: 1, style: LineStyle.Dashed, labelBackgroundColor: C.roca3 } },
     rightPriceScale: { borderColor: C.hairline, scaleMargins: o.margen ?? { top: 0.1, bottom: 0.08 }, entireTextOnly: true, minimumWidth: 64 },
     leftPriceScale: { visible: !!o.izq, borderColor: C.hairline, scaleMargins: o.margen ?? { top: 0.1, bottom: 0.08 }, entireTextOnly: true },
-    timeScale: { borderColor: C.hairline, timeVisible: !!o.horas, secondsVisible: false, rightOffset: 2, minBarSpacing: 1.2, lockVisibleTimeRangeOnResize: true },
+    // los bordes quedan en los datos: alejar con la rueda nunca deja medio panel vacío
+    timeScale: { borderColor: C.hairline, timeVisible: !!o.horas, secondsVisible: false, rightOffset: 2, minBarSpacing: 1.2, lockVisibleTimeRangeOnResize: true, fixLeftEdge: true, fixRightEdge: true },
     localization: { locale: 'es-ES', priceFormatter: (v: number) => fmt(v) },
     // en el teléfono, arrastrar el dedo mueve la cruz (y se lee el tooltip con todas las series); el zoom es con dos dedos
     handleScroll: { mouseWheel: true, pressedMouseMove: true, horzTouchDrag: !tel, vertTouchDrag: false },
@@ -121,13 +122,25 @@ export function flujo(el: HTMLElement, f: Ficha2): Vivo2 {
   return { chart, series, ancla: spot, destruir: () => chart.remove() }
 }
 
+/* Una serie que empieza después que las velas (el funding de Binance trae 45 días; largos contra
+   cortos, 48 horas) se rellena con huecos en las fechas de las velas: así comparte el eje del precio
+   y no encoge el rango al sincronizarse. Los huecos no dibujan nada. */
+function huecos(chart: IChartApi, f: Ficha2, desde: number | null) {
+  if (desde === null) return
+  const ts = f.movimiento.velas.filter((v) => v.t < desde).map((v) => ({ time: tt(v.t) }))
+  if (!ts.length) return
+  chart.addSeries(LineSeries, { priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false }).setData(ts)
+}
+const primero = (xs: { t: number }[]) => (xs.length ? Math.min(...xs.map((x) => x.t)) : null)
+
 /* ---------- derivados en detalle: uno por serie, cada uno con su eje ---------- */
 export type Derivado = 'interes' | 'funding' | 'liquidaciones' | 'largos_cortos'
 export function derivado(el: HTMLElement, f: Ficha2, cual: Derivado): Vivo2 | null {
   const d = f.movimiento.derivados
   if (!d) return null
-  const chart = crear(el, { horas: cual === 'funding', margen: { top: 0.1, bottom: 0.1 } })
+  const chart = crear(el, { horas: cual === 'funding' || cual === 'largos_cortos', margen: { top: 0.1, bottom: 0.1 } })
   const series: SerieV[] = []
+  huecos(chart, f, cual === 'interes' ? primero(d.interes_abierto.map(([t]) => ({ t }))) : primero(cual === 'funding' ? d.funding : cual === 'liquidaciones' ? d.liquidaciones : d.largos_cortos))
   if (cual === 'interes') {
     const s = chart.addSeries(AreaSeries, { lineColor: C.hueso, topColor: rgba(C.hueso, 0.18), bottomColor: rgba(C.hueso, 0.01), lineWidth: 2, priceLineVisible: false, lastValueVisible: true })
     s.setData(lineas(d.interes_abierto)); series.push({ id: 'oi', etiqueta: 'Interés abierto', color: C.hueso, api: s, unidad: 'US$', forma: 'linea' })

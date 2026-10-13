@@ -55,7 +55,7 @@ async function vuelta(n) {
 
   await medir('abrir /luffy en frío', () => p.goto(`${BASE}/luffy`, { waitUntil: 'commit', timeout: TOPE }), ver('.lf-hilo'))
   await p.waitForTimeout(800)
-  await medir('ir a la terminal', tocar('.lf-abajo a[href="/luffy/terminal"]'), ver('[data-prueba="seccion-precio"] canvas'))
+  await medir('ir a la terminal', tocar('.lf-abajo a[href="/luffy/terminal"]'), ver('[data-prueba="grafico-precio2"] canvas'))
   const primera = (await p.locator('.lf-ficha__sym').innerText().catch(() => '')).split(/\s/)[0]
   await p.waitForTimeout(800)
   for (let i = 0; i < 3; i++) {

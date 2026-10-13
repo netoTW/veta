@@ -33,7 +33,12 @@ const FILTROS: [Filtro2, string][] = [['mis_posiciones', 'Mis posiciones'], ['ca
 const ORDENES: [Orden2, string][] = [['vs_btc_7d', 'Fuerza contra BTC (7 d)'], ['volumen_cambio', 'Cambio de volumen (7 d vs 30 d)'], ['oi_cambio', 'Cambio de interés abierto'], ['funding', 'Funding'], ['squeeze', 'Squeeze'], ['cap', 'Capitalización']]
 const RANGOS: [Rango2, string][] = [['30d', '30 D'], ['90d', '90 D'], ['6m', '6 M'], ['1y', '1 A'], ['max', 'MÁX']]
 const CAPAS: [Capa, string][] = [['posiciones', 'Posiciones'], ['gatillos', 'Gatillos'], ['catalizadores', 'Catalizadores'], ['radar', 'Radar'], ['liquidaciones', 'Liquidaciones']]
-const MODO: Record<string, string> = { impulso: 'impulso', squeeze: 'squeeze', pre_catalizador: 'pre-catalizador', ingresos_vs_precio: 'ingresos vs precio' }
+const MODO: Record<string, string> = { impulso: 'impulso', squeeze: 'squeeze', pre_catalizador: 'pre-catalizador', ingresos_vs_precio: 'ingresos vs precio', base_acumulacion: 'base de acumulación', rebote_fundamento: 'rebote por fundamento', legado: 'legado' }
+const modoLlano = (m: string) => MODO[m] ?? m.replace(/_/g, ' ')
+/* los escenarios de la oportunidad, con los nombres de la maqueta */
+const ESCENARIO: Record<string, string> = { mediana_categoria: 'Mediana de su categoría', top3_categoria: 'Top 3 de su categoría', maximo_propio: 'Su propio máximo', minimo_90d: 'Volver al mínimo de 90 d' }
+/* lo que llega como clave y se lee mejor en llano */
+const LLANO: Record<string, string> = { risk_on: 'apetito por riesgo', risk_off: 'aversión al riesgo', neutral: 'neutral', neutro: 'neutral' }
 const leer = <T,>(k: string, d: T): T => { try { const v = localStorage.getItem(k); return v ? (JSON.parse(v) as T) : d } catch { return d } }
 const guardar = (k: string, v: unknown) => { try { localStorage.setItem(k, JSON.stringify(v)) } catch { /* sin storage */ } }
 const signo = (v: number | null | undefined, dec = 1) => (v === null || v === undefined ? '—' : `${v > 0 ? '+' : v < 0 ? '−' : ''}${Math.abs(v).toFixed(dec).replace('.', ',')} %`)
@@ -41,7 +46,7 @@ const tonoDe = (v: number | null | undefined) => (v === null || v === undefined 
 
 /** Una cifra, formateada por su unidad; si falta, su motivo en el lugar del número. */
 function valorCifra(c: Cifra): string {
-  if (c.texto) return c.texto
+  if (c.texto) return LLANO[c.texto] ?? c.texto
   const v = c.valor
   if (v === null) return '—'
   const s = c.signo && v > 0 ? '+' : v < 0 ? '−' : ''
@@ -55,19 +60,33 @@ function valorCifra(c: Cifra): string {
     default: return `${s}${fmt(a)}`
   }
 }
+/* Binance cobra una tasa base (0,01 % cada 8 h, proporcional al intervalo) cuando no hay presión de
+   ningún lado: si casi todos los intervalos están ahí, se dice, para que la franja pareja no parezca un error. */
+function notaFunding(f: Ficha2): string {
+  const xs = f.movimiento.derivados?.funding ?? []
+  if (xs.length < 12) return ''
+  const h = xs[xs.length - 1].intervalo_h ?? 8, base = 0.01 * h / 8
+  const enBase = xs.filter((x) => Math.abs(x.v - base) < 1e-7).length
+  return enBase / xs.length >= 0.4 ? ` ${enBase} de ${xs.length} intervalos en la tasa base (${fmt(base)} % cada ${fmt(h)} h): sin presión de ningún lado.` : ''
+}
 const claseTono = (c: Cifra) => { const t = c.tono ?? (c.signo && c.valor !== null ? (c.valor > 0 ? 'pos' : c.valor < 0 ? 'neg' : null) : null); return t ? `is-${t}` : '' }
 
 function Cifras({ items, cab = false, oscura = false, prueba }: { items: Cifra[]; cab?: boolean; oscura?: boolean; prueba?: string }) {
   if (!items.length) return null
   return (
     <div className={`t2-cifras ${cab ? 't2-cifras--cab' : ''} ${oscura ? 't2-cifras--oscura' : ''}`} data-prueba={prueba}>
-      {items.map((c) => (
-        <div key={c.id} className={`t2-cifra ${c.valor === null && !c.texto ? 'is-falta' : ''}`} data-cifra={c.id}>
-          <span className="t2-cifra__l">{c.etiqueta}</span>
-          <span className={`t2-cifra__v t2m ${claseTono(c)}`}>{valorCifra(c)}</span>
-          {c.valor === null && !c.texto && c.motivo ? <span className="t2-cifra__n is-motivo">{c.motivo}</span> : c.nota ? <span className="t2-cifra__n">{c.nota}</span> : null}
-        </div>
-      ))}
+      {items.map((c, i) => {
+        const falta = c.valor === null && !c.texto
+        // el mismo motivo que la anterior no se repite (tres cifras de DefiLlama con el mismo error)
+        const igual = falta && i > 0 && items[i - 1].valor === null && !items[i - 1].texto && items[i - 1].motivo === c.motivo
+        return (
+          <div key={c.id} className={`t2-cifra ${falta ? 'is-falta' : ''}`} data-cifra={c.id}>
+            <span className="t2-cifra__l">{c.etiqueta}</span>
+            <span className={`t2-cifra__v t2m ${claseTono(c)}`}>{valorCifra(c)}</span>
+            {falta && c.motivo ? <span className="t2-cifra__n is-motivo" title={c.motivo}>{igual ? 'el mismo motivo' : c.motivo}</span> : c.nota ? <span className="t2-cifra__n">{c.nota}</span> : null}
+          </div>
+        )
+      })}
     </div>
   )
 }
@@ -81,6 +100,19 @@ function Seccion({ n, nombre, pregunta, lado, children, prueba }: { n: number; n
 }
 /** Lo que no hay, en su lugar y con el motivo. */
 const Falta = ({ motivo, alto }: { motivo: string; alto?: number }) => <div className="t2-falta" style={alto ? { minHeight: alto } : undefined}><span className="t2m">SIN DATOS</span><p>{motivo}</p></div>
+/** Lo de `no_disponibles` de una sección que no tiene un lugar propio en la pantalla, al pie de la sección. */
+const Resto = ({ items }: { items: { campo: string; motivo: string }[] }) => items.length ? <ul className="t2-resto" data-prueba="resto">{items.map((x) => <li key={x.campo}><span className="t2m">{x.campo.replace(/_/g, ' ')}</span> {x.motivo}</li>)}</ul> : null
+/** La calidad del mapa de liquidaciones, por lado y tal como llega. */
+function ChipCalidad({ l }: { l: NonNullable<Ficha2['movimiento']['liquidaciones']> }) {
+  const lados = (['cortos', 'largos'] as const).flatMap((k) => (l.lados[k] ? [[k, l.lados[k]!] as const] : []))
+  return (
+    <span className="t2-chip t2-chip--oro t2m t2-calidad" data-prueba="calidad-mapa" title={l.frase ?? undefined}>
+      <span>MAPA DE LIQUIDACIONES · ESTIMADO{l.calibrado ? '' : ' · SIN CALIBRAR'}</span>
+      {lados.length ? lados.map(([k, c]) => <span key={k} className={c.distingue ? 'is-mejor' : 'is-azar'} data-lado={k}>{k.toUpperCase()}: {c.texto.toUpperCase()}</span>)
+        : l.frase ? <span>{l.frase.toUpperCase()}</span> : l.vs_azar !== null ? <span>{fmt(l.vs_azar)}× MEJOR QUE EL AZAR</span> : null}
+    </span>
+  )
+}
 
 export function Terminal2() {
   const { activo } = useParams()
@@ -103,7 +135,7 @@ export function Terminal2() {
   const seleccion = (activo ?? ultima ?? filas?.[0]?.simbolo ?? '').toUpperCase().replace(/-USDT$/, '')
   useEffect(() => { if (seleccion) guardar('luffy.t2.ultima', seleccion) }, [seleccion])
   const indice = filas ? filas.findIndex((f) => f.simbolo === seleccion) : -1
-  const irA = useCallback((d: 1 | -1) => { if (!filas?.length) return; const i = indice < 0 ? 0 : Math.min(filas.length - 1, Math.max(0, indice + d)); nav(`/luffy/t2/${filas[i].simbolo}`) }, [filas, indice, nav])
+  const irA = useCallback((d: 1 | -1) => { if (!filas?.length) return; const i = indice < 0 ? 0 : Math.min(filas.length - 1, Math.max(0, indice + d)); nav(`/luffy/terminal/${filas[i].simbolo}`) }, [filas, indice, nav])
   useEffect(() => {
     const k = (e: KeyboardEvent) => { const t = e.target as HTMLElement; if (t && /INPUT|TEXTAREA|SELECT/.test(t.tagName)) return; if (e.key === 'ArrowDown') { e.preventDefault(); irA(1) } else if (e.key === 'ArrowUp') { e.preventDefault(); irA(-1) } }
     window.addEventListener('keydown', k); return () => window.removeEventListener('keydown', k)
@@ -126,10 +158,10 @@ export function Terminal2() {
         {errorLista && <p className="t2-error">{errorLista}</p>}
         <div className="t2-filas" role="listbox" aria-label="Monedas">
           {filas?.map((f) => (
-            <Link key={f.simbolo} to={`/luffy/t2/${f.simbolo}`} className={`t2-fila ${f.simbolo === seleccion ? 'is-activa' : ''} ${f.operable_bingx ? '' : 'no-opera'}`} role="option" aria-selected={f.simbolo === seleccion} data-prueba="moneda2" data-simbolo={f.simbolo}>
-              <span className="t2-fila__a"><span><b>{f.simbolo}</b> <em>{f.nombre}</em></span><span className="t2m">{fmtPrecio(f.precio)}</span></span>
+            <Link key={f.simbolo} to={`/luffy/terminal/${f.simbolo}`} className={`t2-fila ${f.simbolo === seleccion ? 'is-activa' : ''} ${f.operable_bingx ? '' : 'no-opera'}`} role="option" aria-selected={f.simbolo === seleccion} data-prueba="moneda2" data-simbolo={f.simbolo}>
+              <span className="t2-fila__a"><span><b>{f.simbolo}</b> {f.nombre && f.nombre.toUpperCase() !== f.simbolo ? <em>{f.nombre}</em> : null}</span><span className="t2m">{fmtPrecio(f.precio)}</span></span>
               <span className="t2-fila__b t2m">
-                <span className="t2-fila__chips">{[...f.posiciones.map((p) => (p.origen === 'caja' ? 'CAJA' : 'POSICIÓN')), ...f.modos.map((m) => (MODO[m] ?? m).toUpperCase()), ...(f.squeeze ? [f.squeeze === 'ignicion' ? 'SQUEEZE · IGNICIÓN' : 'SQUEEZE'] : []), ...(f.gatillos ? [`${f.gatillos} GATILLO${f.gatillos > 1 ? 'S' : ''}`] : []), ...(f.operable_bingx ? [] : ['NO SE OPERA EN BINGX'])].join(' · ')}</span>
+                <span className="t2-fila__chips">{[...f.posiciones.map((p) => (p.origen === 'caja' ? 'CAJA' : 'POSICIÓN')), ...f.modos.map((m) => modoLlano(m).toUpperCase()), ...(f.squeeze ? [f.squeeze === 'ignicion' ? 'SQUEEZE · IGNICIÓN' : 'SQUEEZE'] : []), ...(f.gatillos ? [`${f.gatillos} GATILLO${f.gatillos > 1 ? 'S' : ''}`] : []), ...(f.operable_bingx ? [] : ['NO SE OPERA EN BINGX'])].join(' · ')}</span>
                 <span className={tonoDe(f.vs_btc_7d_pct)}>vs BTC 7 d {signo(f.vs_btc_7d_pct)}</span>
               </span>
             </Link>
@@ -205,7 +237,13 @@ function Ficha({ activo, rango, setRango, fila, filas, abrirLista }: { activo: s
   const alLab = async (spec: Record<string, unknown> | null, titulo: string) => { if (!spec) return; setAbriendo(titulo); try { const s = await luffy.guardarSpec({ ...(spec as Spec), titulo }, titulo); nav(`/luffy/laboratorio/${s.spec_id}`) } catch (e) { setError(e instanceof Error ? e.message : String(e)) } finally { setAbriendo(null) } }
   const BotonLab = ({ spec, titulo, id }: { spec: Record<string, unknown> | null; titulo: string; id: string }) => spec ? <button type="button" className="t2-cap t2-cap--oro" onClick={() => alLab(spec, titulo)} disabled={abriendo === titulo} data-prueba={`lab2-${id}`}>{abriendo === titulo ? 'ABRIENDO…' : 'ABRIR EN EL LABORATORIO'}</button> : null
 
-  const falta = (donde: string) => ficha?.no_disponibles.find((n) => n.donde === donde)?.motivo ?? null
+  // cada motivo que se muestra en su lugar queda anotado; el resto de la sección va a su pie (Resto)
+  const puestos = new Set<string>()
+  const falta = (donde: string) => { puestos.add(donde); return ficha?.no_disponibles.find((n) => n.donde === donde)?.motivo ?? null }
+  const resto = (sec: string, cifras: Cifra[][] = []) => {
+    const ids = new Set(cifras.flat().map((c) => `${sec}.${c.id}`))
+    return (ficha?.no_disponibles ?? []).flatMap((n) => (n.donde.startsWith(`${sec}.`) && !puestos.has(n.donde) && !ids.has(n.donde) ? [{ campo: n.donde.slice(sec.length + 1), motivo: n.motivo }] : []))
+  }
   const precio = tic?.precio ?? ficha?.encabezado.precio ?? fila?.precio ?? null, cambio = tic?.cambio_pct ?? ficha?.encabezado.cambio_24h_pct ?? fila?.cambio_24h_pct ?? null
   const e = ficha?.encabezado
   const otras = filas.filter((x) => x.simbolo !== activo)
@@ -218,7 +256,7 @@ function Ficha({ activo, rango, setRango, fila, filas, abrirLista }: { activo: s
           <button type="button" className="t2-cap t2-cab__monedas" onClick={abrirLista}>MONEDAS</button>
           <div className="t2-cab__id">
             <h1>{activo}</h1>
-            <span className="t2-cab__nombre">{ficha?.nombre || fila?.nombre}{ficha?.descripcion ? ` · ${ficha.descripcion}` : ''}{ficha && !ficha.operable_bingx ? <em className="t2-noopera t2m"> · NO SE OPERA EN BINGX</em> : null}</span>
+            <span className="t2-cab__nombre">{[ficha?.nombre || fila?.nombre].filter((x) => x && x.toUpperCase() !== activo)}{ficha?.descripcion ? ` · ${ficha.descripcion}` : ''}{ficha && !ficha.operable_bingx ? <em className="t2-noopera t2m"> · NO SE OPERA EN BINGX</em> : null}</span>
             <span className={`t2-cab__precio t2m ${latido ? `is-${latido}` : ""}`}>{fmtPrecio(precio)}</span>
             <span className={`t2-cab__cambio t2m ${tonoDe(cambio)}`}>{signo(cambio)} 24 h</span>
             {conVivo && <span className={`t2-vivo t2m is-${enVivo.estado}`} data-prueba="en-vivo" title={enVivo.estado === 'vivo' ? `Precio al segundo, del websocket público de ${enVivo.bolsa === 'bingx' ? 'BingX' : 'Binance'}` : undefined}>{enVivo.estado === 'vivo' ? `EN VIVO · ${enVivo.bolsa === 'bingx' ? 'BINGX' : 'BINANCE'}` : enVivo.estado === 'conectando' ? 'CONECTANDO…' : enVivo.estado === 'pausado' ? 'EN PAUSA' : 'SIN PRECIO EN VIVO'}</span>}
@@ -227,7 +265,7 @@ function Ficha({ activo, rango, setRango, fila, filas, abrirLista }: { activo: s
           <div className="t2-cab__chips">
             {e?.posiciones.map((p, i) => <span key={i} className="t2-chip t2-chip--esm t2m">{p.origen === 'caja' ? 'CAJA' : 'PABLO'} · {p.estado.toUpperCase()}{p.precio_medio !== null ? ` A ${fmtPrecio(p.precio_medio)}` : ''}{p.pnl_usdt !== null ? ` · ${p.pnl_usdt >= 0 ? '+' : '−'}${fmt(Math.abs(p.pnl_usdt))} USDT` : ''}{p.simulado ? ' · SIMULADA' : ''}</span>)}
             {e && e.gatillos.length > 0 && <span className="t2-chip t2-chip--oro t2m">{e.gatillos.length} GATILLO{e.gatillos.length > 1 ? 'S' : ''}</span>}
-            {e?.modos.filter((m, i, xs) => !(m.estado === 'cumple' && xs.some((o, j) => j !== i && o.modo === m.modo))).map((m) => <span key={`${m.modo}${m.version}`} className="t2-chip t2-chip--oro t2m">RADAR · {(MODO[m.modo] ?? m.modo).toUpperCase()}{m.estado && m.estado !== 'cumple' ? ` ${m.estado.toUpperCase()}` : ''}</span>)}
+            {e?.modos.filter((m, i, xs) => !(m.estado === 'cumple' && xs.some((o, j) => j !== i && o.modo === m.modo))).map((m) => <span key={`${m.modo}${m.version}`} className="t2-chip t2-chip--oro t2m">RADAR · {modoLlano(m.modo).toUpperCase()}{m.estado && m.estado !== 'cumple' ? ` ${m.estado.toUpperCase()}` : ''}</span>)}
             {ficha?.pendiente && <span className="t2-chip t2m">CALCULANDO LA FICHA…</span>}
             {ficha?.viejo && ficha.calculado_en && <span className="t2-chip t2m" title="El servidor la está recalculando">DATOS DE LAS {fmtHora(ficha.calculado_en)}</span>}
             <button type="button" className="t2-preguntar t2m" onClick={preguntar} disabled={abriendo === 'luffy'} data-prueba="preguntar2">{abriendo === 'luffy' ? 'ABRIENDO…' : 'PREGUNTARLE A LUFFY'}</button>
@@ -255,25 +293,28 @@ function Ficha({ activo, rango, setRango, fila, filas, abrirLista }: { activo: s
         <Seguro t="Estadísticas">{() => (
           <Seccion n={1} nombre="Estadísticas" pregunta="Lo típico, en una mirada" prueba="sec-estadisticas">
             {falta('estadisticas') ? <Falta motivo={falta('estadisticas')!} /> : <Cifras items={ficha.estadisticas.cifras} />}
+            <Resto items={resto('estadisticas', [ficha.estadisticas.cifras])} />
           </Seccion>
         )}</Seguro>
 
         <Seguro t="Movimiento actual">{() => (
           <Seccion n={2} nombre="Movimiento actual" pregunta="¿Quién mueve el precio y dónde está la fuerza?" prueba="sec-movimiento"
-            lado={ficha.movimiento.liquidaciones ? <span className="t2-chip t2-chip--oro t2m" data-prueba="calidad-mapa">MAPA DE LIQUIDACIONES · ESTIMADO{ficha.movimiento.liquidaciones.calibrado ? ` · CALIBRADO${ficha.movimiento.liquidaciones.vs_azar !== null ? `: ${fmt(ficha.movimiento.liquidaciones.vs_azar)}× MEJOR QUE EL AZAR` : ''}` : ' · SIN CALIBRAR'}</span> : falta('movimiento.liquidaciones') ? <span className="t2-chip t2m">{falta('movimiento.liquidaciones')!.toUpperCase()}</span> : null}>
+            lado={ficha.movimiento.liquidaciones ? <ChipCalidad l={ficha.movimiento.liquidaciones} /> : falta('movimiento.liquidaciones') ? <span className="t2-chip t2m" data-prueba="calidad-mapa">SIN MAPA DE LIQUIDACIONES · {falta('movimiento.liquidaciones')!.toUpperCase()}</span> : null}>
             {ficha.movimiento.velas.length ? <>
               <Grafico2 prueba="grafico-precio2" alto={tel ? 300 : 360} sincronia={sincronia} deps={[ficha, cmp]} alVivo={(v) => { precioVivo.current = v; v?.capas?.(capas); if (v && tic) v.alPrecio?.(tic.precio) }}
                 construir={(el) => G.precio(el, ficha, { capas, comparar: cmp })}
                 leyendaExtra={<>{capas.has('radar') && ficha.movimiento.marcas.some((x) => x.tipo === 'radar') && <span className="t2-g__s"><i className="t2-g__rombo" />Marcas del radar, al pie</span>}{ficha.movimiento.perfil.poc !== null && <span className="t2-g__s"><i className="t2-g__m" style={{ background: 'rgba(201,162,75,0.5)' }} />Mayor volumen {fmtPrecio(ficha.movimiento.perfil.poc)}</span>}</>} />
-              <AlVerse alto={150} ya><Grafico2 prueba="grafico-flujo2" alto={tel ? 130 : 150} sincronia={sincronia} deps={[ficha]} construir={(el) => G.flujo(el, ficha)}
-                leyendaExtra={falta('movimiento.delta_futuros') ? <span className="t2-g__s is-falta">sin futuros: {falta('movimiento.delta_futuros')}</span> : null} /></AlVerse>
+              {ficha.movimiento.liquidaciones?.frase && capas.has('liquidaciones') && <p className="t2-nota t2-nota--mapa" data-prueba="frase-mapa">Mapa de liquidaciones: {ficha.movimiento.liquidaciones.frase}</p>}
+              {ficha.movimiento.delta_spot.length || ficha.movimiento.delta_futuros.length ? <AlVerse alto={150} ya><Grafico2 prueba="grafico-flujo2" alto={tel ? 130 : 150} sincronia={sincronia} deps={[ficha]} construir={(el) => G.flujo(el, ficha)}
+                leyendaExtra={<>{falta('movimiento.delta_spot') && <span className="t2-g__s is-falta">sin spot: {falta('movimiento.delta_spot')}</span>}{falta('movimiento.interes_abierto') && <span className="t2-g__s is-falta">sin interés abierto: {falta('movimiento.interes_abierto')}</span>}{falta('movimiento.delta_futuros') && <span className="t2-g__s is-falta">sin futuros: {falta('movimiento.delta_futuros')}</span>}</>} /></AlVerse>
+                : <Falta motivo={[falta('movimiento.delta_spot'), falta('movimiento.delta_futuros')].filter(Boolean).join(' · ') || 'sin delta del spot ni de los futuros'} alto={90} />}
             </> : <Falta motivo={falta('movimiento') ?? 'sin velas para esta moneda en el rango'} alto={300} />}
             <Cifras items={ficha.movimiento.cifras} prueba="cifras-mov" />
             <div className="t2-deriv">
               <button type="button" className="t2-cap t2-deriv__btn" aria-expanded={derivados} onClick={() => setDerivados((d) => !d)} data-prueba="ver-derivados">{derivados ? 'OCULTAR DERIVADOS EN DETALLE' : 'VER DERIVADOS EN DETALLE'}</button>
               {derivados && (ficha.movimiento.derivados ? <>
                 <div className="t2-deriv__grilla" data-prueba="derivados2">
-                  {([['interes', 'Dinero apalancado abierto', 'Interés abierto en USD, con su percentil de 30 días.', false], ['funding', 'Lo que pagan los apalancados', 'Funding por intervalo, positivo arriba y negativo abajo.', true], ['liquidaciones', 'Liquidaciones por lado', 'Largos y cortos liquidados por día, cada uno con su color.', false], ['largos_cortos', 'Largos contra cortos', 'Cuentas y posiciones, con la línea del 1 marcada.', false]] as [G.Derivado, string, string, boolean][]).map(([k, t, d, horas]) => (
+                  {([['interes', 'Dinero apalancado abierto', 'Interés abierto en USD, con su percentil de 30 días.', false], ['funding', 'Lo que pagan los apalancados', `Funding por intervalo, positivo arriba y negativo abajo.${notaFunding(ficha)}`, true], ['liquidaciones', 'Liquidaciones por lado', 'Largos y cortos liquidados por día, cada uno con su color.', false], ['largos_cortos', 'Largos contra cortos', 'Cuentas y posiciones, con la línea del 1 marcada.', false]] as [G.Derivado, string, string, boolean][]).map(([k, t, d, horas]) => (
                     <div key={k} className="t2-deriv__p"><span className="t2-deriv__t">{t}</span><span className="t2-deriv__d">{d}</span>
                       <Grafico2 prueba={`derivado-${k}`} alto={150} sincronia={sincronia} deps={[ficha]} horas={horas} construir={(el) => G.derivado(el, ficha, k)} /></div>
                   ))}
@@ -282,6 +323,7 @@ function Ficha({ activo, rango, setRango, fila, filas, abrirLista }: { activo: s
               </> : <Falta motivo={falta('movimiento.derivados') ?? 'sin datos de derivados para esta moneda'} />)}
             </div>
             {ficha.movimiento.lectura.length > 0 && <p className="t2-lectura" data-prueba="lectura2"><b>Lectura por código:</b> {ficha.movimiento.lectura.join(' ')}</p>}
+            <Resto items={resto('movimiento', [ficha.movimiento.cifras])} />
             <div className="t2-sec__pie"><BotonLab spec={ficha.movimiento.spec} titulo={`${activo}: movimiento actual`} id="movimiento" /></div>
           </Seccion>
         )}</Seguro>
@@ -293,7 +335,7 @@ function Ficha({ activo, rango, setRango, fila, filas, abrirLista }: { activo: s
                 {ficha.fundamento.semanas.length ? <AlVerse alto={230}><Grafico2 prueba="grafico-fundamento2" alto={tel ? 190 : 220} sincronia={sincronia} deps={[ficha]} construir={(el) => G.fundamento(el, ficha)} /></AlVerse>
                   : <Falta motivo={falta('fundamento') ?? falta('fundamento.semanas') ?? 'DefiLlama no tiene ingresos para esta moneda'} alto={200} />}
                 <Cifras items={ficha.fundamento.cifras} />
-                {ficha.fundamento.captura ? <div className="t2-captura"><span className="t2m">CÓMO CAPTURA VALOR EL TOKEN</span><p>Clasificación del motor: <b>{ficha.fundamento.captura.clase.toUpperCase()}</b>.{ficha.fundamento.captura.mecanismo ? ` Mecanismo: ${ficha.fundamento.captura.mecanismo}` : ''}{ficha.fundamento.captura.pct_al_token !== null ? `, con el ${fmt(ficha.fundamento.captura.pct_al_token)} % del revenue que llega al token` : ''}.{ficha.fundamento.captura.fuente ? <em className="t2m"> Fuente: {ficha.fundamento.captura.fuente}.</em> : null}</p></div>
+                {ficha.fundamento.captura ? <div className="t2-captura"><span className="t2m">CÓMO CAPTURA VALOR EL TOKEN</span><p>Clasificación del motor: <b>{ficha.fundamento.captura.clase.toUpperCase()}</b>.{ficha.fundamento.captura.mecanismo ? ` Mecanismo: ${ficha.fundamento.captura.mecanismo.replace(/\.\s*$/, '')}` : ''}{ficha.fundamento.captura.pct_al_token !== null ? `, con el ${fmt(ficha.fundamento.captura.pct_al_token)} % del revenue que llega al token` : ''}.{ficha.fundamento.captura.fuente ? <em className="t2m"> Fuente: {ficha.fundamento.captura.fuente}.</em> : null}</p></div>
                   : falta('fundamento.captura') ? <div className="t2-captura"><span className="t2m">CÓMO CAPTURA VALOR EL TOKEN</span><p className="is-motivo">{falta('fundamento.captura')}</p></div> : null}
               </div>
               <aside className="t2-proyecto" aria-label="Ficha del proyecto" data-prueba="proyecto2">
@@ -302,6 +344,7 @@ function Ficha({ activo, rango, setRango, fila, filas, abrirLista }: { activo: s
                   : <p className="t2-proyecto__nada">{falta('fundamento.proyecto') ?? 'El Investigador la compila una vez por semana sólo para posiciones, caja, vigilancia y candidatas: esta moneda no está en esas listas.'}</p>}
               </aside>
             </div>
+            <Resto items={resto('fundamento', [ficha.fundamento.cifras])} />
             <div className="t2-sec__pie"><BotonLab spec={ficha.fundamento.spec} titulo={`${activo}: fundamento`} id="fundamento" /></div>
           </Seccion>
         )}</Seguro>
@@ -320,6 +363,7 @@ function Ficha({ activo, rango, setRango, fila, filas, abrirLista }: { activo: s
               {ficha.redes.granjas.map((g) => <div key={g.nombre} className="t2-voz"><b>{g.nombre}</b><span className="t2m">granja</span><span className="t2m t2-tono t2-tono--shill">shill</span><p>{g.nota}</p></div>)}
               {!ficha.redes.quien_habla.length && !ficha.redes.granjas.length && <p className="t2-nada">{falta('redes.quien_habla') ?? 'Nadie la mencionó en las últimas 24 horas.'}</p>}
             </div>
+            <Resto items={resto('redes', [ficha.redes.cifras, ficha.redes.mercado])} />
             <div className="t2-sec__pie"><BotonLab spec={ficha.redes.spec} titulo={`${activo}: redes`} id="redes" /></div>
           </Seccion>
         )}</Seguro>
@@ -328,18 +372,20 @@ function Ficha({ activo, rango, setRango, fila, filas, abrirLista }: { activo: s
           <Seccion n={5} nombre="On-chain y wallets" pregunta="¿Quién tiene la moneda y qué está haciendo?" prueba="sec-onchain" lado={<span className="t2-sec__nota">Entidades: diccionario propio del motor (tipos al estilo Arkham){ficha.onchain.cadena ? ` · ${ficha.onchain.cadena}` : ''}.</span>}>
             {falta('onchain') ? <Falta motivo={falta('onchain')!} /> : <>
               <Cifras items={ficha.onchain.cifras} />
-              {ficha.onchain.flujo.length > 0 && <AlVerse alto={150}><Grafico2 prueba="grafico-cadena2" alto={tel ? 110 : 130} sincronia={sincronia} deps={[ficha]} construir={(el) => G.cadena(el, ficha)} leyendaExtra={<span className="t2-g__s">mismo eje de tiempo que arriba</span>} /></AlVerse>}
+              {ficha.onchain.flujo.length > 0 ? <AlVerse alto={150}><Grafico2 prueba="grafico-cadena2" alto={tel ? 110 : 130} sincronia={sincronia} deps={[ficha]} construir={(el) => G.cadena(el, ficha)} leyendaExtra={<span className="t2-g__s">mismo eje de tiempo que arriba</span>} /></AlVerse>
+                : falta('onchain.flujo') ? <Falta motivo={`Flujo con exchanges: ${falta('onchain.flujo')}`} /> : null}
               <div className="t2-dos">
                 <div className="t2-bloque t2-dos__a"><span className="t2-bloque__t t2m">MOVIMIENTOS GRANDES</span>
                   {ficha.onchain.movimientos.map((m, i) => <div key={i} className="t2-mov"><span className="t2m">{m.hora}</span><b>{m.entidad}</b><span className={`t2-lado--${m.lado}`}>{m.accion}</span><span className="t2m">{m.monto}</span></div>)}
-                  {!ficha.onchain.movimientos.length && <p className="t2-nada">Sin movimientos grandes en el rango.</p>}
+                  {!ficha.onchain.movimientos.length && (falta('onchain.movimientos') ? <p className="t2-nada is-motivo">{falta('onchain.movimientos')}</p> : falta('onchain.flujo') ? <p className="t2-nada is-motivo">Llegan con el flujo diario: {falta('onchain.flujo')}</p> : <p className="t2-nada">Sin movimientos grandes en el rango.</p>)}
                 </div>
                 <div className="t2-bloque"><span className="t2-bloque__t t2m">WALLETS QUE SIGUES</span>
                   {ficha.onchain.wallets.map((w) => <div key={w.nombre} className="t2-wal"><span>{w.nombre}</span><span className={`t2m t2-lado--${w.lado}`}>{w.que_hizo}</span></div>)}
-                  {!ficha.onchain.wallets.length && <p className="t2-nada">Ninguna de tus wallets tocó {activo}. Se agregan conversando con Luffy.</p>}
+                  {!ficha.onchain.wallets.length && (falta('onchain.wallets') ? <p className="t2-nada is-motivo">{falta('onchain.wallets')}</p> : <p className="t2-nada">Ninguna de tus wallets tocó {activo}. Se agregan conversando con Luffy.</p>)}
                   <span className="t2-nota">Sólo lectura: seguir wallets no opera nada.</span>
                 </div>
               </div>
+              <Resto items={resto('onchain', [ficha.onchain.cifras])} />
             </>}
           </Seccion>
         )}</Seguro>
@@ -348,14 +394,16 @@ function Ficha({ activo, rango, setRango, fila, filas, abrirLista }: { activo: s
           <Seccion n={6} nombre="Oportunidad" pregunta="¿Cuánto espacio hay?" prueba="sec-oportunidad" lado={<span className="t2-sec__nota">Escenarios, no pronósticos: «si llegara a valer lo que vale…».</span>}>
             {ficha.oportunidad.escenarios.length ? <div className="t2-tabla" data-prueba="escenarios2"><table>
               <thead><tr><th scope="col">Si llegara a valer lo que vale…</th><th scope="col">Capitalización</th><th scope="col">Múltiplo</th><th scope="col">Ajustado por dilución</th><th scope="col">Precio implícito</th></tr></thead>
-              <tbody>{ficha.oportunidad.escenarios.map((x) => { const c = x.multiplo === null ? '' : x.multiplo >= 1 ? 'is-pos' : 'is-neg'; return <tr key={x.ref}><th scope="row">{x.ref}</th><td className="t2m">{fmt(x.cap_usd)}</td><td className={`t2m ${c}`}>{x.multiplo === null ? '—' : `${fmt(x.multiplo)}×`}</td><td className={`t2m ${c}`}>{x.multiplo_fdv === null ? '—' : `${fmt(x.multiplo_fdv)}×`}</td><td className="t2m">{fmtPrecio(x.precio)}</td></tr> })}</tbody>
+              <tbody>{ficha.oportunidad.escenarios.map((x) => { const c = x.multiplo === null ? '' : x.multiplo >= 1 ? 'is-pos' : 'is-neg'; return <tr key={x.ref}><th scope="row">{ESCENARIO[x.ref] ?? x.ref.replace(/_/g, ' ')}</th><td className="t2m">{fmt(x.cap_usd)}</td><td className={`t2m ${c}`}>{x.multiplo === null ? '—' : `${fmt(x.multiplo)}×`}</td><td className={`t2m ${c}`}>{x.multiplo_fdv === null ? '—' : `${fmt(x.multiplo_fdv)}×`}</td><td className="t2m">{fmtPrecio(x.precio)}</td></tr> })}</tbody>
             </table></div> : <Falta motivo={falta('oportunidad.escenarios') ?? 'sin comparables de su categoría'} />}
             <div className="t2-dos">
               <div className="t2-dos__a"><Cifras items={ficha.oportunidad.cifras} /></div>
               <div className="t2-bloque" data-prueba="radar-llano"><span className="t2-bloque__t t2m">EL RADAR, EN LLANO</span>
-                {ficha.oportunidad.radar.map((r) => <div key={r.modo} className="t2-radar"><i className={r.cumple ? 'is-on' : ''} aria-hidden="true" /><p><b>{r.modo}{r.version ? ` (v${r.version})` : ''}:</b> {r.frase}</p></div>)}
+                {!ficha.oportunidad.radar.length && <p className="t2-nada">{falta('oportunidad.radar') ?? `El radar no evaluó ${activo} en sus modos.`}</p>}
+                {ficha.oportunidad.radar.map((r) => <div key={r.modo} className="t2-radar"><i className={r.cumple ? 'is-on' : ''} aria-hidden="true" /><p><b>{modoLlano(r.modo)}{r.version ? ` (v${r.version})` : ''}:</b> {r.frase}</p></div>)}
               </div>
             </div>
+            <Resto items={resto('oportunidad', [ficha.oportunidad.cifras])} />
           </Seccion>
         )}</Seguro>
         {ficha.calculado_en && <p className="t2-pie t2m">Calculado {fmtFecha(ficha.calculado_en, true)}{ficha.viejo ? ' · se está recalculando' : ''}</p>}

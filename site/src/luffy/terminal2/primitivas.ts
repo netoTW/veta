@@ -42,14 +42,21 @@ export class MapaLiq extends Base {
   private vista = new Vista('bottom', (ctx, w) => {
     if (!this.visible) return
     ctx.font = `500 10px ${FUENTE_MONO}`; ctx.textBaseline = 'bottom'
+    const rotulos: { y: number; n: NivelLiq }[] = []
     for (const { y1, y2, n } of this.ys) {
       const corto = n.lado === 'cortos', col = corto ? C.esm : C.rojo
       const top = Math.min(y1, y2), alto = Math.max(6, Math.abs(y2 - y1))
       ctx.fillStyle = rgba(col, 0.07 + 0.2 * n.intensidad); ctx.fillRect(0, top + Math.abs(y2 - y1) / 2 - alto / 2, w, alto)
-      if (n.densa || (n.intensidad >= 0.5 && !angosto(w))) {
-        const txt = angosto(w) ? `${corto ? 'CORTOS' : 'LARGOS'}${n.monto_usd ? ` ~${fmt(n.monto_usd)}` : ''}` : `LIQ. ${corto ? 'CORTOS' : 'LARGOS'}${n.densa ? ' · DENSA' : ''}${n.monto_usd ? ` · ~${fmt(n.monto_usd)}` : ''}`
-        ctx.fillStyle = corto ? C.esmLuz : C.rojoLuz; ctx.fillText(txt, 8, top + Math.abs(y2 - y1) / 2 - alto / 2 - 2)
-      }
+      if (n.densa || (n.intensidad >= 0.5 && !angosto(w))) rotulos.push({ y: top + Math.abs(y2 - y1) / 2 - alto / 2 - 2, n })
+    }
+    // con muchos niveles los rótulos se pisaban: van los más intensos primero y sólo si hay lugar
+    const puestos: number[] = [], tope = angosto(w) ? 4 : 7
+    for (const { y, n } of rotulos.sort((a, b) => b.n.intensidad - a.n.intensidad)) {
+      if (puestos.length >= tope || puestos.some((p) => Math.abs(p - y) < 14)) continue
+      puestos.push(y)
+      const corto = n.lado === 'cortos'
+      const txt = angosto(w) ? `${corto ? 'CORTOS' : 'LARGOS'}${n.monto_usd ? ` ~${fmt(n.monto_usd)} US$` : ''}` : `LIQ. ${corto ? 'CORTOS' : 'LARGOS'}${n.densa ? ' · DENSA' : ''}${n.monto_usd ? ` · ~${fmt(n.monto_usd)} US$` : ''}`
+      ctx.fillStyle = corto ? C.esmLuz : C.rojoLuz; ctx.fillText(txt, 8, y)
     }
   })
   constructor(niveles: NivelLiq[]) { super(); this.niveles = niveles }

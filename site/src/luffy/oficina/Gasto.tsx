@@ -25,7 +25,7 @@ export function GastoOficina() {
   const [abierta, setAbierta] = useState<{ tipo: 'origen' | 'agente'; p: Parte } | null>(null)
   useEffect(() => {
     let v = true; const ctl = new AbortController()
-    const traer = () => gastoApi.gasto(ctl.signal).then((x) => { if (v) { setG(x); setError(null) } }, (e) => { if (v && !(e instanceof DOMException)) setError(e instanceof ErrorLuffy6b && e.codigo === 'no_encontrado' ? 'El reparto por origen y por agente aparece en cuanto Mugiwara publique /oficina/gasto (CONTRATO v2.3). Mientras, el gasto está en Control → Gasto.' : e instanceof ErrorLuffy6b ? e.message : String(e)) })
+    const traer = () => gastoApi.gasto(ctl.signal).then((x) => { if (v) { setG(x); setError(null) } }, (e) => { if (v && !(e instanceof DOMException)) setError(e instanceof ErrorLuffy6b ? e.message : String(e)) })
     void traer()
     // la vitrina lo recalcula cada minuto
     const t = setInterval(traer, 60_000)
@@ -53,7 +53,7 @@ export function GastoOficina() {
 
       <Serie g={g} colores={colores} />
       <p className="lf-ctrl__nota mono lf-gof__pie">{g.nota ? `${g.nota} · ` : ''}<Link to="/luffy/control?ver=gasto">el detalle, en Control → Gasto</Link></p>
-      {abierta && <HojaLlamadas periodo={periodo} tipo={abierta.tipo} parte={abierta.p} cerrar={() => setAbierta(null)} />}
+      {abierta && <HojaLlamadas periodo={periodo} desde={t.desde} origenes={g.origenes} tipo={abierta.tipo} parte={abierta.p} cerrar={() => setAbierta(null)} />}
     </section>
   )
 }
@@ -124,14 +124,15 @@ function Serie({ g, colores }: { g: Gasto; colores: Map<string, string> }) {
   )
 }
 
-function HojaLlamadas({ periodo, tipo, parte, cerrar }: { periodo: Periodo; tipo: 'origen' | 'agente'; parte: Parte; cerrar: () => void }) {
+function HojaLlamadas({ periodo, desde, origenes, tipo, parte, cerrar }: { periodo: Periodo; desde: string | null; origenes: Record<string, string>; tipo: 'origen' | 'agente'; parte: Parte; cerrar: () => void }) {
   const [xs, setXs] = useState<Llamada[] | null>(null)
+  const [mas, setMas] = useState(false)
   const [error, setError] = useState<string | null>(null)
   useEffect(() => {
     const ctl = new AbortController()
-    gastoApi.llamadas(periodo, tipo === 'origen' ? { origen: parte.clave } : { agente: parte.clave }, ctl.signal).then(setXs, (e) => { if (!(e instanceof DOMException)) setError(e instanceof ErrorLuffy6b ? e.message : String(e)) })
+    gastoApi.llamadas(periodo, { ...(tipo === 'origen' ? { origen: parte.clave } : { agente: parte.clave }), desde }, ctl.signal).then((r) => { setXs(r.items); setMas(r.mas) }, (e) => { if (!(e instanceof DOMException)) setError(e instanceof ErrorLuffy6b ? e.message : String(e)) })
     return () => ctl.abort()
-  }, [periodo, tipo, parte.clave])
+  }, [periodo, desde, tipo, parte.clave])
   const nombre = PERIODOS.find(([k]) => k === periodo)?.[1].toLowerCase()
   return (
     <Hoja titulo={parte.etiqueta} sub={<>{tipo === 'origen' ? 'Origen' : 'Agente'} · {nombre} · {usd(parte.costo_usd)}{parte.llamadas !== null ? ` en ${parte.llamadas.toLocaleString('es-ES')} llamadas` : ''}</>} cerrar={cerrar} prueba="hoja-llamadas">
@@ -143,12 +144,13 @@ function HojaLlamadas({ periodo, tipo, parte, cerrar }: { periodo: Periodo; tipo
           <li key={i} className="lf-linea__r">
             <span className="lf-linea__h mono">{fmtHora(l.hora)}</span>
             <div className="lf-linea__c">
-              <p>{tipo === 'origen' ? (NOMBRE[l.agente as IdAgente] ?? l.agente.replace(/_/g, ' ')) : l.origen.replace(/_/g, ' ')}{l.tipo_turno ? ` · ${l.tipo_turno.replace(/_/g, ' ')}` : ''} · <b className="mono">{fmtUsd(l.costo_usd, l.costo_usd < 0.01 ? 4 : 3)}</b>{l.inferido ? <em className="mono"> · origen inferido</em> : null}</p>
-              <p className="lf-linea__m mono">{[l.modelo, l.tokens ? [l.tokens.entrada !== null ? `${l.tokens.entrada.toLocaleString('es-ES')} entrada` : null, l.tokens.cache !== null ? `${l.tokens.cache.toLocaleString('es-ES')} caché` : null, l.tokens.salida !== null ? `${l.tokens.salida.toLocaleString('es-ES')} salida` : null].filter(Boolean).join(' · ') : null].filter(Boolean).join(' · ')}{l.hilo_id && <> · <Link to={`/luffy/h/${l.hilo_id}`}>el hilo</Link></>}</p>
+              <p>{tipo === 'origen' ? (NOMBRE[l.agente as IdAgente] ?? l.agente_etiqueta ?? l.agente.replace(/_/g, ' ')) : (origenes[l.origen] ?? l.origen.replace(/_/g, ' '))}{l.tipo_turno ? ` · ${l.tipo_turno.replace(/_/g, ' ')}` : ''}{' · '}<b className="mono">{fmtUsd(l.costo_usd, l.costo_usd < 0.01 ? 4 : 3)}</b>{l.inferido ? <em className="mono"> · origen inferido</em> : null}</p>
+              <p className="lf-linea__m mono">{[l.modelo, l.tokens ? [l.tokens.entrada !== null ? `${l.tokens.entrada.toLocaleString('es-ES')} entrada` : null, l.tokens.cache !== null ? `${l.tokens.cache.toLocaleString('es-ES')} caché` : null, l.tokens.salida !== null ? `${l.tokens.salida.toLocaleString('es-ES')} salida` : null].filter(Boolean).join(' · ') : null].filter(Boolean).join(' · ')}{l.hilo_id && <> · <Link to={`/luffy/h/${l.hilo_id}`}>{l.hilo_titulo ? `«${l.hilo_titulo}»` : 'el hilo'}</Link></>}</p>
             </div>
           </li>
         ))}
       </ol>
+      {mas && <p className="lf-hojaof__nota mono">Son las 60 más recientes del período.</p>}
     </Hoja>
   )
 }

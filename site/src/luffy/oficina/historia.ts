@@ -108,7 +108,7 @@ const deMonedas = (e: Ev) => { const m = monedasDe(e); return m.length ? ` de ${
 export const pasoDe = (e: Ev & { nombre?: string }) => (typeof e.paso === 'string' && e.paso ? e.paso : `${pasoLlano(e.nombre ?? '')}${deMonedas(e)}`)
 
 export const NOMBRE_FUENTE: Record<string, string> = {
-  x: 'X', telegram_fuente: 'Telegram', telegram: 'Telegram', binance: 'Binance', upbit: 'Upbit', bithumb: 'Bithumb', coinbase: 'Coinbase', snapshot: 'Snapshot',
+  x: 'X', telegram_fuente: 'Telegram', telegram_grupos: 'Telegram (grupos)', telegram: 'Telegram', binance: 'Binance', upbit: 'Upbit', bithumb: 'Bithumb', coinbase: 'Coinbase', snapshot: 'Snapshot',
   tally: 'Tally', binance_futures: 'Binance Futures', coinalyze: 'Coinalyze', defillama: 'DefiLlama', bingx: 'BingX', motor_veta: 'Motor VETA', web: 'la web', helius: 'Helius', blockscout: 'Blockscout',
 }
 export const fuenteLlana = (f: string) => NOMBRE_FUENTE[f] ?? f.replace(/_/g, ' ')

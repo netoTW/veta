@@ -105,7 +105,7 @@ console.log('\nAPP · Pablo: instalable, con service worker y sin conexión')
   // la pantalla sin conexión se recarga sola al volver la red: se deja terminar antes de seguir
   await espera(2500)
   // la terminal a 390 px, como se ve abierta desde el ícono
-  await p.goto(`${BASE}/luffy/terminal/WAL`, { waitUntil: 'networkidle' }); await p.waitForSelector('[data-prueba="seccion-precio"] canvas', { timeout: 40000 }).catch(() => {}); await espera(800)
+  await p.goto(`${BASE}/luffy/terminal/WAL`, { waitUntil: 'networkidle' }); await p.waitForSelector('[data-prueba="grafico-precio2"] canvas', { timeout: 40000 }).catch(() => {}); await espera(800)
   if (OUT) await p.screenshot({ path: `${OUT}/como-app-390.png` })
   await ctx.close()
 }

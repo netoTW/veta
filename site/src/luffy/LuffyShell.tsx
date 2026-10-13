@@ -92,7 +92,7 @@ export function LuffyShell() {
       <main className="lf-main">
         <Suspense fallback={null}>
           {/* la terminal no se desmonta al cambiar de moneda (la lista, la sincronía y lo pedido siguen); el resto se reinicia por ruta */}
-          <LimiteDeError key={p.startsWith('/luffy/terminal') ? '/luffy/terminal' : p.startsWith('/luffy/t2') ? '/luffy/t2' : p.startsWith('/luffy/informes') ? '/luffy/informes' : p} donde="luffy"><Outlet /></LimiteDeError>
+          <LimiteDeError key={p.startsWith('/luffy/terminal1') ? '/luffy/terminal1' : p.startsWith('/luffy/terminal') ? '/luffy/terminal' : p.startsWith('/luffy/informes') ? '/luffy/informes' : p} donde="luffy"><Outlet /></LimiteDeError>
         </Suspense>
       </main>
       {/* barra inferior del teléfono */}

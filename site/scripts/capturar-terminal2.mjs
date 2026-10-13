@@ -16,7 +16,7 @@ for (const [nombre, ancho, alto, movil] of [['1440', 1440, 1000, false], ['390',
     await p.goto(`${BASE}/luffy/t2/${sym}`, { waitUntil: 'domcontentloaded' })
     await p.waitForSelector('[data-prueba="grafico-precio2"] canvas, [data-prueba="sec-movimiento"] .t2-falta', { timeout: 30000 })
     // bajar despacio para que carguen los gráficos de abajo
-    for (let y = 0; y < 12; y++) { await p.mouse.wheel(0, 900); await espera(250) }
+    for (let y = 0; y < 12; y++) { await p.evaluate(() => window.scrollBy(0, 900)); await espera(250) }
     await p.evaluate(() => window.scrollTo(0, 0)); await espera(600)
     await p.screenshot({ path: `${OUT}/${sym}-${nombre}.png`, fullPage: true })
     if (sym === MONEDAS[0]) {

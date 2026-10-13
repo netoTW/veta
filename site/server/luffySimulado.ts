@@ -1097,7 +1097,33 @@ const HISTORIA_OFI: Record<string, unknown>[] = (() => {
   }
   return out
 })()
-luffySimulado.get('/eventos/recientes', (c) => { const desde = Number(c.req.query('desde_id') ?? 0) || 0, limite = Math.min(1000, Number(c.req.query('limite') ?? 200) || 200); const items = HISTORIA_OFI.filter((e) => (e.id as number) > desde).slice(0, limite); return c.json({ items, ultimo_id: items.length ? items[items.length - 1].id : desde, consultado_en: ahora(), fuente: 'eventos' }) })
+/* Telegram como fuente (v2.4): los grupos, la medición y los hechos que se extrajeron */
+const hTg = (min: number) => new Date(Date.now() - min * 60_000).toISOString()
+const HECHOS_TG = [
+  { id: 900001, tipo: 'fuente_leida', hora: hTg(140), proceso: 'cli', fuente: 'telegram_grupos', texto: 'Telegram Hypercall Trollbox: La propuesta de recompra de SYN no alcanzó quórum; se vuelve a votar', activo: 'SYN', activos: ['SYN'], hechos: 2 },
+  { id: 900002, tipo: 'fuente_leida', hora: hTg(170), proceso: 'cli', fuente: 'telegram_grupos', texto: 'Telegram Hypercall Trollbox: El equipo confirma que las recompras todavía no se votaron oficialmente', activo: 'SYN', activos: ['SYN'], hechos: 1 },
+  { id: 900003, tipo: 'fuente_leida', hora: hTg(175), proceso: 'cli', fuente: 'telegram_grupos', texto: 'Telegram: visto Hypercall Trollbox (seguido)', accion: 'visto', estado: 'seguido', grupo: 'hypercall_trollbox' },
+]
+luffySimulado.get('/fuentes/telegram', (c) => {
+  const dias = Array.from({ length: 8 }, (_, k) => { const d = new Date(Date.now() - (7 - k) * 86_400_000 - 3 * 3600_000).toISOString().slice(0, 10), llegan = [63, 45, 131, 64, 10, 46, 24, 18][k], pasan = Math.round(llegan * 0.17); return { dia: d, llegan, pasan, hechos: k === 7 ? 3 : 0, catalizadores: k === 7 ? 2 : 0, llamadas: k === 7 ? 1 : 0, costo_usd: k === 7 ? 0.006 : 0 } })
+  const tot = (k: 'llegan' | 'pasan' | 'hechos' | 'catalizadores' | 'llamadas' | 'costo_usd') => dias.reduce((a, d) => a + d[k], 0)
+  return c.json({
+    activa: true, motivo: null,
+    grupos: [
+      { chat_id: 1234567890, username: 'hypercall_trollbox', titulo: 'Hypercall Trollbox', tipo: 'grupo', activo: 'SYN', estado: 'seguido', quien: 'pablo_manual', motivo: 'Pablo unió la cuenta a mano (grupo de Hypercall, producto de Synapse/SYN)', enlace: 'https://t.me/hypercall_trollbox', participantes: 527, unido_en: null, agregado_en: hTg(60 * 26), dejado_en: null, ultima_lectura: hTg(12), n_admins: 6 },
+      { chat_id: 1457329518, username: null, titulo: 'CRYPTO SIGNALS', tipo: 'grupo', activo: null, estado: 'no_elegido', quien: 'sistema', motivo: 'apareció en la cuenta; Pablo no lo eligió', enlace: null, participantes: 3306, unido_en: null, agregado_en: hTg(60 * 26), dejado_en: null, ultima_lectura: null, n_admins: 0 },
+      { chat_id: 1674034689, username: null, titulo: 'Grupo de trabajo', tipo: 'grupo', activo: null, estado: 'no_elegido', quien: 'sistema', motivo: 'apareció en la cuenta; Pablo no lo eligió', enlace: null, participantes: 0, unido_en: null, agregado_en: hTg(60 * 26), dejado_en: null, ultima_lectura: null, n_admins: 0 },
+    ],
+    medicion: { dias, total: { llegan: tot('llegan'), pasan: tot('pasan'), hechos: tot('hechos'), catalizadores: tot('catalizadores'), llamadas: tot('llamadas'), costo_usd: tot('costo_usd') }, pasa_pct: Math.round((tot('pasan') / tot('llegan')) * 1000) / 10, consultado_en: ahora(), fuente: 'simulador' },
+    ultimo_ciclo: hTg(12), detenido: false,
+    resumen_ultimo_ciclo: { leidos: 12, nuevos: 12, pasan: 2, canales: 1, por_motivo: { saludo: 4, corto: 3, conversacion: 3, equipo: 1, tema: 1 }, extraccion: { mensajes: 2, llamadas: 1, hechos: 1, a_agenda: 1, costo_usd: 0.004 } },
+    consultado_en: ahora(), fuente: 'simulador', vitrina: { calculado_en: ahora(), edad_s: 5, cada_s: 60, estado: 'fresco', duracion_ms: 30, error: null },
+  })
+})
+luffySimulado.get('/eventos/recientes', (c) => { const desde = Number(c.req.query('desde_id') ?? 0) || 0, limite = Math.min(1000, Number(c.req.query('limite') ?? 200) || 200); const tipos = c.req.query('tipos')?.split(',').filter(Boolean)
+  // con `tipos` (v2.3), los más nuevos de esos tipos
+  if (tipos?.length) { const xs = [...HISTORIA_OFI, ...HECHOS_TG].filter((e) => tipos.includes(e.tipo as string)).sort((a, b) => String(b.hora).localeCompare(String(a.hora))).slice(0, limite); return c.json({ items: xs, ultimo_id: null, consultado_en: ahora(), fuente: 'eventos' }) }
+  const items = HISTORIA_OFI.filter((e) => (e.id as number) > desde).slice(0, limite); return c.json({ items, ultimo_id: items.length ? items[items.length - 1].id : desde, consultado_en: ahora(), fuente: 'eventos' }) })
 
 /* ---------- 8.6 informes ---------- */
 luffySimulado.get('/informes', (c) => { const lim = Number(c.req.query('limite') ?? 30) || 30; return c.json({ items: INFORMES_SIM.slice(0, lim), siguiente: null }) })

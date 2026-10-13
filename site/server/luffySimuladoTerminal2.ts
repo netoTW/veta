@@ -82,7 +82,8 @@ function ficha(m: Moneda, rango: string) {
   const liq = m.perp ? {
     niveles: [[1.045, 'cortos', 1, 4.1e6], [1.083, 'cortos', 0.55, 1.8e6], [1.14, 'cortos', 0.3, 0.6e6], [0.94, 'largos', 0.9, 3.2e6], [0.9, 'largos', 0.5, 1.2e6], [0.855, 'largos', 0.3, 0.5e6]]
       .map(([k, lado, i, monto]) => ({ precio: prec(ult * (k as number)), desde: prec(ult * (k as number) * 0.994), hasta: prec(ult * (k as number) * 1.006), lado, intensidad: i, monto_usd: Math.round((monto as number) * (m.cap / 58e6) ** 0.5), densa: (i as number) >= 0.9 })),
-    calidad: { calibrado: true, datos: 'liquidaciones de Binance y Bybit de 90 días contra el nivel estimado', vs_azar: m.simbolo === 'WAL' ? 1.9 : r2(1.2 + r() * 0.9, 1) },
+    // como la del contrato v2.5: un solo cociente y la frase llana por lado (los largos, hoy, no se distinguen del azar)
+    calidad: { calibrado: true, datos: 'resto', vs_azar: m.simbolo === 'WAL' ? 1.35 : r2(1.2 + r() * 0.3, 2), frase: `estimación medida contra liquidaciones reales hasta el ${new Date(Date.now() - 86_400_000).toISOString().slice(0, 10)} (resto). En días que no se usaron para ajustar: los largos, no se distingue del azar (1,01; entre 0,91 y 1,13); los cortos, ${m.simbolo === 'WAL' ? '1,35' : '1,2'} veces mejor que el azar (entre 1,17 y 1,54)` },
   } : null
   // marcas y niveles de las capas
   const marcas: Record<string, unknown>[] = []

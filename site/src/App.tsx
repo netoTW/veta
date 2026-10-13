@@ -1,5 +1,5 @@
 import { Suspense } from 'react'
-import { BrowserRouter, Routes, Route, Outlet, useLocation } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Outlet, Navigate, useLocation, useParams } from 'react-router-dom'
 import { Nav } from './components/Nav'
 import { Footer } from './components/Footer'
 import { useLenis, useReveals } from './lib/motion'
@@ -58,7 +58,9 @@ const LuffyChat = lazy(() => import('./luffy/Chat').then((m) => ({ default: m.Ch
 const LuffyLaboratorio = lazy(() => import('./luffy/Laboratorio').then((m) => ({ default: m.Laboratorio })))
 const LuffyTableros = lazy(() => import('./luffy/Tableros').then((m) => ({ default: m.Tableros })))
 const LuffyTerminal = lazy(() => import('./luffy/Terminal').then((m) => ({ default: m.Terminal })))
-// el terminal v2, en construcción: sin enlace en el menú hasta conectarlo con datos reales (ESTADO-WEB.md)
+// el terminal v2 (CONTRATO-PANEL §8.8) es «Terminal» desde el 13-oct; el de antes queda un tiempo en /luffy/terminal1
+/* la dirección provisoria del v2 lleva a la de siempre */
+function HaciaTerminal() { const { activo } = useParams(); return <Navigate to={`/luffy/terminal${activo ? `/${activo}` : ''}`} replace /> }
 const LuffyTerminal2 = lazy(() => import('./luffy/terminal2/Terminal2').then((m) => ({ default: m.Terminal2 })))
 const LuffyCartera = lazy(() => import('./luffy/Cartera').then((m) => ({ default: m.Cartera })))
 const LuffyRadar = lazy(() => import('./luffy/Radar').then((m) => ({ default: m.Radar })))
@@ -119,8 +121,9 @@ export default function App() {
             <Route path="laboratorio/:specId" element={<LuffyLaboratorio />} />
             <Route path="tableros" element={<LuffyTableros />} />
             {/* una sola ruta con la moneda opcional: pasar de /terminal a /terminal/WAL no remonta la terminal */}
-            <Route path="terminal/:activo?" element={<LuffyTerminal />} />
-            <Route path="t2/:activo?" element={<LuffyTerminal2 />} />
+            <Route path="terminal/:activo?" element={<LuffyTerminal2 />} />
+            <Route path="terminal1/:activo?" element={<LuffyTerminal />} />
+            <Route path="t2/:activo?" element={<HaciaTerminal />} />
             <Route path="cartera" element={<LuffyCartera />} />
             <Route path="radar" element={<LuffyRadar />} />
             <Route path="control" element={<LuffyControl />} />

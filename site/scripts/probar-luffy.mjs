@@ -52,7 +52,7 @@ const errores = []
 async function contexto(movil) {
   const ctx = await b.newContext(movil ? { ...devices['iPhone 14'], viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, locale: 'es-ES' } : { viewport: { width: 1440, height: 900 }, locale: 'es-ES' })
   const p = await ctx.newPage()
-  p.on('pageerror', (e) => errores.push(`PAGEERROR ${String(e.message).slice(0, 160)}`))
+  p.on('pageerror', (e) => errores.push(`PAGEERROR ${String(e.message).slice(0, 160)} @ ${p.url().replace(/^https?:\/\/[^/]+/, '')} ${String(e.stack ?? '').split('\n').slice(1, 4).join(' ').slice(0, 300)}`))
   p.on('console', (m) => { if (m.type() === 'error' && !/favicon|404 \(Not Found\)/.test(m.text())) errores.push(m.text().slice(0, 160)) })
   return { ctx, p }
 }
@@ -161,20 +161,20 @@ console.log('\nLUFFY · admin, escritorio')
 
 /* ---------- 6b: terminal (también real, sólo lectura); stop y declarar sólo en el simulador ---------- */
 {
-  console.log('\nLUFFY · 6b · terminal: WAL, teclado y derivados al laboratorio')
+  console.log('\nLUFFY · 6b · terminal anterior (/luffy/terminal1): WAL, teclado y derivados al laboratorio')
   const { ctx, p } = await contexto(false)
   await entrar(ctx, env.VETA_ADMIN_EMAIL, env.VETA_ADMIN_PASSWORD)
-  await ir(p, `${BASE}/luffy/terminal/WAL`)
+  await ir(p, `${BASE}/luffy/terminal1/WAL`)
   await p.waitForSelector('[data-prueba="seccion-precio"] canvas', { timeout: 40000 })
   ok((await p.locator('.lf-ficha__sym').innerText()).startsWith('WAL'), 'la ficha de WAL abre con sus gráficos')
   ok((await p.locator('.lf-ficha__graficos canvas').count()) >= 3, `secciones dibujadas: ${await p.locator('.lf-ficha__graficos canvas').count()} lienzos`)
   await foto(p, '10-terminal-wal', true)
-  await p.keyboard.press('ArrowDown'); await p.waitForURL((u) => /\/luffy\/terminal\/[A-Z0-9]+$/.test(u.pathname) && !u.pathname.endsWith('/WAL'), { timeout: 10000 })
+  await p.keyboard.press('ArrowDown'); await p.waitForURL((u) => /\/luffy\/terminal1\/[A-Z0-9]+$/.test(u.pathname) && !u.pathname.endsWith('/WAL'), { timeout: 10000 })
   const otra = p.url().split('/').pop()
   await p.waitForFunction((s) => (document.querySelector('.lf-ficha__sym')?.textContent ?? '').startsWith(s), otra, { timeout: 15000 })
   await p.waitForSelector('[data-prueba="seccion-precio"] canvas', { timeout: 40000 })
   ok(true, `↓ cambia de moneda sin recargar (${otra})`)
-  await p.keyboard.press('ArrowUp'); await p.waitForURL(/\/luffy\/terminal\/WAL$/, { timeout: 10000 })
+  await p.keyboard.press('ArrowUp'); await p.waitForURL(/\/luffy\/terminal1\/WAL$/, { timeout: 10000 })
   await p.waitForSelector('[data-prueba="seccion-precio"] canvas', { timeout: 40000 })
   // el stop se arrastra en el gráfico y genera una propuesta, que se cancela (con datos reales no se escribe)
   if (SIM) {
@@ -256,6 +256,14 @@ if (SIM) {
   const llamadas = await p.waitForSelector('[data-prueba="hoja-llamadas"] [data-prueba="llamadas"] li', { timeout: 10000 }).then(() => true, () => false)
   ok(llamadas, 'tocar un origen abre sus llamadas')
   await p.keyboard.press('Escape')
+  // Telegram como fuente (v2.4): los grupos que se leen, los que no, la medición y lo último que se extrajo
+  await p.locator('[data-prueba="telegram-oficina"]').scrollIntoViewIfNeeded()
+  const tg = await p.waitForSelector('[data-prueba="telegram-grupo"]', { timeout: 15000 }).then(() => true, () => false)
+  ok(tg && /Hypercall Trollbox/.test(await p.locator('[data-prueba="telegram-grupos"]').innerText()), 'Telegram: el grupo que eligió Pablo, con su estado')
+  await p.locator('.lf-tgo__otros').click()
+  ok((await p.locator('[data-prueba="telegram-otros"] li').count()) === 2, 'Telegram: los que están en la cuenta sin elegir, aparte')
+  ok((await p.locator('[data-prueba="telegram-medicion"] .lf-tgo__dia').count()) === 8, 'Telegram: la medición de los días')
+  ok(/quórum/.test(await p.locator('[data-prueba="telegram-hechos"]').innerText()) && !/visto Hypercall/.test(await p.locator('[data-prueba="telegram-hechos"]').innerText()), 'Telegram: lo último que se extrajo (los hechos, no los cambios de la lista)')
   await p.locator('[data-prueba="objeto-servidor"] polygon').first().click({ force: true })
   const salud = await p.waitForSelector('[data-prueba="hoja-fuentes"] [data-prueba^="salud-"]', { timeout: 10000 }).then(() => true, () => false)
   ok(salud, 'tocar una fuente muestra su salud de las últimas horas')
@@ -283,7 +291,7 @@ if (SIM) {
     f.catalizadores = 'no es una lista'
     await r.fulfill({ response: res, json: f })
   })
-  await ir(p, `${BASE}/luffy/terminal/WAL`)
+  await ir(p, `${BASE}/luffy/terminal1/WAL`)
   await p.waitForSelector('[data-prueba="seccion-precio"] canvas', { timeout: 40000 })
   await espera(800)
   ok(!(await p.locator('text=Esta pantalla no se pudo dibujar').count()), 'la ficha no se cae entera con datos raros')
@@ -298,7 +306,7 @@ console.log('\nLUFFY · admin, teléfono (390 px)')
 {
   const { ctx, p } = await contexto(true)
   await entrar(ctx, env.VETA_ADMIN_EMAIL, env.VETA_ADMIN_PASSWORD)
-  const rutas = [['m01-chat', hiloStonk ? `/luffy/h/${hiloStonk}` : '/luffy'], ['m03-lab', specStonk ? `/luffy/laboratorio/${specStonk}` : '/luffy/laboratorio'], ['m05-tableros', '/luffy/tableros'], ['m06-terminal', '/luffy/terminal/WAL'], ['m07-cartera', '/luffy/cartera'], ['m08-radar', '/luffy/radar'], ['m09-control', '/luffy/control'], ['m10-oficina', '/luffy/oficina'], ['m11-informes', '/luffy/informes']]
+  const rutas = [['m01-chat', hiloStonk ? `/luffy/h/${hiloStonk}` : '/luffy'], ['m03-lab', specStonk ? `/luffy/laboratorio/${specStonk}` : '/luffy/laboratorio'], ['m05-tableros', '/luffy/tableros'], ['m06-terminal', '/luffy/terminal1/WAL'], ['m07-cartera', '/luffy/cartera'], ['m08-radar', '/luffy/radar'], ['m09-control', '/luffy/control'], ['m10-oficina', '/luffy/oficina'], ['m11-informes', '/luffy/informes']]
   for (const [nombre, r] of rutas) {
     await ir(p, `${BASE}${r}`)
     await p.waitForSelector('.lf-g canvas, .lf-hilo, [data-prueba="tablero"], [data-prueba="posicion"], [data-prueba="candidata"], [data-prueba="gatillo"], .lf-ev, .lf-inf__sec', { timeout: 30000 }).catch(() => {})

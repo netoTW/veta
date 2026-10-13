@@ -1,17 +1,14 @@
 /* ============================================================================
-   Terminal v2 · lo único que depende del contrato de Mugiwara.
-
-   Mugiwara todavía no publicó la sección del terminal v2 en CONTRATO-PANEL.md.
-   Mientras tanto, la forma de aquí es la provisional, armada con
-   PROMPT-TERMINAL-v2-mugiwara.md, y es la que manda el simulador
-   (server/luffySimuladoTerminal2.ts). Cuando llegue el contrato real, se ajustan
-   las RUTAS, los tipos `Crudo*` y `adaptar*`: la pantalla lee el modelo (`Ficha2`,
-   `Fila2`), que no cambia.
+   Terminal v2 · lo único que depende del contrato de Mugiwara (CONTRATO-PANEL §8.8,
+   v2.5: `GET /terminal/v2/lista` y `GET /terminal/v2/{activo}`). Mugiwara adoptó la
+   forma que se había armado aquí con PROMPT-TERMINAL-v2-mugiwara.md; el simulador
+   (server/luffySimuladoTerminal2.ts) manda la misma y queda para las pruebas.
+   La pantalla lee el modelo (`Ficha2`, `Fila2`): si el contrato cambia, se ajustan
+   las RUTAS y `adaptar*`, nada más.
 
    El adaptador es tolerante: un campo que falta queda vacío (nunca un cero
    inventado) y lo que no hay se lee de `no_disponibles`, con su motivo.
    ========================================================================== */
-
 export const RUTAS = {
   lista: '/terminal/v2/lista',
   ficha: (activo: string) => `/terminal/v2/${encodeURIComponent(activo.toUpperCase())}`,
@@ -35,6 +32,8 @@ export interface Fila2 {
   operable_bingx: boolean; posiciones: { origen: 'pablo' | 'caja'; simulado: boolean }[]; gatillos: number
 }
 export interface Vela { t: number; o: number; h: number; l: number; c: number; v: number | null }
+/** La calidad del mapa en un lado: tal como llega (`texto`), con su cociente contra el azar si lo hay. */
+export interface CalidadLado { texto: string; vs_azar: number | null; detalle: string | null; distingue: boolean }
 export interface NivelLiq { precio: number; desde: number; hasta: number; lado: 'cortos' | 'largos'; intensidad: number; monto_usd: number | null; densa: boolean }
 export interface Marca { t: number; tipo: 'entrada' | 'salida' | 'catalizador' | 'radar'; capa: Capa; precio: number | null; etiqueta: string }
 export interface NivelPrecio { tipo: 'stop' | 'gatillo' | 'entrada'; capa: Capa; precio: number; etiqueta: string }
@@ -52,7 +51,7 @@ export interface Ficha2 {
   estadisticas: { cifras: Cifra[] }
   movimiento: {
     velas: Vela[]; perfil: { niveles: [number, number][]; poc: number | null }
-    liquidaciones: { niveles: NivelLiq[]; calibrado: boolean; datos: string | null; vs_azar: number | null } | null
+    liquidaciones: { niveles: NivelLiq[]; calibrado: boolean; datos: string | null; vs_azar: number | null; frase: string | null; lados: { largos: CalidadLado | null; cortos: CalidadLado | null } } | null
     marcas: Marca[]; niveles: NivelPrecio[]
     delta_spot: Punto[]; delta_futuros: Punto[]; interes_abierto: Punto[]
     cifras: Cifra[]; lectura: string[]
@@ -110,6 +109,28 @@ function cifras(v: unknown, seccion: string, faltan: Map<string, string>): Cifra
   })
 }
 
+/* La calidad del mapa por lado. Si Mugiwara la manda armada (`calidad.lados.largos`), se toma
+   así; si no, se lee de la frase llana tal como llega («los largos, no se distingue del azar
+   (1,01; entre 0,91 y 1,13); los cortos, 1,35 veces mejor que el azar (entre 1,17 y 1,54)»).
+   No se suaviza: lo que no se distingue del azar se dice así. */
+const NUM_ES = (t: string) => { const m = t.match(/(\d+(?:,\d+)?)/); return m ? Number(m[1].replace(',', '.')) : null }
+function ladosDe(cal: Crudo): { largos: CalidadLado | null; cortos: CalidadLado | null } {
+  const armado = obj(cal.lados)
+  const uno = (lado: 'largos' | 'cortos'): CalidadLado | null => {
+    const a = obj(armado[lado])
+    if (str(a.texto) || num(a.vs_azar) !== null) {
+      const v = num(a.vs_azar), texto = str(a.texto) ?? (v === null ? 'no se distingue del azar' : `${String(v).replace('.', ',')} veces mejor que el azar`)
+      return { texto, vs_azar: v, detalle: str(a.detalle), distingue: v !== null && !/no se distingue/i.test(texto) }
+    }
+    const f = str(cal.frase)
+    const m = f?.match(new RegExp(`los ${lado},\\s*([^;()]+?)\\s*(?:\\(([^)]*)\\))?(?=;|\\.|$)`, 'i'))
+    if (!m) return null
+    const texto = m[1].trim(), detalle = m[2]?.trim() ?? null, distingue = !/no se distingue/i.test(texto)
+    return { texto, vs_azar: distingue ? NUM_ES(texto) : null, detalle, distingue }
+  }
+  return { largos: uno('largos'), cortos: uno('cortos') }
+}
+
 export function adaptarLista(c: unknown): Fila2[] {
   return arr(obj(c).items).flatMap((x) => {
     const o = obj(x), s = str(o.simbolo)
@@ -150,7 +171,7 @@ export function adaptarFicha(c: unknown): Ficha2 {
       perfil: { niveles: arr(perfil.niveles).flatMap((n) => { const a = arr(n).map(num); return a[0] !== null && a[1] !== null ? [[a[0]!, a[1]!] as [number, number]] : [] }), poc: num(perfil.poc) },
       liquidaciones: liq ? {
         niveles: arr(liq.niveles).flatMap((n) => { const q = obj(n); const p = num(q.precio); if (p === null) return []; return [{ precio: p, desde: num(q.desde) ?? p * 0.997, hasta: num(q.hasta) ?? p * 1.003, lado: q.lado === 'largos' ? 'largos' as const : 'cortos' as const, intensidad: Math.max(0, Math.min(1, num(q.intensidad) ?? 0.3)), monto_usd: num(q.monto_usd), densa: bool(q.densa) }] }),
-        calibrado: bool(cal.calibrado), datos: str(cal.datos), vs_azar: num(cal.vs_azar),
+        calibrado: bool(cal.calibrado), datos: str(cal.datos), vs_azar: num(cal.vs_azar), frase: str(cal.frase), lados: ladosDe(cal),
       } : null,
       marcas: arr(mov.marcas).flatMap((m) => { const q = obj(m); const t = num(q.t), tipo = str(q.tipo); if (t === null || !tipo) return []; const capa = (str(q.capa) ?? (tipo === 'radar' ? 'radar' : tipo === 'catalizador' ? 'catalizadores' : 'posiciones')) as Capa; return [{ t, tipo: tipo as Marca['tipo'], capa, precio: num(q.precio), etiqueta: str(q.etiqueta) ?? '' }] }),
       niveles: arr(mov.niveles).flatMap((n) => { const q = obj(n); const p = num(q.precio), tipo = str(q.tipo); if (p === null || !tipo) return []; return [{ tipo: tipo as NivelPrecio['tipo'], capa: (str(q.capa) ?? (tipo === 'gatillo' ? 'gatillos' : 'posiciones')) as Capa, precio: p, etiqueta: str(q.etiqueta) ?? '' }] }),

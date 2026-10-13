@@ -137,10 +137,8 @@ límite de error, archivado de la calibración.
 ## 4. Pendientes, por prioridad
 
 ### Alta
-0000. **Terminal v2** (`Mugiwara/PROMPT-TERMINAL-v2-veta.md`): la pantalla está hecha con datos simulados en
-    `/luffy/t2` (sin enlace, sin desplegar; ESTADO-WEB.md). Cuando Mugiwara publique la sección del terminal v2 en
-    `CONTRATO-PANEL.md`: ajustar sólo `site/src/luffy/terminal2/contrato.ts` y `server/luffySimuladoTerminal2.ts`,
-    capturas reales (WAL y una sin perpetuo), apuntar «Terminal» del menú a la v2 y desplegar.
+0000. **Terminal v2:** conectado al contrato real (§8.8, v2.5) y en el menú desde el 13-oct; el anterior queda en
+    `/luffy/terminal1` unos días. Retirarlo (ruta, `Terminal.tsx` y sus pruebas) cuando Pablo dé el visto bueno.
 000. **Pendientes tras la 6b** (`Mugiwara/PROMPT-VETA-pendientes.md`): bloque A (estabilidad y
     velocidad) y B (app instalable) desplegados el 12-oct; C (la oficina rehecha) hecho y con commit
     local; desplegado el 12-oct. La oficina viva e interactiva, con su visto bueno y la antena rehecha,
@@ -237,10 +235,21 @@ límite de error, archivado de la calibración.
   capa vacía no es un dato que falte. La web la oculta y quita el nombre de la excepción de los motivos.
 - **Gasto en la oficina (12-oct, desplegado):** la web lee `GET /oficina/gasto` tal como está en v2.3; hasta que Mugiwara la
   despliegue (daba 404), la tarjeta lo dice en una línea y se enciende sola cuando llegue.
-  Falta en el contrato **la lista de llamadas** que se ve al tocar un origen o un agente:
+  (13-oct: ya está en el contrato, v2.3/v2.4, y la web la usa.) Pedido original de **la lista de llamadas**:
   `GET /oficina/gasto/llamadas?periodo=hoy|siete_dias|mes&origen=&agente=&limite=60` →
   `{items: [{hora, origen, agente, modelo, costo_usd, tokens: {entrada, cache_lectura, salida}, hilo_id, mensaje_id, tipo_turno, inferido}]}`,
   más nuevas primero. La web ya la consume (simulador en `server/luffySimuladoGasto.ts`).
+- **Terminal v2 y Telegram, con datos reales (13-oct), lo que conviene del lado de Mugiwara:**
+  1. Números en español dentro de `texto`, `nota` y `lectura`: hoy llegan «0.02044 – 0.26542», «máximo 0.759179 el
+     2025-05-14», «bajo 0.0338564». La web no los reescribe (no sabe qué es un número y qué no).
+  2. `movimiento.liquidaciones.calidad.lados = {largos: {vs_azar, entre: [a, b], texto}, cortos: {…}}`: hoy la web
+     lee cada lado de la frase llana; con el campo armado no depende de la redacción. Y `datos: "resto"` es interno.
+  3. Motivos llanos en `no_disponibles`: hoy algunos son el error crudo («DefiLlama 400 en /summary/fees/…», «Client
+     error '429 Too Many Requests' for url …»).
+  4. `redes.mercado[regimen].texto` en llano («apetito por riesgo»); hoy llega `risk_on` y la web lo traduce.
+  5. `GET /oficina/gasto/llamadas?periodo=hoy` devuelve las últimas 24 h, no el día de Chile como `/oficina/gasto`
+     (la web las recorta al `desde`).
+  6. `GET /fuentes/telegram`: la vitrina llegó con `edad_s` 5458 y `cada_s` 60 (estado `viejo`).
 - **Terminal v2 (12-oct):** la web ya tiene la pantalla contra una forma provisional (`site/src/luffy/terminal2/contrato.ts`,
   armada con `PROMPT-TERMINAL-v2-mugiwara.md`): rutas `/terminal/v2/lista` y `/terminal/v2/{activo}`, cifras como
   `{id, etiqueta, valor, unidad, texto?, nota?, tono?, signo?}`, series como `[t, valor]`, velas `[t, o, h, l, c, v]` y

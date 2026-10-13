@@ -3,11 +3,12 @@
    7 días y el mes por origen y por agente, la serie diaria y los umbrales; lo de las
    pruebas de las sesiones va aparte y no cuenta para los umbrales.
 
-   Las llamadas de un origen o de un agente (lo que se ve al tocarlos) no están todavía
-   en el contrato: se piden a Mugiwara (`TRASPASO.md` §6) como
-   `GET /oficina/gasto/llamadas?periodo=hoy|siete_dias|mes&origen=&agente=&limite=60`;
-   el simulador ya las responde. Todo lo de la forma vive aquí, con un adaptador
-   tolerante: un campo que falta queda vacío, nunca un cero inventado.
+   Las llamadas de un origen o de un agente (lo que se ve al tocarlos):
+   `GET /oficina/gasto/llamadas?periodo=hoy|siete_dias|mes&origen=&agente=&limite=60`
+   (v2.4). El servidor lleva el período a días corridos (hoy = las últimas 24 h), así que
+   aquí se recortan al comienzo del período en hora de Chile, el mismo `desde` de las
+   barras. Todo lo de la forma vive aquí, con un adaptador tolerante: un campo que
+   falta queda vacío, nunca un cero inventado.
    ========================================================================== */
 import { pedir, qs } from '../api6b'
 
@@ -21,7 +22,7 @@ export interface Gasto {
   origenes: Record<string, string>
   nota: string | null; consultado_en: string | null
 }
-export interface Llamada { hora: string; origen: string; agente: string; modelo: string | null; costo_usd: number; tokens: { entrada: number | null; salida: number | null; cache: number | null } | null; hilo_id: string | null; mensaje_id: number | null; tipo_turno: string | null; inferido: boolean }
+export interface Llamada { hora: string; origen: string; agente: string; agente_etiqueta: string | null; hilo_titulo: string | null; modelo: string | null; costo_usd: number; tokens: { entrada: number | null; salida: number | null; cache: number | null } | null; hilo_id: string | null; mensaje_id: number | null; tipo_turno: string | null; inferido: boolean }
 
 type C = Record<string, unknown>
 const obj = (v: unknown): C => (v && typeof v === 'object' && !Array.isArray(v) ? (v as C) : {})
@@ -43,15 +44,20 @@ export function adaptarGasto(c: unknown): Gasto {
     nota: str(o.nota), consultado_en: str(o.consultado_en),
   }
 }
-const adaptarLlamadas = (c: unknown): Llamada[] => arr(obj(c).items).flatMap((x) => {
+const adaptarLlamadas = (c: unknown): { items: Llamada[]; mas: boolean } => ({ mas: !!str(obj(c).siguiente), items: arr(obj(c).items).flatMap((x) => {
   const o = obj(x), h = str(o.hora); if (!h) return []
   const t = o.tokens ? obj(o.tokens) : null
-  return [{ hora: h, origen: str(o.origen) ?? '', agente: str(o.agente) ?? str(o.quien) ?? '', modelo: str(o.modelo), costo_usd: num(o.costo_usd) ?? 0, tokens: t ? { entrada: num(t.entrada), salida: num(t.salida), cache: num(t.cache_lectura) } : null, hilo_id: str(o.hilo_id), mensaje_id: num(o.mensaje_id), tipo_turno: str(o.tipo_turno), inferido: o.inferido === true }]
-})
+  return [{ hora: h, origen: str(o.origen) ?? '', agente: str(o.agente) ?? str(o.quien) ?? '', agente_etiqueta: str(o.agente_etiqueta), hilo_titulo: str(o.hilo_titulo), modelo: str(o.modelo), costo_usd: num(o.costo_usd) ?? 0, tokens: t ? { entrada: num(t.entrada), salida: num(t.salida), cache: num(t.cache_lectura) } : null, hilo_id: str(o.hilo_id), mensaje_id: num(o.mensaje_id), tipo_turno: str(o.tipo_turno), inferido: o.inferido === true }]
+}) })
 
 export const gastoApi = {
   gasto: (signal?: AbortSignal) => pedir<unknown>('/oficina/gasto', { signal }).then(adaptarGasto),
-  llamadas: (periodo: Periodo, f: { origen?: string; agente?: string }, signal?: AbortSignal) => pedir<unknown>(`/oficina/gasto/llamadas${qs({ periodo, origen: f.origen, agente: f.agente, limite: 60 })}`, { signal }).then(adaptarLlamadas),
+  llamadas: (periodo: Periodo, f: { origen?: string; agente?: string; desde?: string | null }, signal?: AbortSignal) => pedir<unknown>(`/oficina/gasto/llamadas${qs({ periodo, origen: f.origen, agente: f.agente, limite: 60 })}`, { signal }).then(adaptarLlamadas).then((r) => {
+    const d = f.desde ? Date.parse(f.desde) : NaN
+    if (!Number.isFinite(d)) return r
+    const items = r.items.filter((l) => Date.parse(l.hora) >= d)
+    return { items, mas: r.mas && items.length === r.items.length }
+  }),
 }
 
 /** Los umbrales son del mes: para hoy y 7 días se llevan al ritmo (la parte de días que le toca a cada tramo). */
