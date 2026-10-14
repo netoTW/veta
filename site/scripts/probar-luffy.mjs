@@ -226,6 +226,10 @@ if (SIM) {
   await p.waitForSelector('[data-prueba="escena"]', { timeout: 30000 })
   ok((await p.locator('[data-prueba^="tarjeta-"]').count()) === 6, 'una tarjeta por agente (Luffy, Cuant, Investigador, Estratega, Jev, Crawler)')
   ok((await p.locator('[data-prueba^="ficha-"]').count()) > 0, `la araña sigue monedas (${await p.locator('[data-prueba^="ficha-"]').count()} fichas)`)
+  // v2.6: cada escritorio separa los encargos (con su costo) de lo que Luffy usó por su cuenta (sin costo)
+  await p.waitForFunction(() => /encargos? en 24 h/.test(document.querySelector('[data-prueba="tarjeta-cuant"] .lf-ag__cifra')?.textContent ?? ''), null, { timeout: 15000 }).catch(() => {})
+  ok(/0 encargos en 24 h/i.test(await p.locator('[data-prueba="tarjeta-cuant"] .lf-ag__cifra').innerText()) && /usó sus instrumentos 7 veces · sin costo/i.test(await p.locator('[data-prueba="instrumentos-cuant"]').innerText()), 'escritorio del Cuant: los encargos y, aparte, lo que Luffy usó por su cuenta')
+  ok(!(await p.locator('[data-prueba="instrumentos-estratega"]').count()) && !(await p.locator('[data-prueba="instrumentos-jev"]').count()), 'un escritorio sin instrumentos no dice «no los usó»')
   const trabaja = await p.waitForFunction(() => [...document.querySelectorAll('[data-prueba^="agente-"]')].some((e) => e.getAttribute('data-trabajando') === 'si' && !/jev|crawler/.test(e.getAttribute('data-prueba') ?? '')), null, { timeout: 40000 }).then(() => true, () => false)
   ok(trabaja, 'con los eventos, un agente se pone a trabajar (teclea y se enciende su pantalla)')
   const camina = await p.waitForFunction(() => { const t = document.querySelector('[data-prueba="arana"]')?.getAttribute('transform') ?? ''; return /rotate\((?!0\))/.test(t) }, null, { timeout: 60000, polling: 100 }).then(() => true, () => false)
@@ -247,6 +251,11 @@ if (SIM) {
   ok(costo, 'la repetición dice cuánto lleva gastado el turno (de su línea en /oficina/turnos)')
   await p.locator('[data-prueba="rep-salir"]').click()
   ok(!(await p.locator('[data-prueba="repeticion"]').count()), 'volver al vivo cierra la repetición')
+  await p.locator('[data-prueba="tarjeta-investigador"] .lf-ag__abrir').click()
+  await p.waitForSelector('[data-prueba="hoja-investigador"]')
+  const ins = await p.locator('[data-prueba="instrumentos-luffy"]').innerText().catch(() => '')
+  ok(/25 veces/i.test(ins) && /defillama serie\s*14/i.test(ins), 'la hoja del Investigador lista los instrumentos que Luffy usó, aparte de los encargos')
+  await p.keyboard.press('Escape')
   // el gasto en la oficina: barras contra los umbrales, reparto y, al tocar un origen, sus llamadas
   await p.locator('[data-prueba="gasto-oficina"]').scrollIntoViewIfNeeded()
   const barras = await p.waitForSelector('[data-prueba="gasto-barra-mes"] .lf-gof__marca', { timeout: 15000 }).then(() => true, () => false)
@@ -272,6 +281,29 @@ if (SIM) {
   await p.locator('[data-prueba^="ficha-"]').first().click({ force: true })
   const terminal = await p.waitForURL(new RegExp(`/luffy/terminal/${sym}`), { timeout: 10000 }).then(() => true, () => false)
   ok(terminal, `tocar una moneda abre su ficha del terminal (${sym})`)
+  await ctx.close()
+}
+
+/* ---------- Radar · la tabla de aciertos (v2.6, §8.9): una medición, no un marcador ---------- */
+if (SIM) {
+  console.log('\nLUFFY · radar: la tabla de aciertos')
+  const { ctx, p } = await contexto(false)
+  await entrar(ctx, env.VETA_ADMIN_EMAIL, env.VETA_ADMIN_PASSWORD)
+  await ir(p, `${BASE}/luffy/radar`)
+  await p.locator('[data-prueba="pestana-aciertos"]').click()
+  const hay = await p.waitForSelector('[data-prueba="aciertos-fila"]', { timeout: 20000 }).then(() => true, () => false)
+  const n = await p.locator('[data-prueba="aciertos-fila"]').count()
+  ok(hay && n === 5, `una fila por modo, el total del radar y las propuestas de Luffy (${n})`)
+  const t = await p.locator('[data-prueba="aciertos"]').innerText()
+  ok(/provisional/i.test(t) && /\d+ de \d+/.test(t) && /le ganan a BTC/.test(t) && /mediana/.test(t), 'cuántas le ganan a BTC, el retorno mediano y el tamaño de muestra; lo de hoy, provisional')
+  ok(/sin cumplir/i.test(t) && /por cumplir/.test(t), 'el plazo que no se cumplió todavía se dice así')
+  ok(!(await p.locator('[data-prueba="aciertos"] .is-pos, [data-prueba="aciertos"] .is-neg').count()), 'sin colores de victoria')
+  await p.locator('[data-prueba="aciertos-fila"][data-modo="impulso-1"]').click()
+  const sen = await p.locator('[data-prueba="aciertos-senal"]').count()
+  const s0 = await p.locator('[data-prueba="aciertos-senal"]').first().innerText().catch(() => '')
+  ok(sen === 17 && /\d+,\d+/.test(s0) && /BTC/.test(s0), `al tocar un modo, sus señales con fecha, precio y retorno (${sen})`)
+  await p.locator('[data-prueba="aciertos-fila"][data-modo="impulso-1"]').click()
+  ok(!(await p.locator('[data-prueba="aciertos-senal"]').count()), 'tocarlo otra vez lo cierra')
   await ctx.close()
 }
 

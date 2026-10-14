@@ -10,6 +10,7 @@
 import { Hono } from 'hono'
 import { simuladorTerminal2 } from './luffySimuladoTerminal2.ts'
 import { simuladorGasto, simuladorTurnos } from './luffySimuladoGasto.ts'
+import { aciertosSimulados } from './luffySimuladoAciertos.ts'
 
 /* ---------- utilidades ---------- */
 const ahora = () => new Date().toISOString().replace(/\.\d{3}Z$/, '+00:00')
@@ -849,9 +850,10 @@ const FUENTES_SIM = [
   { nombre: 'motor_veta', etiqueta: 'Motor VETA', estado: 'al_dia', ultima_lectura: hace(31) },
 ]
 const AGENTES_SIM = [
-  { nombre: 'cuant', etiqueta: 'Cuant', ultima_actividad: hace(60 * 6), llamadas_24h: 12, costo_24h_usd: 1.9, en_curso: false },
-  { nombre: 'investigador', etiqueta: 'Investigador', ultima_actividad: hace(60 * 3), llamadas_24h: 2, costo_24h_usd: 1.6, en_curso: false },
-  { nombre: 'estratega', etiqueta: 'Estratega', ultima_actividad: hace(60 * 24), llamadas_24h: 0, costo_24h_usd: 0, en_curso: false },
+  // v2.6: encargos aparte de lo que Luffy usó por su cuenta de cada escritorio (como el 14-oct real: el Cuant en 0 encargos)
+  { nombre: 'cuant', etiqueta: 'Cuant', ultima_actividad: hace(60 * 6), llamadas_24h: 0, encargos_24h: 0, costo_24h_usd: 0, instrumentos_luffy_24h: { n: 7, por_instrumento: { cuant_microestructura: 4, evaluar_entrada: 3 }, ultimo: hace(60 * 6), costo_usd: 0 }, en_curso: false },
+  { nombre: 'investigador', etiqueta: 'Investigador', ultima_actividad: hace(60 * 3), llamadas_24h: 2, encargos_24h: 2, costo_24h_usd: 1.6, instrumentos_luffy_24h: { n: 25, por_instrumento: { defillama_serie: 14, social_pulso: 3, telegram_que_se_dice: 3, x_buscar: 3, motor_historial: 1, telegram_leer: 1 }, ultimo: hace(60 * 3), costo_usd: 0 }, en_curso: false },
+  { nombre: 'estratega', etiqueta: 'Estratega', ultima_actividad: hace(60 * 24), llamadas_24h: 0, encargos_24h: 0, costo_24h_usd: 0, instrumentos_luffy_24h: { n: 0, por_instrumento: {}, ultimo: null, costo_usd: 0 }, en_curso: false },
   { nombre: 'jev', etiqueta: 'Jev (clasificación)', ultima_actividad: hace(0), llamadas_24h: 7034, costo_24h_usd: 0.41, en_curso: true },
 ]
 const TRABAJOS_SIM = [['reconciliacion', 'Reconciliación (Pablo y caja)', '15 min'], ['alertas', 'Alertas', '5 min'], ['crawler', 'Crawler de X', '25 min ± azar'], ['pulso', 'Pulso social', '30 min'], ['escaner', 'Escáner', '4 h'], ['radar_squeeze', 'Radar squeeze', '1 h'], ['listados', 'Listados', '5 min'], ['gobernanza', 'Gobernanza', '60 min'], ['caja', 'Ciclo de la caja', '2 h'], ['informe', 'Informe diario', '08:00 Chile'], ['snapshot_derivados', 'Snapshot de derivados', '1 h']].map(([nombre, etiqueta, cada], i) => ({ nombre, etiqueta, cada, ultima: hace(3 + i * 7), proxima: new Date(Date.now() + (5 + i * 4) * 60_000).toISOString(), estado: 'ok' }))
@@ -1026,6 +1028,7 @@ luffySimulado.get('/radar/candidatas', (c) => {
   const cs = CANDIDATAS_BASE.filter((x) => (!modo || x.modo === modo) && x.dias <= dias && (!activo || x.activo === activo) && (desc || x.decision !== 'descartar')).map(candidata)
   return c.json({ desde: diaAtras(dias), hasta: diaAtras(0), modo, candidatas: cs, consultado_en: ahora(), fuente: 'candidatas (señales por código + Jev)' })
 })
+luffySimulado.get('/radar/aciertos', (c) => c.json(aciertosSimulados()))
 luffySimulado.get('/radar/modos', (c) => c.json({ modos: MODOS_SIM, familias: FAMILIAS, historia_propia: { derivados_horarios: { desde: '2026-10-11T00:00+00:00', n: 363 }, anuncios_listados: { n: 12, desde: '2026-10-09' }, gobernanza: { n: 390, abiertas: 4, fuentes: { snapshot: { ok: true }, tally: { ok: false, motivo: 'sin TALLY_API_KEY (apagado)' } } } }, regimen: { lectura: 'risk_on' }, consultado_en: ahora(), fuente: 'modos + candidatas + historia propia' }))
 luffySimulado.post('/modos/:id/:version/decidir', async (c) => {
   const m = MODOS_SIM.find((x) => x.id === c.req.param('id') && x.version === c.req.param('version')); if (!m) return c.json({ detail: 'modo no existe' }, 404)

@@ -953,8 +953,8 @@ Lo que cambió al verlo con datos reales:
   exchanges, los movimientos grandes y las wallets. Lo que no tiene un lugar propio va al pie de su sección
   (`Resto`), así nada queda sin decirse. En on-chain hoy son seis cifras sin dato (tenedores, 30 d, nuevos, flujo).
 - **Calidad del mapa por lado, tal como llega:** el chip dice «cortos: 1,35 veces mejor que el azar · largos: no se
-  distingue del azar» (leído de `calidad.frase`; si Mugiwara manda `calidad.lados` armado, se toma ése) y la frase
-  completa va bajo el gráfico. Antes decía «calibrado: 1,35× mejor que el azar» para los dos lados.
+  distingue del azar» y la frase completa va bajo el gráfico. Antes decía «calibrado: 1,35× mejor que el azar» para
+  los dos lados. (Desde la v2.6 sale de `calidad.lados`, ver más abajo.)
 - **Derivados:** el funding real varía (19 valores distintos en WAL); 252 de 270 intervalos están en la tasa base de
   Binance (0,005 % cada 4 h) y el panel lo dice en una línea, para que la franja pareja no parezca un error. Las
   series que empiezan después que las velas (funding 45 días, largos contra cortos 48 h) se rellenan con huecos y
@@ -965,8 +965,8 @@ Lo que cambió al verlo con datos reales:
 - **Mapa:** con 62 niveles los rótulos se pisaban; ahora van los más intensos y sólo si hay lugar (7, o 4 en el
   teléfono), con el monto en US$.
 - **Nombres llanos:** escenarios con los de la maqueta («Mediana de su categoría», «Su propio máximo»…), los modos del
-  radar sin guiones bajos, el régimen («apetito por riesgo» en vez de `risk_on`); el nombre no se repite cuando es
-  igual al ticker.
+  radar sin guiones bajos; el nombre no se repite cuando es igual al ticker. (El régimen se traducía aquí; desde la
+  v2.6 llega en llano.)
 
 ### Telegram como fuente y el gasto con datos reales (13-oct-2026, contrato v2.4)
 
@@ -978,10 +978,33 @@ Lo que cambió al verlo con datos reales:
   `telegram_grupos` va al puerto social de la sala.
 - **Gasto:** `/oficina/gasto` ya responde en producción, así que la línea de aviso se fue. Entra el origen
   `fuente_telegram` (y el agente `telegram_grupos`) con su etiqueta del contrato. Las llamadas piden
-  `periodo=hoy|siete_dias|mes`; como el servidor lo toma como días corridos (hoy = 24 h), la web las recorta al
-  `desde` del período en hora de Chile, el mismo de las barras. Cada llamada muestra la etiqueta del agente y el
-  título del hilo; si hay más de 60, lo dice.
+  `periodo=hoy|siete_dias|mes` (desde la v2.6 el servidor lo corta en hora de Chile, como las barras). Cada llamada
+  muestra la etiqueta del agente y el título del hilo; si hay más de 60, lo dice.
 - Pruebas en `probar-luffy.mjs` (simulador): el grupo elegido, los no elegidos aparte, los 8 días y los hechos.
+
+### Contrato v2.6: aciertos del radar, terminal en llano y escritorios por separado (14-oct-2026)
+
+- **Tabla de aciertos** (§8.9, `GET /radar/aciertos`): pestaña «Aciertos» del Radar (`src/luffy/Aciertos.tsx`, la
+  forma en `aciertosApi.ts`). Una fila por modo y versión, más «Todo el radar» y las propuestas de entrada de Luffy:
+  señales y, a 7, 14 y 30 días, cuántas le ganaron a BTC («16 de 61», con el %), el retorno mediano y cuántas quedan
+  por cumplir. Un plazo sin ninguna cumplida dice «sin cumplir» y cuándo se cumple la primera; «hasta hoy» va aparte
+  y marcado «provisional». Al tocar un modo se abre su frase y sus señales, con fecha, moneda (enlace al terminal),
+  precio de la señal y el retorno de cada plazo (o la fecha en que se cumple) junto al de BTC. Sin verde ni rojo: es
+  una medición. La caja contra mantener (`caja` del contrato) no se muestra todavía. El 14-oct ningún plazo de 7
+  días se había cumplido (el radar empezó el 11-oct): todo es provisional.
+- **Terminal, tal como llega:** la calidad del mapa sale de `calidad.lados` («CORTOS v2: 1,35 veces mejor que el azar
+  (entre 1,17 y 1,54) · LARGOS v2: no se distingue del azar (1,01; entre 0,91 y 1,13)»), sin rearmarla desde la frase.
+  Se quitó la traducción del régimen (`risk_on` → llano): llega en llano. Números en español, motivos llanos y
+  futuros/spot del mismo exchange vienen de Mugiwara y se muestran sin tocar.
+- **Escritorios de la oficina:** cada tarjeta separa los encargos al agente con su costo («0 encargos en 24 h · 0,00
+  US$») de lo que Luffy usó por su cuenta de ese escritorio («Luffy usó sus instrumentos 25 veces · sin costo»,
+  `instrumentos_luffy_24h`). La hoja del agente lista esos instrumentos aparte de los encargos. El Estratega no tiene
+  instrumentos: no se le dice «no los usó».
+- **Gasto:** `periodo=hoy` ya viene con el día de Chile; se quitó el recorte que hacía la web.
+- Pruebas nuevas en `probar-luffy.mjs` (tabla de aciertos, escritorios) y `probar-terminal2.mjs` (calidad por lado).
+  Capturas con datos reales, escritorio y 390 px, en `recursos/capturas/v26/` (`scripts/capturar-aciertos.mjs` y
+  `capturar-terminal2.mjs`; en el teléfono la ficha se captura a 1,5× porque Chrome repite lo de arriba pasados
+  16 384 px).
 
 ## 8. Huecos del contrato abiertos
 

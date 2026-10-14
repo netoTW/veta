@@ -53,7 +53,7 @@ export function GastoOficina() {
 
       <Serie g={g} colores={colores} />
       <p className="lf-ctrl__nota mono lf-gof__pie">{g.nota ? `${g.nota} · ` : ''}<Link to="/luffy/control?ver=gasto">el detalle, en Control → Gasto</Link></p>
-      {abierta && <HojaLlamadas periodo={periodo} desde={t.desde} origenes={g.origenes} tipo={abierta.tipo} parte={abierta.p} cerrar={() => setAbierta(null)} />}
+      {abierta && <HojaLlamadas periodo={periodo} origenes={g.origenes} tipo={abierta.tipo} parte={abierta.p} cerrar={() => setAbierta(null)} />}
     </section>
   )
 }
@@ -124,15 +124,15 @@ function Serie({ g, colores }: { g: Gasto; colores: Map<string, string> }) {
   )
 }
 
-function HojaLlamadas({ periodo, desde, origenes, tipo, parte, cerrar }: { periodo: Periodo; desde: string | null; origenes: Record<string, string>; tipo: 'origen' | 'agente'; parte: Parte; cerrar: () => void }) {
+function HojaLlamadas({ periodo, origenes, tipo, parte, cerrar }: { periodo: Periodo; origenes: Record<string, string>; tipo: 'origen' | 'agente'; parte: Parte; cerrar: () => void }) {
   const [xs, setXs] = useState<Llamada[] | null>(null)
   const [mas, setMas] = useState(false)
   const [error, setError] = useState<string | null>(null)
   useEffect(() => {
     const ctl = new AbortController()
-    gastoApi.llamadas(periodo, { ...(tipo === 'origen' ? { origen: parte.clave } : { agente: parte.clave }), desde }, ctl.signal).then((r) => { setXs(r.items); setMas(r.mas) }, (e) => { if (!(e instanceof DOMException)) setError(e instanceof ErrorLuffy6b ? e.message : String(e)) })
+    gastoApi.llamadas(periodo, { ...(tipo === 'origen' ? { origen: parte.clave } : { agente: parte.clave }) }, ctl.signal).then((r) => { setXs(r.items); setMas(r.mas) }, (e) => { if (!(e instanceof DOMException)) setError(e instanceof ErrorLuffy6b ? e.message : String(e)) })
     return () => ctl.abort()
-  }, [periodo, desde, tipo, parte.clave])
+  }, [periodo, tipo, parte.clave])
   const nombre = PERIODOS.find(([k]) => k === periodo)?.[1].toLowerCase()
   return (
     <Hoja titulo={parte.etiqueta} sub={<>{tipo === 'origen' ? 'Origen' : 'Agente'} · {nombre} · {usd(parte.costo_usd)}{parte.llamadas !== null ? ` en ${parte.llamadas.toLocaleString('es-ES')} llamadas` : ''}</>} cerrar={cerrar} prueba="hoja-llamadas">

@@ -208,6 +208,7 @@
 .t2-calidad > span + span::before { content: '·'; margin-right: 10px; color: var(--ceniza-2); }
 .t2-calidad .is-mejor { color: var(--oro-luz); }
 .t2-calidad .is-azar { color: var(--ceniza); }
+.t2-calidad em { font-style: normal; text-transform: none; letter-spacing: 0.02em; }
 .t2-nota--mapa { display: block; margin: 4px 0 10px; color: var(--ceniza-2); font-size: 11.5px; line-height: 1.5; }
 .t2-nada.is-motivo { color: var(--ceniza-2); font-style: italic; }
 .t2-resto { list-style: none; margin: 12px 0 0; padding: 10px 14px; border-top: 1px solid rgba(236, 230, 216, 0.06); display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--ceniza-2); }

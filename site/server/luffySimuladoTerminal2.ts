@@ -82,8 +82,13 @@ function ficha(m: Moneda, rango: string) {
   const liq = m.perp ? {
     niveles: [[1.045, 'cortos', 1, 4.1e6], [1.083, 'cortos', 0.55, 1.8e6], [1.14, 'cortos', 0.3, 0.6e6], [0.94, 'largos', 0.9, 3.2e6], [0.9, 'largos', 0.5, 1.2e6], [0.855, 'largos', 0.3, 0.5e6]]
       .map(([k, lado, i, monto]) => ({ precio: prec(ult * (k as number)), desde: prec(ult * (k as number) * 0.994), hasta: prec(ult * (k as number) * 1.006), lado, intensidad: i, monto_usd: Math.round((monto as number) * (m.cap / 58e6) ** 0.5), densa: (i as number) >= 0.9 })),
-    // como la del contrato v2.5: un solo cociente y la frase llana por lado (los largos, hoy, no se distinguen del azar)
-    calidad: { calibrado: true, datos: 'resto', vs_azar: m.simbolo === 'WAL' ? 1.35 : r2(1.2 + r() * 0.3, 2), frase: `estimación medida contra liquidaciones reales hasta el ${new Date(Date.now() - 86_400_000).toISOString().slice(0, 10)} (resto). En días que no se usaron para ajustar: los largos, no se distingue del azar (1,01; entre 0,91 y 1,13); los cortos, ${m.simbolo === 'WAL' ? '1,35' : '1,2'} veces mejor que el azar (entre 1,17 y 1,54)` },
+    // como la del contrato v2.6: la frase llana y, aparte, cada lado armado (los largos, hoy, no se distinguen del azar)
+    calidad: { calibrado: true, datos: 'monedas con menos interés abierto', vs_azar: m.simbolo === 'WAL' ? 1.35 : r2(1.2 + r() * 0.3, 2),
+      lados: {
+        largos: { vs_azar: 1.01, entre: [0.91, 1.13], distingue_del_azar: false, version: 'v2', texto: 'no se distingue del azar (1,01; entre 0,91 y 1,13)' },
+        cortos: { vs_azar: m.simbolo === 'WAL' ? 1.35 : 1.2, entre: [1.17, 1.54], distingue_del_azar: true, version: m.simbolo === 'WAL' ? 'v2' : 'v3', texto: `${m.simbolo === 'WAL' ? '1,35' : '1,2'} veces mejor que el azar (entre 1,17 y 1,54)` },
+      },
+      frase: `estimación medida contra liquidaciones reales hasta el ${new Date(Date.now() - 86_400_000).toISOString().slice(0, 10).split('-').reverse().join('-')} (monedas con menos interés abierto). En días que no se usaron para ajustar: los largos, no se distingue del azar (1,01; entre 0,91 y 1,13); los cortos, ${m.simbolo === 'WAL' ? '1,35' : '1,2'} veces mejor que el azar (entre 1,17 y 1,54)` },
   } : null
   // marcas y niveles de las capas
   const marcas: Record<string, unknown>[] = []
@@ -176,7 +181,7 @@ function ficha(m: Moneda, rango: string) {
     movimiento: {
       velas, perfil, liquidaciones: liq, marcas, niveles, delta_spot: dspot, delta_futuros: dfut, interes_abierto: oi,
       cifras: [
-        cifra('fut_spot', 'Futuros / spot (volumen)', m.perp ? 6.1 : null, 'x', { tono: 'oro', nota: 'lo mueven apalancados' }),
+        cifra('fut_spot', 'Volumen futuros / spot', m.perp ? 6.1 : null, 'x', { tono: 'oro', nota: 'Binance futuros contra Binance spot, día 13-10-2026' }),
         cifra('funding', 'Funding (8 h)', m.perp ? -0.018 : null, 'pct', { signo: true, nota: 'los cortos pagan' }),
         cifra('oi_cap', 'Interés abierto / cap.', m.perp ? 0.15 : null, 'num', { nota: 'percentil 94 de 30 d' }),
         cifra('largos_cortos', 'Largos / cortos (cuentas)', m.perp ? 0.74 : null, 'num', { nota: 'más cuentas cortas' }),
@@ -214,7 +219,7 @@ function ficha(m: Moneda, rango: string) {
     },
     redes: {
       mercado: [
-        cifra('regimen', 'Régimen del mercado', null, 'texto', { texto: 'lateral alcista' }), cifra('fg', 'Miedo y codicia', null, 'texto', { texto: '62 · codicia', tono: 'oro' }),
+        cifra('regimen', 'Régimen del mercado', null, 'texto', { texto: 'apetito por riesgo' }), cifra('fg', 'Miedo y codicia', null, 'texto', { texto: '62 · codicia', tono: 'oro' }),
         cifra('fund_mkt', 'Funding promedio del mercado', 0.008, 'pct', { signo: true, tono: 'neutro' }), cifra('dom', 'Dominancia de BTC', 57, 'pct'),
         cifra('alts', 'Altcoins contra BTC (30 d)', 3, 'pct', { signo: true }),
       ],

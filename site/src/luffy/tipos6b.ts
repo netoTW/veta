@@ -167,9 +167,11 @@ export interface FeedAlertas { items: AlertaFeed[]; siguiente: number | null; ti
 
 /* ---------- 8.5 oficina ---------- */
 export type EstadoFuente = 'al_dia' | 'atrasada' | 'caida' | 'apagada' | 'sin_datos'
+export interface InstrumentosLuffy { n: number; por_instrumento: Record<string, number>; ultimo: string | null; costo_usd: number }
 export interface Oficina {
   luffy: { en_curso: { hilo_id: string; titulo: string; desde: string; modo: string; canal: string }[]; ultimo_turno: string | null; turnos_24h: number; costo_24h_usd: number }
-  agentes: { nombre: string; etiqueta?: string; ultima_actividad: string | null; llamadas_24h: number; costo_24h_usd: number; en_curso: boolean }[]
+  /** v2.6: `encargos_24h` (= `llamadas_24h`) son los encargos al agente, con su costo; `instrumentos_luffy_24h`, lo que Luffy usó por su cuenta de ese escritorio (código o fuentes, 0 USD). */
+  agentes: { nombre: string; etiqueta?: string; ultima_actividad: string | null; llamadas_24h: number; encargos_24h?: number; costo_24h_usd: number; instrumentos_luffy_24h?: InstrumentosLuffy; en_curso: boolean }[]
   fuentes: { nombre: string; etiqueta?: string; estado: EstadoFuente; ultima_lectura?: string | null; detalle?: string }[]
   trabajos: { nombre: string; etiqueta?: string; cada: string; ultima?: string | null; proxima?: string | null; estado?: string }[]
   eventos_ultimo_id?: number | null; consultado_en: string; fuente: string

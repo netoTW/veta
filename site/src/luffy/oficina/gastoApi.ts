@@ -5,9 +5,9 @@
 
    Las llamadas de un origen o de un agente (lo que se ve al tocarlos):
    `GET /oficina/gasto/llamadas?periodo=hoy|siete_dias|mes&origen=&agente=&limite=60`
-   (v2.4). El servidor lleva el período a días corridos (hoy = las últimas 24 h), así que
-   aquí se recortan al comienzo del período en hora de Chile, el mismo `desde` de las
-   barras. Todo lo de la forma vive aquí, con un adaptador tolerante: un campo que
+   (v2.4). Desde la v2.6 el servidor corta el período en hora de Chile, igual que las
+   barras: lo que llega se muestra tal cual. Todo lo de la forma vive aquí, con un
+   adaptador tolerante: un campo que
    falta queda vacío, nunca un cero inventado.
    ========================================================================== */
 import { pedir, qs } from '../api6b'
@@ -52,12 +52,7 @@ const adaptarLlamadas = (c: unknown): { items: Llamada[]; mas: boolean } => ({ m
 
 export const gastoApi = {
   gasto: (signal?: AbortSignal) => pedir<unknown>('/oficina/gasto', { signal }).then(adaptarGasto),
-  llamadas: (periodo: Periodo, f: { origen?: string; agente?: string; desde?: string | null }, signal?: AbortSignal) => pedir<unknown>(`/oficina/gasto/llamadas${qs({ periodo, origen: f.origen, agente: f.agente, limite: 60 })}`, { signal }).then(adaptarLlamadas).then((r) => {
-    const d = f.desde ? Date.parse(f.desde) : NaN
-    if (!Number.isFinite(d)) return r
-    const items = r.items.filter((l) => Date.parse(l.hora) >= d)
-    return { items, mas: r.mas && items.length === r.items.length }
-  }),
+  llamadas: (periodo: Periodo, f: { origen?: string; agente?: string }, signal?: AbortSignal) => pedir<unknown>(`/oficina/gasto/llamadas${qs({ periodo, origen: f.origen, agente: f.agente, limite: 60 })}`, { signal }).then(adaptarLlamadas),
 }
 
 /** Los umbrales son del mes: para hoy y 7 días se llevan al ritmo (la parte de días que le toca a cada tramo). */

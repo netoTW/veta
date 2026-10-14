@@ -37,8 +37,6 @@ const MODO: Record<string, string> = { impulso: 'impulso', squeeze: 'squeeze', p
 const modoLlano = (m: string) => MODO[m] ?? m.replace(/_/g, ' ')
 /* los escenarios de la oportunidad, con los nombres de la maqueta */
 const ESCENARIO: Record<string, string> = { mediana_categoria: 'Mediana de su categoría', top3_categoria: 'Top 3 de su categoría', maximo_propio: 'Su propio máximo', minimo_90d: 'Volver al mínimo de 90 d' }
-/* lo que llega como clave y se lee mejor en llano */
-const LLANO: Record<string, string> = { risk_on: 'apetito por riesgo', risk_off: 'aversión al riesgo', neutral: 'neutral', neutro: 'neutral' }
 const leer = <T,>(k: string, d: T): T => { try { const v = localStorage.getItem(k); return v ? (JSON.parse(v) as T) : d } catch { return d } }
 const guardar = (k: string, v: unknown) => { try { localStorage.setItem(k, JSON.stringify(v)) } catch { /* sin storage */ } }
 const signo = (v: number | null | undefined, dec = 1) => (v === null || v === undefined ? '—' : `${v > 0 ? '+' : v < 0 ? '−' : ''}${Math.abs(v).toFixed(dec).replace('.', ',')} %`)
@@ -46,7 +44,7 @@ const tonoDe = (v: number | null | undefined) => (v === null || v === undefined 
 
 /** Una cifra, formateada por su unidad; si falta, su motivo en el lugar del número. */
 function valorCifra(c: Cifra): string {
-  if (c.texto) return LLANO[c.texto] ?? c.texto
+  if (c.texto) return c.texto
   const v = c.valor
   if (v === null) return '—'
   const s = c.signo && v > 0 ? '+' : v < 0 ? '−' : ''
@@ -108,8 +106,8 @@ function ChipCalidad({ l }: { l: NonNullable<Ficha2['movimiento']['liquidaciones
   return (
     <span className="t2-chip t2-chip--oro t2m t2-calidad" data-prueba="calidad-mapa" title={l.frase ?? undefined}>
       <span>MAPA DE LIQUIDACIONES · ESTIMADO{l.calibrado ? '' : ' · SIN CALIBRAR'}</span>
-      {lados.length ? lados.map(([k, c]) => <span key={k} className={c.distingue ? 'is-mejor' : 'is-azar'} data-lado={k}>{k.toUpperCase()}: {c.texto.toUpperCase()}</span>)
-        : l.frase ? <span>{l.frase.toUpperCase()}</span> : l.vs_azar !== null ? <span>{fmt(l.vs_azar)}× MEJOR QUE EL AZAR</span> : null}
+      {lados.length ? lados.map(([k, c]) => <span key={k} className={c.distingue ? 'is-mejor' : 'is-azar'} data-lado={k}>{k.toUpperCase()}{c.version ? ` ${c.version}` : ''}: <em>{c.texto}</em></span>)
+        : l.frase ? <span><em>{l.frase}</em></span> : null}
     </span>
   )
 }

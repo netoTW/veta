@@ -6,10 +6,12 @@ import { fmt, fmtFecha, fmtPrecio, lista } from './formato'
 import { Seguro } from './Seguro'
 import { Plegable } from './Plegable'
 import { EmptyState } from '../ui/EmptyState'
+import { TablaAciertos } from './Aciertos'
 
 /* Radar (CONTRATO-PANEL.md §8.3): candidatas por modo con familias, cifras,
    etiquetas en llano y el seguimiento a 7, 14 y 30 días contra BTC; modos con
-   su hipótesis, estudio y rendimiento vivo; aprobar o rechazar los propuestos.
+   su hipótesis, estudio y rendimiento vivo; aprobar o rechazar los propuestos;
+   y la tabla de aciertos por modo (§8.9, v2.6).
    Cada candidata abre su ficha del terminal. */
 const signo = (v: number | null | undefined) => (v === null || v === undefined ? '—' : `${v > 0 ? '+' : ''}${fmt(v)} %`)
 const tono = (v: number | null | undefined) => (v === null || v === undefined ? '' : v > 0 ? 'is-pos' : v < 0 ? 'is-neg' : '')
@@ -23,7 +25,7 @@ export function Radar() {
   const [modo, setModo] = useState(''); const [dias, setDias] = useState(30); const [descartadas, setDescartadas] = useState(false)
   const [c, setC] = useState<Candidatas | null>(null); const [m, setM] = useState<Modos | null>(null)
   const [error, setError] = useState<string | null>(null); const [aviso, setAviso] = useState<string | null>(null)
-  const [pestana, setPestana] = useState<'candidatas' | 'modos'>('candidatas')
+  const [pestana, setPestana] = useState<'candidatas' | 'modos' | 'aciertos'>('candidatas')
   const [motivo, setMotivo] = useState<Record<string, string>>({})
   const cargarModos = useCallback(async () => { try { setM(await luffy6b.modos()) } catch (e) { setError(e instanceof ErrorLuffy6b ? e.message : String(e)) } }, [])
   useEffect(() => { void cargarModos() }, [cargarModos])
@@ -33,11 +35,11 @@ export function Radar() {
   return (
     <div className="lf-pag">
       <div className="lf-pag__cab"><h1 className="lf-pag__t">Radar <em>de confluencias</em></h1>
-        <div className="lf-tabs" role="tablist"><button type="button" className={pestana === 'candidatas' ? 'is-on' : ''} onClick={() => setPestana('candidatas')}>Candidatas</button><button type="button" className={pestana === 'modos' ? 'is-on' : ''} onClick={() => setPestana('modos')}>Modos{propuestos ? ` · ${propuestos} propuesto${propuestos > 1 ? 's' : ''}` : ''}</button></div>
+        <div className="lf-tabs" role="tablist"><button type="button" className={pestana === 'candidatas' ? 'is-on' : ''} onClick={() => setPestana('candidatas')}>Candidatas</button><button type="button" className={pestana === 'modos' ? 'is-on' : ''} onClick={() => setPestana('modos')}>Modos{propuestos ? ` · ${propuestos} propuesto${propuestos > 1 ? 's' : ''}` : ''}</button><button type="button" className={pestana === 'aciertos' ? 'is-on' : ''} onClick={() => setPestana('aciertos')} data-prueba="pestana-aciertos">Aciertos</button></div>
       </div>
       {error && <p className="lf-m__error">{error}</p>}
       {aviso && <p className="lf-lab__msg mono">{aviso}</p>}
-      {pestana === 'candidatas' ? (
+      {pestana === 'aciertos' ? <TablaAciertos /> : pestana === 'candidatas' ? (
         <>
           <div className="lf-chips">
             <button type="button" className={`lf-chip ${!modo ? 'is-on' : ''}`} onClick={() => setModo('')}>Todos los modos</button>

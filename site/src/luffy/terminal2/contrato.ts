@@ -1,13 +1,15 @@
 /* ============================================================================
    Terminal v2 · lo único que depende del contrato de Mugiwara (CONTRATO-PANEL §8.8,
-   v2.5: `GET /terminal/v2/lista` y `GET /terminal/v2/{activo}`). Mugiwara adoptó la
+   v2.6: `GET /terminal/v2/lista` y `GET /terminal/v2/{activo}`). Mugiwara adoptó la
    forma que se había armado aquí con PROMPT-TERMINAL-v2-mugiwara.md; el simulador
    (server/luffySimuladoTerminal2.ts) manda la misma y queda para las pruebas.
    La pantalla lee el modelo (`Ficha2`, `Fila2`): si el contrato cambia, se ajustan
    las RUTAS y `adaptar*`, nada más.
 
    El adaptador es tolerante: un campo que falta queda vacío (nunca un cero
-   inventado) y lo que no hay se lee de `no_disponibles`, con su motivo.
+   inventado) y lo que no hay se lee de `no_disponibles`, con su motivo. Desde la
+   v2.6 los textos llegan en llano y con los números en español (régimen, motivos,
+   notas, calidad del mapa por lado): se muestran tal cual, sin traducir aquí.
    ========================================================================== */
 export const RUTAS = {
   lista: '/terminal/v2/lista',
@@ -33,7 +35,7 @@ export interface Fila2 {
 }
 export interface Vela { t: number; o: number; h: number; l: number; c: number; v: number | null }
 /** La calidad del mapa en un lado: tal como llega (`texto`), con su cociente contra el azar si lo hay. */
-export interface CalidadLado { texto: string; vs_azar: number | null; detalle: string | null; distingue: boolean }
+export interface CalidadLado { texto: string; vs_azar: number | null; entre: [number, number] | null; distingue: boolean; version: string | null }
 export interface NivelLiq { precio: number; desde: number; hasta: number; lado: 'cortos' | 'largos'; intensidad: number; monto_usd: number | null; densa: boolean }
 export interface Marca { t: number; tipo: 'entrada' | 'salida' | 'catalizador' | 'radar'; capa: Capa; precio: number | null; etiqueta: string }
 export interface NivelPrecio { tipo: 'stop' | 'gatillo' | 'entrada'; capa: Capa; precio: number; etiqueta: string }
@@ -109,24 +111,16 @@ function cifras(v: unknown, seccion: string, faltan: Map<string, string>): Cifra
   })
 }
 
-/* La calidad del mapa por lado. Si Mugiwara la manda armada (`calidad.lados.largos`), se toma
-   así; si no, se lee de la frase llana tal como llega («los largos, no se distingue del azar
-   (1,01; entre 0,91 y 1,13); los cortos, 1,35 veces mejor que el azar (entre 1,17 y 1,54)»).
-   No se suaviza: lo que no se distingue del azar se dice así. */
-const NUM_ES = (t: string) => { const m = t.match(/(\d+(?:,\d+)?)/); return m ? Number(m[1].replace(',', '.')) : null }
+/* La calidad del mapa por lado (v2.6, `calidad.lados`), tal como llega: `texto` ya viene en llano
+   («1,35 veces mejor que el azar (entre 1,17 y 1,54)», «no se distingue del azar (…)»). Un lado
+   sin medición llega `null`. No se suaviza ni se rearma desde la frase. */
 function ladosDe(cal: Crudo): { largos: CalidadLado | null; cortos: CalidadLado | null } {
   const armado = obj(cal.lados)
   const uno = (lado: 'largos' | 'cortos'): CalidadLado | null => {
-    const a = obj(armado[lado])
-    if (str(a.texto) || num(a.vs_azar) !== null) {
-      const v = num(a.vs_azar), texto = str(a.texto) ?? (v === null ? 'no se distingue del azar' : `${String(v).replace('.', ',')} veces mejor que el azar`)
-      return { texto, vs_azar: v, detalle: str(a.detalle), distingue: v !== null && !/no se distingue/i.test(texto) }
-    }
-    const f = str(cal.frase)
-    const m = f?.match(new RegExp(`los ${lado},\\s*([^;()]+?)\\s*(?:\\(([^)]*)\\))?(?=;|\\.|$)`, 'i'))
-    if (!m) return null
-    const texto = m[1].trim(), detalle = m[2]?.trim() ?? null, distingue = !/no se distingue/i.test(texto)
-    return { texto, vs_azar: distingue ? NUM_ES(texto) : null, detalle, distingue }
+    const a = obj(armado[lado]), texto = str(a.texto)
+    if (!texto) return null
+    const e = arr(a.entre).map(num)
+    return { texto, vs_azar: num(a.vs_azar), entre: e.length === 2 && e[0] !== null && e[1] !== null ? [e[0], e[1]] : null, distingue: a.distingue_del_azar === true, version: str(a.version) }
   }
   return { largos: uno('largos'), cortos: uno('cortos') }
 }

@@ -154,7 +154,10 @@ límite de error, archivado de la calibración.
 1. **El banco de 20 informes del motor** en `fixtures-contrato/`: sin él, «listo»
    (§13 de la especificación) no está completo. Es del motor.
 2. **El respaldo fuera del servidor no ha funcionado nunca** (`veta-backup` en
-   `failed`, credenciales R2 de marcador). Necesita las credenciales de Pablo.
+   `failed`, credenciales R2 de marcador). **Pablo, 14-oct: por ahora no.** Mientras tanto el Mac
+   trae cada noche los datos del motor a `~/VETA-respaldos` (LaunchAgent `com.veta.respaldo-mac`,
+   23:20; 30 días con enlaces duros; verifica contra el servidor). Depende de que el Mac esté
+   prendido. Cuando haya bucket: `RESPALDO_*` en `/opt/veta/.env` y `respaldar-remoto.sh` ya listo.
 3. **Borrar la cuenta de prueba de producción** `prueba-base-20260926@vetalab.io`
    (comando en el informe, espera aprobación).
 
@@ -250,6 +253,8 @@ límite de error, archivado de la calibración.
   5. `GET /oficina/gasto/llamadas?periodo=hoy` devuelve las últimas 24 h, no el día de Chile como `/oficina/gasto`
      (la web las recorta al `desde`).
   6. `GET /fuentes/telegram`: la vitrina llegó con `edad_s` 5458 y `cada_s` 60 (estado `viejo`).
+  **Los seis, resueltos en la v2.6 (14-oct)** y la web ya los toma tal cual: se quitaron la traducción del régimen,
+  la calidad del mapa leída de la frase y el recorte de las llamadas al día de Chile.
 - **Terminal v2 (12-oct):** la web ya tiene la pantalla contra una forma provisional (`site/src/luffy/terminal2/contrato.ts`,
   armada con `PROMPT-TERMINAL-v2-mugiwara.md`): rutas `/terminal/v2/lista` y `/terminal/v2/{activo}`, cifras como
   `{id, etiqueta, valor, unidad, texto?, nota?, tono?, signo?}`, series como `[t, valor]`, velas `[t, o, h, l, c, v]` y

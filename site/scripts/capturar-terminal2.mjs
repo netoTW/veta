@@ -7,13 +7,15 @@ const cookie = await entrar(env.VETA_ADMIN_EMAIL)
 const b = await chromium.launch({ channel: 'chrome', headless: true })
 const errores = []
 for (const [nombre, ancho, alto, movil] of [['1440', 1440, 1000, false], ['390', 390, 844, true]]) {
-  const ctx = await b.newContext({ viewport: { width: ancho, height: alto }, deviceScaleFactor: 2, isMobile: movil, hasTouch: movil })
+  // Chrome no captura más de 16 384 píxeles de alto: más abajo repite lo de arriba. La ficha en el teléfono
+  // mide unos 10 000 px, así que ahí se captura a 1,5× (a 2× saldría la cabecera repetida al pie).
+  const ctx = await b.newContext({ viewport: { width: ancho, height: alto }, deviceScaleFactor: movil ? 1.5 : 2, isMobile: movil, hasTouch: movil })
   await ctx.addCookies(cookie.split('; ').map((c) => { const i = c.indexOf('='); return { name: c.slice(0, i), value: c.slice(i + 1), url: BASE } }))
   const p = await ctx.newPage()
   p.on('console', (m) => { if (m.type() === 'error') errores.push(`${nombre}: ${m.text()}`) })
   p.on('pageerror', (e) => errores.push(`${nombre}: ${e}`))
   for (const sym of MONEDAS) {
-    await p.goto(`${BASE}/luffy/t2/${sym}`, { waitUntil: 'domcontentloaded' })
+    await p.goto(`${BASE}/luffy/terminal/${sym}`, { waitUntil: 'domcontentloaded' })
     await p.waitForSelector('[data-prueba="grafico-precio2"] canvas, [data-prueba="sec-movimiento"] .t2-falta', { timeout: 30000 })
     // bajar despacio para que carguen los gráficos de abajo
     for (let y = 0; y < 12; y++) { await p.evaluate(() => window.scrollBy(0, 900)); await espera(250) }

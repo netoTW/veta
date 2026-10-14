@@ -48,7 +48,7 @@ console.log('\nTERMINAL v2 · escritorio')
   ok((await p.locator('[data-prueba="cifras-cab"] .t2-cifra').count()) >= 10, 'el encabezado trae su grilla de cifras')
   for (const s of ['estadisticas', 'movimiento', 'fundamento', 'redes', 'onchain', 'oportunidad']) ok(await p.locator(`[data-prueba="sec-${s}"]`).count() === 1, `sección ${s}`)
   const calidad = await p.locator('[data-prueba="calidad-mapa"]').innerText()
-  ok(/CORTOS: 1,35 VECES MEJOR QUE EL AZAR/.test(calidad) && /LARGOS: NO SE DISTINGUE DEL AZAR/.test(calidad), `el mapa de liquidaciones dice su calidad por lado, sin suavizar (${calidad.replace(/\s+/g, ' ')})`)
+  ok(/CORTOS v2: 1,35 veces mejor que el azar \(entre 1,17 y 1,54\)/.test(calidad) && /LARGOS v2: no se distingue del azar \(1,01; entre 0,91 y 1,13\)/.test(calidad), `el mapa de liquidaciones dice su calidad por lado tal como llega (calidad.lados), sin suavizar (${calidad.replace(/\s+/g, ' ')})`)
   ok((await p.locator('[data-prueba="lectura2"]').innerText()).startsWith('Lectura por código'), 'la lectura por código')
 
   // las capas: cada una cambia el gráfico de precio y, al volver a prenderla, queda como estaba

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
-import type { EstadoFuente, Oficina as OficinaT } from '../tipos6b'
+import type { EstadoFuente, InstrumentosLuffy, Oficina as OficinaT } from '../tipos6b'
 import { fmtHora, fmtUsd, hace } from '../formato'
 import { NOMBRE, grupoDe, type GrupoFuente, type IdAgente, type Puerto } from './Escena'
 import { CANAL_LLANO, MODO_LLANO, cubreDesde, franjas, fuenteLlana, lecturas, lineaDe, pasoDe, type Ev, type Linea, type Turno } from './historia'
@@ -41,13 +41,22 @@ export function Hoja({ titulo, sub, cerrar, children, prueba }: { titulo: ReactN
 const Cubre = () => { const d = cubreDesde(); return d ? <p className="lf-hojaof__nota mono">La historia que llegó alcanza desde las {fmtHora(d)}.</p> : null }
 
 /* ---------- un agente ---------- */
-export function HojaAgente({ a, rol, cifra, version, cargada, cerrar, repetir }: { a: IdAgente; rol: string; cifra: string; version: number; cargada: boolean; cerrar: () => void; repetir: (t: Turno) => void }) {
+/** Los instrumentos de un escritorio que Luffy usó por su cuenta, de más a menos usado. */
+export const porInstrumento = (x: InstrumentosLuffy) => Object.entries(x.por_instrumento ?? {}).map(([k, v]) => [k.replace(/_/g, ' '), v] as const).sort((p, q) => q[1] - p[1])
+
+export function HojaAgente({ a, rol, cifra, instrumentos, version, cargada, cerrar, repetir }: { a: IdAgente; rol: string; cifra: string; instrumentos?: InstrumentosLuffy | null; version: number; cargada: boolean; cerrar: () => void; repetir: (t: Turno) => void }) {
   const lineas = useMemo(() => lineaDe(a), [a, version]) // eslint-disable-line react-hooks/exhaustive-deps
   const [abierto, setAbierto] = useState<string | null>(null)
   const total = lineas.reduce((s, l) => s + (l.costo ?? 0), 0)
   return (
     <Hoja titulo={NOMBRE[a]} sub={<>{rol}<br />{cifra}</>} cerrar={cerrar} prueba={`hoja-${a}`}>
       {a === 'jev' && <Barras lineas={lineas} />}
+      {instrumentos && <div className="lf-instr" data-prueba="instrumentos-luffy">
+        <h3 className="lf-hojaof__t mono">Instrumentos que Luffy usó por su cuenta · 24 h<em> · {instrumentos.n.toLocaleString('es-ES')} {instrumentos.n === 1 ? 'vez' : 'veces'} · sin costo</em></h3>
+        {instrumentos.n ? <ul className="lf-instr__l">{porInstrumento(instrumentos).map(([k, v]) => <li key={k}><span>{k}</span><b className="mono">{v}</b></li>)}</ul>
+          : <p className="lf-hojaof__nota mono">No los usó en las últimas 24 h.</p>}
+        {instrumentos.ultimo && <p className="lf-hojaof__nota mono">La última vez, {hace(instrumentos.ultimo)}.</p>}
+      </div>}
       <h3 className="lf-hojaof__t mono">{a === 'luffy' ? 'Turnos de las últimas 24 h' : a === 'jev' ? 'Por hora' : a === 'crawler' ? 'Lecturas y ciclos del radar' : 'Encargos de las últimas 24 h'}{total > 0 && <em> · {usd(total)}</em>}</h3>
       {!cargada && <p className="lf-hojaof__nota mono">Trayendo la historia…</p>}
       {cargada && !lineas.length && <p className="lf-hojaof__nota mono">Sin actividad en las últimas 24 h.</p>}

@@ -284,6 +284,8 @@
 .lf-ag__ultimo { margin: 0; font-size: 0.74rem; line-height: 1.4; color: var(--hueso); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .lf-ag__ultimo em { color: var(--ceniza-2); font-style: normal; font-size: 0.62rem; }
 .lf-ag__cifra { margin: auto 0 0; padding-top: 6px; border-top: 1px solid var(--hilo-suave); font-size: 0.56rem; letter-spacing: 0.06em; color: var(--oro-luz, #EAD189); }
+/* v2.6: lo que Luffy usó por su cuenta de ese escritorio, debajo de los encargos y sin el oro del costo */
+.lf-ag__instr { margin: 4px 0 0; font-size: 0.56rem; letter-spacing: 0.06em; color: var(--ceniza); }
 .lf-ofi2__sala { position: relative; margin-bottom: 14px; border-radius: var(--r-hoja); overflow: hidden; border: 1px solid var(--hilo-suave); background: radial-gradient(120% 90% at 50% 10%, #15181B 0, #0B0C0E 70%); box-shadow: var(--vidrio-luz); }
 .lf-ofi2__pie { margin: 0; padding: 10px 16px 12px; font-size: 0.56rem; letter-spacing: 0.08em; color: var(--ceniza); border-top: 1px solid var(--hilo-suave); }
 .lf-ofi2__pie a { color: var(--esmeralda-luz); }
@@ -445,6 +447,10 @@
 .lf-hojaof__cuerpo { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 12px 18px 18px; }
 .lf-hojaof__t { margin: 6px 0 10px; font-size: 0.56rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ceniza-2); }
 .lf-hojaof__t em { font-style: normal; color: var(--oro-luz, #EAD189); }
+.lf-instr { margin-bottom: 16px; }
+.lf-instr__l { list-style: none; margin: 0 0 6px; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 4px 14px; }
+.lf-instr__l li { display: flex; justify-content: space-between; gap: 8px; padding: 4px 0; border-bottom: 1px solid var(--hilo-suave); font-size: 0.8rem; color: var(--hueso); }
+.lf-instr__l b { color: var(--ceniza); font-weight: 500; }
 .lf-hojaof__nota { margin: 8px 0; font-size: 0.62rem; color: var(--ceniza-2); }
 .lf-linea { list-style: none; margin: 0; padding: 0; }
 .lf-linea__r { display: grid; grid-template-columns: 74px 1fr; gap: 10px; padding: 9px 0; border-top: 1px solid var(--hilo-suave); }
@@ -579,3 +585,56 @@
 .lf-tgo__hechos { border-top: 1px solid var(--hairline-2); padding-top: 10px; }
 @media (max-width: 760px) { .lf-tgo__cuerpo { grid-template-columns: minmax(0, 1fr); } }
 .lf-tgo .lf-linea__h em { display: block; font-style: normal; font-size: 0.54rem; }
+
+/* ---------- Radar · tabla de aciertos (§8.9, v2.6): una medición, sin colores de victoria ---------- */
+.lf-ac { display: grid; gap: 10px; }
+.lf-ac__t { border: 1px solid var(--hilo-suave); border-radius: var(--r-hoja, 14px); overflow: hidden; background: rgba(236, 230, 216, 0.015); }
+.lf-ac__cab, .lf-ac__fila { display: grid; grid-template-columns: minmax(150px, 1.5fr) 0.7fr repeat(4, minmax(0, 1fr)); gap: 12px; align-items: start; padding: 12px 16px; }
+.lf-ac__cab { font-size: 0.54rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ceniza-2); border-bottom: 1px solid var(--hilo-suave); }
+.lf-ac__cab small { display: block; letter-spacing: 0.1em; color: var(--ceniza-2); font-size: 0.5rem; }
+.lf-ac__fila { width: 100%; text-align: left; background: none; border: 0; border-top: 1px solid var(--hilo-suave); color: var(--hueso); cursor: pointer; font: inherit; }
+.lf-ac__cab + .lf-ac__fila { border-top: 0; }
+.lf-ac__fila:hover, .lf-ac__fila.is-abierta { background: rgba(236, 230, 216, 0.035); }
+.lf-ac__fila:focus-visible { outline: 1px solid var(--oro); outline-offset: -1px; }
+.lf-ac__fila.is-total { background: rgba(236, 230, 216, 0.025); }
+.lf-ac__fila.is-luffy { border-top: 1px solid var(--hairline-2); }
+.lf-ac__n b { display: block; font-weight: 500; font-size: 0.9rem; }
+.lf-ac__n small, .lf-ac__k small { display: block; font-size: 0.54rem; letter-spacing: 0.06em; color: var(--ceniza-2); margin-top: 3px; }
+.lf-ac__k { font-size: 1.05rem; }
+.lf-ac__c { display: grid; gap: 2px; }
+.lf-ac__c b { font-size: 0.95rem; font-weight: 500; color: var(--hueso); }
+.lf-ac__c small { font-size: 0.68rem; color: var(--ceniza); line-height: 1.35; }
+.lf-ac__c.is-pendiente b { font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ceniza-2); font-weight: 400; }
+.lf-ac__c.is-provisional b { color: var(--ceniza); }
+.lf-ac__prov { font-family: var(--font-mono); font-size: 0.52rem !important; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ceniza-2) !important; }
+.lf-ac__rl { display: none; }
+.lf-ac__abierta { padding: 4px 16px 16px; border-top: 1px dashed var(--hilo-suave); background: rgba(236, 230, 216, 0.02); }
+.lf-ac__frase { margin: 10px 0; font-size: 0.82rem; color: var(--ceniza); line-height: 1.5; }
+.lf-ac__det { display: grid; }
+.lf-ac__dcab, .lf-ac__s { display: grid; grid-template-columns: 92px minmax(90px, 1fr) 110px repeat(4, minmax(0, 1fr)); gap: 10px; align-items: baseline; padding: 7px 0; }
+.lf-ac__dcab { font-size: 0.52rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ceniza-2); border-bottom: 1px solid var(--hilo-suave); }
+.lf-ac__s { border-bottom: 1px solid var(--hilo-suave); font-size: 0.8rem; }
+.lf-ac__f { font-size: 0.66rem; color: var(--ceniza); }
+.lf-ac__m { color: var(--hueso); text-decoration: none; font-weight: 500; }
+.lf-ac__m:hover { color: var(--oro-luz, #EAD189); }
+.lf-ac__m small { font-weight: 400; color: var(--ceniza-2); font-size: 0.66rem; }
+.lf-ac__p { color: var(--ceniza); }
+.lf-ac__r { display: grid; gap: 1px; }
+.lf-ac__r b { font-weight: 500; color: var(--hueso); }
+.lf-ac__r small { font-size: 0.62rem; color: var(--ceniza-2); }
+.lf-ac__r em { font-style: normal; font-size: 0.62rem; color: var(--ceniza-2); }
+.lf-ac__r.is-provisional b { color: var(--ceniza); }
+.lf-ac__fuente { color: var(--ceniza-2); }
+.lf-ac__edad { color: var(--ceniza-2); white-space: nowrap; }
+@media (max-width: 760px) {
+  .lf-ac__cab, .lf-ac__dcab { display: none; }
+  .lf-ac__fila { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 14px; padding: 14px; }
+  .lf-ac__n { grid-column: 1; }
+  .lf-ac__k { grid-column: 2; text-align: right; }
+  .lf-ac__rl { display: block; font-size: 0.5rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ceniza-2); margin-bottom: 2px; }
+  .lf-ac__abierta { padding: 4px 14px 14px; }
+  .lf-ac__s { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px 10px; padding: 10px 0; }
+  .lf-ac__f { grid-column: 1; }
+  .lf-ac__m { grid-column: 2 / 4; }
+  .lf-ac__p { grid-column: 4; text-align: right; }
+}

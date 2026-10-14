@@ -6,7 +6,7 @@ import type { EventoOficina, Oficina as OficinaT, UniversoFila } from './tipos6b
 import { fmtHora, fmtUsd, hace } from './formato'
 import { EmptyState } from '../ui/EmptyState'
 import { Escena, NOMBRE, puertoDe, type ApiEscena, type GrupoFuente, type IdAgente, type MonedaEscena, type Puerto } from './oficina/Escena'
-import { HojaAgente, HojaFuentes, SALUD_LLANO, describirPaso } from './oficina/Hojas'
+import { HojaAgente, HojaFuentes, SALUD_LLANO, describirPaso, porInstrumento } from './oficina/Hojas'
 import { actividad as actividadDe, alCambiar, anotar as anotarHistoria, historia, lineaTurno, MODO_LLANO, monedasDe, pasoDe, rotuloDe, todos, type Ev, type Turno } from './oficina/historia'
 import { TarjetaCurva } from './Cartera'
 import { GastoOficina } from './oficina/Gasto'
@@ -41,6 +41,8 @@ const ROL: Record<IdAgente, string> = {
 }
 const AGENTES: IdAgente[] = ['luffy', 'cuant', 'investigador', 'estratega', 'jev', 'crawler']
 const usd = (v: number | undefined) => (typeof v === 'number' && v > 0 ? ` · ${fmtUsd(v, 3)}` : '')
+const PROPOSITO_JEV: Record<string, string> = { ciclo_clasificacion: 'ciclo de clasificación' }
+const CON_INSTRUMENTOS = new Set<IdAgente>(['cuant', 'investigador'])
 const comoAgente = (s: string | null | undefined): IdAgente | null => { const k = (s ?? '').toLowerCase(); return (AGENTES as string[]).includes(k) ? (k as IdAgente) : null }
 const ABRE: Record<string, string> = { auto: 'leyendo el pedido', chat: 'leyendo el pedido', decision: 'pensando la decisión', caja: 'revisando la caja', gatillo: 'revisando un gatillo', terminal: 'preparando la ficha' }
 const DATOS_DE: Record<string, string> = { binance_futures: 'foto de derivados', coinalyze: 'derivados del día', defillama: 'ingresos y depósitos', bingx: 'velas y cuenta', motor_veta: 'fichas del motor' }
@@ -53,7 +55,7 @@ function describir(e: EventoOficina): { texto: string; clase: string } | null {
     case 'agente_convocado': return { texto: `convoca al ${e.agente}`, clase: '' }
     case 'agente_terminado': return { texto: `el ${e.agente} entrega${e.ok ? '' : ' con error'} · ${Math.round(e.duracion_s)} s${usd(e.costo_usd)}`, clase: e.ok ? '' : 'is-mal' }
     case 'herramienta': return { texto: `${e.quien} usa ${e.nombre}${e.fuente ? ` → ${e.fuente}` : ''}${e.ok ? '' : ' (falló)'}`, clase: e.ok ? 'is-fuente' : 'is-mal' }
-    case 'jev': return { texto: `Jev clasifica ${e.n} (${e.proposito.replace(/_/g, ' ')})${usd(e.costo_usd)}`, clase: 'is-fuente' }
+    case 'jev': return { texto: `Jev clasifica ${e.n} publicacion${e.n === 1 ? '' : 'es'} (${PROPOSITO_JEV[e.proposito] ?? e.proposito.replace(/_/g, ' ')})${usd(e.costo_usd)}`, clase: 'is-fuente' }
     case 'fuente_leida': return { texto: `${e.fuente.replace(/_/g, ' ')} ${e.ok ? `entrega${e.n ? ` ${e.n}` : ''}` : 'no respondió'}${e.detalle && e.detalle !== 'ok' ? ` · ${e.detalle}` : ''}`, clase: e.ok ? 'is-fuente' : 'is-mal' }
     case 'radar_ciclo': return { texto: `radar ${e.modo}: ${e.n_candidatas} candidata${e.n_candidatas === 1 ? '' : 's'} de ${e.n_evaluados}`, clase: '' }
     case 'caja_ciclo': return { texto: `ciclo de la caja (${e.motivo}): ${e.corrio ? `corrió, ${e.propuestas} propuesta${e.propuestas === 1 ? '' : 's'}` : 'sin novedades, no abrió turno'}${usd(e.costo_usd)}`, clase: '' }
@@ -292,8 +294,13 @@ export function Oficina() {
     if (a === 'luffy') return `${estado.luffy.turnos_24h} turnos en 24 h · ${fmtUsd(estado.luffy.costo_24h_usd)}`
     if (a === 'crawler') { const t = estado.trabajos.find((x) => /crawler/i.test(x.nombre)); const x = estado.fuentes.find((f) => f.nombre === 'x'); return `${(t as { corridas_24h?: number } | undefined)?.corridas_24h ?? '—'} pasadas en 24 h${x?.ultima_lectura ? ` · leyó ${hace(x.ultima_lectura)}` : ''}` }
     const ag = estado.agentes.find((x) => comoAgente(x.nombre) === a)
-    return ag ? `${ag.llamadas_24h.toLocaleString('es-ES')} ${a === 'jev' ? 'clasificaciones' : 'encargos'} en 24 h · ${fmtUsd(ag.costo_24h_usd)}` : ''
+    if (!ag) return ''
+    const n = ag.encargos_24h ?? ag.llamadas_24h
+    return a === 'jev' ? `${n.toLocaleString('es-ES')} clasificaciones en 24 h · ${fmtUsd(ag.costo_24h_usd)}` : `${n.toLocaleString('es-ES')} encargo${n === 1 ? '' : 's'} en 24 h · ${fmtUsd(ag.costo_24h_usd)}`
   }
+  // v2.6: lo que Luffy usó por su cuenta de cada escritorio, aparte de los encargos (código o fuentes, sin costo de modelo)
+  // (sólo el Cuant y el Investigador tienen instrumentos: a otro escritorio no se le dice «no los usó»)
+  const instrumentos = (a: IdAgente) => { const x = estado?.agentes.find((y) => comoAgente(y.nombre) === a)?.instrumentos_luffy_24h ?? null; return x && (x.n > 0 || CON_INSTRUMENTOS.has(a)) ? x : null }
   const ultimaVez = (a: IdAgente) => ultimo[a] ?? (() => { const ag = estado?.agentes.find((x) => comoAgente(x.nombre) === a); const t = a === 'luffy' ? estado?.luffy.ultimo_turno : ag?.ultima_actividad; return t ? { texto: a === 'luffy' ? 'último turno' : 'última actividad', hora: t } : null })()
   const ahoraHacen = AGENTES.filter((a) => globos[a]).sort((x, y) => (globos[y]?.t ?? 0) - (globos[x]?.t ?? 0))
   const pasoRep = rep && rep.i > 0 ? rep.turno.pasos[rep.i - 1] : null
@@ -316,6 +323,7 @@ export function Oficina() {
               <p className="lf-ag__rol">{ROL[a]}</p>
               <p className="lf-ag__ultimo">{u ? <>{u.texto}<em className="mono"> · {hace(u.hora)}</em></> : <em className="mono">sin actividad reciente</em>}</p>
               <p className="lf-ag__cifra mono">{cifra(a)}</p>
+              {(() => { const ins = instrumentos(a); return ins ? <p className="lf-ag__instr mono" data-prueba={`instrumentos-${a}`} title={porInstrumento(ins).map(([k, v]) => `${k}: ${v}`).join('\n') || undefined}>{ins.n ? `Luffy usó sus instrumentos ${ins.n.toLocaleString('es-ES')} ${ins.n === 1 ? 'vez' : 'veces'} · sin costo` : 'Luffy no usó sus instrumentos en 24 h'}</p> : null })()}
               <button type="button" className="lf-ag__abrir" onClick={() => alAgente(a)} aria-label={`${NOMBRE[a]}: su día`} />
             </article>
           ) })}
@@ -371,7 +379,7 @@ export function Oficina() {
       </div>
       <p className="lf-ctrl__nota mono lf-ofi2__fuentes">Fuentes: {(estado?.fuentes ?? []).map((f, i) => <span key={f.nombre}>{i > 0 && ' · '}<button type="button" onClick={() => alFuente(puertoOGrupo(f.nombre))}>{f.etiqueta ?? f.nombre.replace(/_/g, ' ')} {SALUD_LLANO[f.estado]}</button></span>)}</p>
 
-      {abierta?.tipo === 'agente' && <Seguro t="Su día">{() => <HojaAgente a={abierta.a} rol={ROL[abierta.a]} cifra={cifra(abierta.a)} version={version} cargada={cargada} cerrar={cerrarHoja} repetir={repetir} />}</Seguro>}
+      {abierta?.tipo === 'agente' && <Seguro t="Su día">{() => <HojaAgente a={abierta.a} rol={ROL[abierta.a]} cifra={cifra(abierta.a)} instrumentos={instrumentos(abierta.a)} version={version} cargada={cargada} cerrar={cerrarHoja} repetir={repetir} />}</Seguro>}
       {abierta?.tipo === 'fuente' && <Seguro t="Salud de las fuentes">{() => <HojaFuentes cual={abierta.cual} estado={estado} version={version} cargada={cargada} cerrar={cerrarHoja} />}</Seguro>}
     </div>
   )
