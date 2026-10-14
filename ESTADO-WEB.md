@@ -990,8 +990,8 @@ Lo que cambió al verlo con datos reales:
   por cumplir. Un plazo sin ninguna cumplida dice «sin cumplir» y cuándo se cumple la primera; «hasta hoy» va aparte
   y marcado «provisional». Al tocar un modo se abre su frase y sus señales, con fecha, moneda (enlace al terminal),
   precio de la señal y el retorno de cada plazo (o la fecha en que se cumple) junto al de BTC. Sin verde ni rojo: es
-  una medición. La caja contra mantener (`caja` del contrato) no se muestra todavía. El 14-oct ningún plazo de 7
-  días se había cumplido (el radar empezó el 11-oct): todo es provisional.
+  una medición. El 14-oct ningún plazo de 7 días se había cumplido (el radar empezó el 11-oct): todo es provisional.
+  (La caja contra mantener y el universo llegaron después, ver la sección siguiente.)
 - **Terminal, tal como llega:** la calidad del mapa sale de `calidad.lados` («CORTOS v2: 1,35 veces mejor que el azar
   (entre 1,17 y 1,54) · LARGOS v2: no se distingue del azar (1,01; entre 0,91 y 1,13)»), sin rearmarla desde la frase.
   Se quitó la traducción del régimen (`risk_on` → llano): llega en llano. Números en español, motivos llanos y
@@ -1005,6 +1005,22 @@ Lo que cambió al verlo con datos reales:
   Capturas con datos reales, escritorio y 390 px, en `recursos/capturas/v26/` (`scripts/capturar-aciertos.mjs` y
   `capturar-terminal2.mjs`; en el teléfono la ficha se captura a 1,5× porque Chrome repite lo de arriba pasados
   16 384 px).
+
+### Aciertos: el universo junto a BTC y la caja contra mantener (14-oct-2026, contrato v2.7)
+
+- **El universo (v2.7):** cada plazo de la tabla dice cuántas le ganaron «al universo» (la mediana, en el mismo
+  período, de las monedas que sigue el radar y que no marcó ese día) y cuántas «a BTC», una debajo de la otra, con el
+  tamaño de muestra; al pasar el ratón, el porcentaje y la diferencia mediana. En las señales de un modo, cada retorno
+  lleva debajo el de BTC y el del universo. Arriba, una línea dice qué es el universo y cuántas monedas tiene (311 el
+  14-oct). Usa `plazo` (`cumplido` | `parcial` | `pendiente` | `sin_datos`) tal como llega.
+- **La caja contra mantener:** debajo de la tabla de modos, en la misma pestaña. Arriba el resumen (medias de las
+  operaciones reales; las de misiones simuladas no cuentan y se dice cuántas quedan fuera): lo que hizo la caja y lo que
+  habría dado mantener 7, 14 y 30 días y hasta hoy, sin stop y con el stop por volatilidad. Después cada operación,
+  con las simuladas marcadas y en gris: lo que hizo la caja (retorno, US$, días; o «abierta») y, por plazo, mantener sin
+  stop y con stop (o la fecha en que se cumple; si el stop saltó, el día). Al tocarla: la tesis, la entrada, la
+  salida, el stop de la caja y el de volatilidad con su ATR, y la misión. Sin verde ni rojo.
+- Simulador con todos los casos (una abierta, dos simuladas, un stop que salta) y pruebas en `probar-luffy.mjs`.
+  Capturas con datos reales en `recursos/capturas/v27/`.
 
 ## 8. Huecos del contrato abiertos
 

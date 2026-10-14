@@ -625,6 +625,20 @@
 .lf-ac__r em { font-style: normal; font-size: 0.62rem; color: var(--ceniza-2); }
 .lf-ac__r.is-provisional b { color: var(--ceniza); }
 .lf-ac__fuente { color: var(--ceniza-2); }
+/* las dos comparaciones del plazo (al universo / a BTC; sin stop / con stop), una al lado de la otra */
+.lf-ac__cap { font-size: 0.5rem !important; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ceniza-2) !important; }
+.lf-ac__par { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; max-width: 190px; font-size: 0.68rem; color: var(--ceniza); line-height: 1.45; }
+.lf-ac__par b { font-size: 0.82rem; font-weight: 500; color: var(--hueso); white-space: nowrap; }
+.lf-ac__c.is-provisional .lf-ac__par b { color: var(--ceniza); }
+/* la caja contra mantener */
+.lf-ac__caja { display: grid; gap: 10px; margin-top: 22px; }
+.lf-ac__h { margin: 0; font-family: var(--font-mono); font-size: 0.6rem; font-weight: 400; letter-spacing: 0.16em; text-transform: uppercase; color: var(--hueso); }
+.lf-ac__t--caja .lf-ac__cab, .lf-ac__t--caja .lf-ac__fila { grid-template-columns: minmax(150px, 1.3fr) minmax(120px, 1fr) repeat(4, minmax(0, 1fr)); }
+.lf-ac__fila.is-resumen { background: rgba(236, 230, 216, 0.03); }
+.lf-ac__fila.is-simulada .lf-ac__n b, .lf-ac__fila.is-simulada .lf-ac__c b { color: var(--ceniza); }
+.lf-ac__sim { margin-left: 8px; padding: 1px 6px; border: 1px solid var(--hilo-suave); border-radius: 999px; font-style: normal; font-size: 0.5rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ceniza-2); vertical-align: 2px; }
+.lf-ac__datos { margin: 0 0 4px; padding-left: 18px; display: grid; gap: 4px; font-size: 0.78rem; color: var(--ceniza); line-height: 1.5; }
+.lf-ac__datos .num { color: var(--hueso); }
 .lf-ac__edad { color: var(--ceniza-2); white-space: nowrap; }
 @media (max-width: 760px) {
   .lf-ac__cab, .lf-ac__dcab { display: none; }
@@ -637,4 +651,6 @@
   .lf-ac__f { grid-column: 1; }
   .lf-ac__m { grid-column: 2 / 4; }
   .lf-ac__p { grid-column: 4; text-align: right; }
+  .lf-ac__t--caja .lf-ac__fila { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .lf-ac__par { max-width: none; }
 }
